@@ -1,0 +1,212 @@
+<com:TContent ID="MainContent">
+<script type="text/javascript">
+    function confirmDeactivate(active)
+    {
+        var msg = 'ACTIVATE';
+        if (active == 1)
+            var msg = 'DEACTIVATE';
+
+        if (!confirm('Are you sure you want to ' + msg + ' this purchase order?'))
+            return false;
+    }
+
+    //this will prompt the user to confirm the client RMA number
+    function beforeReviewedBtn()
+    {
+        if ($('<%= $this->fieldTaskIdToProgress->getClientId(); %>').value != "0")     //we're mandating the client RMA number
+        {
+            if ($('<%= $this->clientRmaNumber->getClientId(); %>').value != '')          //its not empty
+            {
+                if (!confirm("Please confirm the Client RMA Number (" + $('<%= $this->clientRmaNumber->getClientId(); %>').value + "), as this will be added to the Return Authority and updated in the field task.\n\nClick OK to continue."))
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+</script>
+    <br />
+    <com:TActiveLabel ID="jsLbl" Style="display:none;"/>
+    <div>
+        <com:TPanel ID="SearchAddPanel" CssClass="SearchPanel" DefaultButton="SearchButton">
+            <table width="100%" border="0">
+                <tr>
+                    <td width="200px"><b>Transit/Dispatch Note No:</b></td>
+                    <td>
+                        <com:TTextBox ID="SearchText" AutoPostBack="false" Columns="45" />
+                        <com:TButton ID="SearchButton" Text=" Search " OnClick="search" />
+                        <com:TButton ID="ResetButton" Text=" Reset " OnClick="resetReload" />
+                        <com:THiddenField ID="SearchString" />
+                        <com:THiddenField ID="focusObject" />
+                        <com:THiddenField ID="focusObjectArgument" />
+                    </td>
+                </tr>
+            </table>
+            <br /><hr /><br />
+        </com:TPanel>
+    <!---   ---------------- Adding Panel ---------------- --->
+
+        <com:TActivePanel ID="AddPanel" CssClass="AddPanel" Style="padding:10px;">
+        </com:TActivePanel>
+        <!---   ---------------- End of  Adding Panel ---------------- --->
+
+
+        <!---   ---------------- Start of Listing Panel ---------------- --->
+        <com:TPanel ID="ListingPanel">
+            <table width="100%" class="DataListTitle">
+                <tr>
+                    <td><com:TLabel ID="ListRaLabel" Text="" /></td>
+                </tr>
+            </table>
+            <br />
+            <table width="100%" class="DataListTitle">
+                <tr>
+                     <td width="208px"><com:TLabel ID="clientRaLabel" Text="Client RMA Number:" style="font-weight:bold;"/></td>
+                     <td>
+                         <com:THiddenField ID="fieldTaskIdToProgress" Value="" />
+                         <com:TActiveTextBox ID="clientRmaNumber" Style="background-color:#ffa6a6;" Width="30%" Text="" />
+                         <com:THiddenField ID="clientRmaNumberHidden"  />
+                     </td>
+                 </tr>
+            </table>
+
+            <br />
+            <com:TActiveButton ID="reviewedButtonTop" Style="display:none;" Text=" Submit as Reviewed " Attributes.onclick="return beforeReviewedBtn();" OnClick="reviewedRa" />
+            <com:TActiveButton ID="closeButtonTop" Style="display:none;" Text=" Cancel and Return to DN " OnClick="cancelRa" Attributes.onclick="if (!confirm('Are you sure you want to cancel and return to DN?')) return false;" />
+            <com:TButton ID="reloadButtonTop" Style="display:none;" Text=" Reload Data " OnClick="reloadData" Attributes.onclick="if (!confirm('Warning! You will lose information already entered, do you want to continue?')) return false;"/>
+            <br />
+            <br />
+
+            <com:TDataList ID="DataList" OnSelectedIndexChanged="selectItem"
+                         DataKeyField="id"
+                         OnEditCommand="edit"
+                         OnUpdateCommand="save" OnCancelCommand="cancel"
+                         CssClass="DataList"
+                         ItemStyle.CssClass="DataListItem"
+                         AlternatingItemStyle.CssClass="DataListAlterItem"
+                         EditItemStyle.CssClass="DataListEditItem"
+                         width="100%" EnableViewState="true">
+
+                <prop:HeaderTemplate>
+                    <table width="100%" height="25">
+                        <tr>
+                            <th width="100%">&nbsp;</th>
+                        </tr>
+                    </table>
+                </prop:HeaderTemplate>
+
+                <prop:ItemTemplate>
+                    <br />
+                    <com:TActiveHiddenField id="piId" Value="<%# $this->DataItem['id'] %>" />
+                    <table width="100%" border="0">
+                        <tr>
+                            <td>
+                                <table width="100%">
+                                    <tr height="20px">
+                                        <td width="200px"><b>Barcode:</b></td>
+                                        <td><b><%# $this->DataItem['serialNo'] %></b></td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Quantity:</b></td>
+                                        <td><%# $this->DataItem['qtySent'] %></td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Part Code:</b></td>
+                                        <td><%# $this->DataItem['partCode'] %></td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Part Name:</b></td>
+                                        <td><%# $this->DataItem['name'] %></td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Contract:</b></td>
+                                        <td>
+                                            <com:TActiveTextBox ID="contractTxt" Style="background-color:#ffa6a6;" Width="98%" Text="<%# $this->DataItem['contract'] %>" Visible="<%# $this->DataItem['contract'] == '' %>" />
+                                            <com:TActiveLabel ID="contractLbl" Text="<%# $this->DataItem['contract'] %>" Visible="<%# $this->DataItem['contract'] != '' %>" />
+                                        </td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Field Task No:</b></td>
+                                        <td>
+                                            <com:TActiveTextBox ID="ftIdTxt" Style="background-color:#ffa6a6;" Width="30%" Text="" Visible="<%# $this->DataItem['ftId'] == '' %>" />
+                                            <com:TActiveLabel ID="ftIdLbl" Text="<%# $this->DataItem['ftId'] %>" Visible="<%# $this->DataItem['ftId'] != '' %>" />
+                                        </td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Manufacturer Serial No:</b></td>
+                                        <td>
+                                            <com:TActiveLabel ID="manufNoTxt" Text="<%# $this->DataItem['manufNo'] %>" />
+                                        </td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Client Asset No:</b></td>
+                                        <td>
+                                            <com:TActiveLabel ID="assetNoLbl" Text="<%# $this->DataItem['assetNo'] %>" />
+                                        </td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Part Fault Description:</b></td>
+                                        <td><com:TActiveLabel ID="techCommentsLbl" Text="<%# $this->DataItem['actionComments'] %>" /></td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Tech Fault (TO BE SENT):</b></td>
+                                        <td>
+                                            <com:TActiveTextBox ID="techComments" Width="5%" Text="<%# $this->Page->getTechFaultDescription($this->DataItem['actionComments']) %>" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td width="2%" Style="display:none;">
+                                <com:Application.controls.HYLock Feature="pages_all,feature_allow_Raise_PurchaseOrder">
+                                    <com:TImageButton ID="EditButton" ImageUrl="../../../themes/images/edit.png" Text="Edit" CommandName="edit" ToolTip="Edit Purchase Order" Visible="true"/>
+                                </com:Application.controls.HYLock>
+                            </td>
+                        </tr>
+                    </table>
+                    <br />
+                </prop:ItemTemplate>
+
+                <!---   ---------------- Start of Edit Panel ---------------- --->
+                <prop:EditItemTemplate>
+                </prop:EditItemTemplate>
+
+                <!---   ---------------- Footer ---------------- --->
+                <prop:FooterTemplate>
+                    <table width="100%" height="25">
+                        <tr>
+                            <th colspan=5>
+                                <div style="font-weight: bold; text-align: center;">
+                                    Total <%# $this->Page->totalRows %> Parts
+                                </div>
+                            </th>
+                        </tr>
+                    </table>
+                </prop:FooterTemplate>
+
+
+            </com:TDataList>
+
+            <br />
+            <com:TActiveButton ID="reviewedButtonBtm" Style="display:none;" Text=" Submit as Reviewed " Attributes.onclick="return beforeReviewedBtn();" OnClick="reviewedRa" />
+            <com:TActiveButton ID="closeButtonBtm" Style="display:none;" Text=" Cancel and Return to DN " OnClick="cancelRa" Attributes.onclick="if (!confirm('Are you sure you want to cancel and return to DN?')) return false;" />
+            <com:TButton ID="reloadButtonBtm" Style="display:none;" Text=" Reload Data " OnClick="reloadData" Attributes.onclick="if (!confirm('Warning! You will lose information already entered, do you want to continue?')) return false;"/>
+        </com:TPanel>
+
+        <com:TPanel ID="PaginationPanel">
+            <table width="100%" height="25">
+                <tr>
+                    <th colspan="2" align="left">
+                        Select Page:
+                        <com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+                    </th>
+                    <th colspan="3" align="right">
+                        Go To Page:
+                        <com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+                    </th>
+                </tr>
+            </table>
+        </com:TPanel>
+    </div>
+
+</com:TContent>

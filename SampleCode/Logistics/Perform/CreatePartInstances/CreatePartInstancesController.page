@@ -1,0 +1,129 @@
+<com:TContent ID="MainContent">
+	<com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+
+    <com:TActiveHiddenField ID="closeAfterSave" Value="false" />
+    <com:TActiveHiddenField ID="regPtId" Value="" />
+
+    <com:TActiveLabel ID="jsLbl" Text="" />
+
+	<com:TCallback ID="selectPTBtn" OnCallback="Page.selectPT" />
+	<com:TCallback ID="checkSNExsitingBtn" OnCallback="Page.checkSNExsiting" />
+	<com:TCallback ID="checkWarehouseBtn" OnCallback="Page.checkWarehouse" />
+	<com:TCallback ID="registerPIBtn" OnCallback="Page.registerPI" />
+	<com:TCallback ID="showPatternBtn" OnCallback="Page.showPattern" />
+
+	<div id='errors' style='color:red;font-weight:bold'></div>
+	<div id='toolTip'></div>
+	<div class='row' fieldids="pendingparts" style="display:none;"></div>
+	<div id="pagewrapper">
+		<span class='inlineBlock leftpanel vtop'>
+			<com:TPanel ID="poRow" CssClass='row'>
+				<span class='inlineBlock title'>
+					<com:TCheckBox ID="hasPoButton" Attributes.onClick="return pageJs.toggleHasPO(this,'<%= $this->poNo->getClientId()%>', '<%= $this->partType->getClientId()%>', '<%= $this->poPartsLbl->getClientId()%>');" Attributes.onmouseover="bsuiteJs.showTooltip(event, 'toolTip', 'Check here to toggle between PO/PT.')"/>
+					<label for="<%= $this->hasPoButton->getClientId()%>">PO. No:<span class='manD'>*</span></label>
+				</span>
+				<span class='inlineBlock content'>
+					<com:Application.controls.EntityAutoComplete.HYPurchaseOrderComplete ID="poNo"
+						ResultPanel.CssClass="hydraautocomplete" QtyGreaterThanFilter="registered" SearchLimit="50" width="94%"/>
+		  			<com:TActiveHiddenField ID="hiddenPoId" />
+		  			<com:TActiveHiddenField ID="poId" />
+		  			<com:TActiveHiddenField ID="hiddenPoPartsId" />
+		  			<com:TActiveLabel ID="poPartsLbl" />
+				</span>
+			</com:TPanel>
+			<div class='row'>
+				<span class='inlineBlock title'>Part Type:<span class='manD'>*</span></span>
+				<span class='inlineBlock content'>
+					<com:Application.controls.EntityAutoComplete.HYPartTypeComplete ID="partType" Attributes.onChange="pageJs.clearBeforeSelectPT();pageJs.requestData.po.id='';pageJs.requestData.po.pId='';pageJs.requestData.po.maxRegQty=null;" Attributes.onkeydown="return pageJs.enterToSelectPT(event, '<%= $this->partType->ResultPanel->getClientId()%>');"
+		  				Attributes.fieldids="parttype" ResultPanel.CssClass="hydraautocomplete" width="94%" SearchLimit="50" ResultPanel.Attributes.OnClick="pageJs.selectPT(this);" />
+				</span>
+			</div>
+			<div class='loadedAfterPT' style="display:none;">
+				<div class='row'>
+					<span class='inlineBlock title'>&nbsp;</span>
+					<span class='inlineBlock content'>
+						<a href="javascript:void(0);" onclick="$('additionalPtInfo').toggle();" onmouseover="bsuiteJs.showTooltip(event, 'toolTip', 'Click to See Extra PT Info')">Additional Part Info.</a>
+					</span>
+				</div>
+				<div id="additionalPtInfo" style="display:none;">
+					<div class='row'>
+						<span class='inlineBlock title'>Contracts:</span>
+						<span class='inlineBlock content'>
+							<div id="sharedContracts" class='disabled' style="height:60px;width:100%;overflow:auto;" fieldids="contracts"></div>
+						</span>
+					</div>
+					<div class='row'>
+						<span class='inlineBlock title'>Owner:</span>
+						<span class='inlineBlock content'>
+							<div id="owner" class='disabled' style="height:21px;width:100%;" fieldids="owner"></div>
+						</span>
+					</div>
+				</div>
+				<div class='row'>
+					<span class='inlineBlock title'>Status:<span class='manD'>*</span></span>
+					<span class='inlineBlock content'>
+						<select ID="status" fieldids="statusList"></select>
+					</span>
+				</div>
+				<div class='row'>
+					<span class='inlineBlock title'>Qty:<span class='manD'>*</span></span>
+					<span class='inlineBlock content'>
+						<input type="text" id="qty" value='1' width="10%" fieldids="qty"/>
+					</span>
+				</div>
+				<div class='row' aliases='wrapper'>
+					<span class='inlineBlock title'>
+						<div aliases='aliastype'><input aliases='aliastypeid' type='hidden' value="<%= PartInstanceAliasType::ID_SERIAL_NO %>"/>Serial No:</div>
+						<select aliases='aliastypeList' style="display:none;"><%= $this->generateAliasTypeList()%></select>
+					</span>
+					<span class='inlineBlock content'>
+						<span aliases='alias' class="inlineBlock">
+							<input type='text' id="serialNo"  fieldids="serialNo" onkeydown="pageJs.focusToNextBlankAlias(event);" />
+								<a href='javascript: void(0);' aliases='moreOrLess' Onclick="pageJs.addAlias(this);" style="display:none;">Add</a>
+							<div fieldids="serialNoValidator"></div>
+							<div fieldids="aliasPattern"></div>
+						</span>
+						<span aliases='boxLabel' class="inlineBlock"><com:TLabel ID="boxlabel" Attributes.OnMouseOver="bsuiteJs.showTooltip(event, 'toolTip', 'Tick to print box label<br />when add this part in the List')" ><input type="checkbox" id="printBoxLabel" /><label for="printBoxLabel"> Box Label</label></com:TLabel></span>
+					</span>
+				</div>
+				<div class='row' >
+					<span class='inlineBlock title'>&nbsp;</span>
+					<span class='inlineBlock content'><a href="javascript: void(0);" onclick="$$('[aliases=moreOrLess]').first().click()" >Add More Aliases</a>
+					</span>
+				</div>
+				<div class='row' aliases="pilist">
+					<div>
+						<span class='inlineBlock title'></span>
+						<span class='inlineBlock content ralign'>
+							<input type="button" aliases='addPIBtn' value="Add" onclick="pageJs.addPI(this);"/>
+							<input type="button" value="Remove" onclick="pageJs.removeAlias(this);"/>
+						</span>
+					</div>
+					<div style="width: 95%"  >
+						<div>Ready To Register (<span id="PiCount">0</span>) Part Instance(s):</div>
+						<div width="100%" aliases="aliasList">
+						</div>
+					</div>
+				</div>
+			</div>
+		</span>
+		<span class='inlineBlock rightpanel vtop'>
+			<com:TPanel ID="showPendingPartsPane" CssClass='row'>
+				<input type="checkbox" checked id='showPendingPartInfo' onclick="$$('[fieldids=pendingparts]').first().toggle();"/><label for="showPendingPartInfo" style="font-weight:bold;">&nbsp;Display PENDING Parts Information</label>
+			</com:TPanel>
+			<div class='row loadedAfterPT' style="display:none;">
+				<com:Application.controls.HYWHTree ID="warehouse" hidden="warehouseid" HideTree="true" AfterLoadedJavascript="mb.hide();"/>
+				<com:THiddenField ID="warehouseid" VALUE="" />
+			</div>
+			<div class='row'>
+				<input type="button" id="registerPIBtn" value="Register Parts" class='loadedAfterPT' style="display:none;" onclick="pageJs.registerPIs();"/>
+			</div>
+		</span>
+	</div>
+
+	<com:TClientScript>
+		var pageJs = new CreatePIJS('<%= $this->warehouseid->getClientId()%>','<%= $this->selectPTBtn->getUniqueID()%>', '<%= CreatePartInstancesController::MAX_QTY %>', '<%= $this->checkSNExsitingBtn->getUniqueID()%>', '<%= $this->checkWarehouseBtn->getUniqueID()%>', '<%= $this->registerPIBtn->getUniqueID()%>','<%= $this->showPatternBtn->getUniqueID()%>');
+		pageJs.toggleHasPO($('<%= $this->hasPoButton->getClientId()%>'),'<%= $this->poNo->getClientId()%>', '<%= $this->partType->getClientId()%>', '<%= $this->poPartsLbl->getClientId()%>', '<%= $this->regPtId->getClientId()%>');
+		pageJs._setCloseAfterSave($('<%= $this->closeAfterSave->getClientId()%>'));
+	</com:TClientScript>
+</com:TContent>

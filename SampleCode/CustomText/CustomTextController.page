@@ -1,0 +1,342 @@
+<%@MasterClass="Application.layouts.CRUDLayout"%>
+<com:TContent ID="MainContent">
+	<!-- //Added confirm to UI for save -->
+	<com:TClientScript>
+		function saveCustomTextClicked()
+		{
+			var answer = confirm("Are you sure you want to save all details?")
+			if(answer)
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		function confirmDeactivate(active)
+		{
+			var msg = 'activate';
+			if (active == 1)
+				var msg = 'deactivate';
+				
+			if (!confirm('Are you sure you want to ' + msg + ' this custom text?'))
+				return false;	
+		}
+	</com:TClientScript>
+	<div>
+	<!-- new search -->
+	
+		<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel" DefaultButton="SearchButton">
+			<table width="100%" border="0">
+			
+				<tr>
+					<td colspan="4"><b>Admin - Custom Text:</b>
+						<com:THiddenField ID="SearchString" />
+						<com:THiddenField ID="focusObject" />	
+						<com:THiddenField ID="focusObjectArgument" />
+						<com:THiddenField ID="ItemCountValue" />
+					</td>
+				</tr>
+<tr><td>&nbsp;</td></tr>
+				<tr>
+					<td Width='10%' align="right"><b>Class Name :</b></td>
+					<td width="30%" >
+						<com:TActiveDropDownList ID="ClassNameDataList"
+											PromptText="Please Select...." 
+											PromptValue=" "
+											AutoPostBack="false"
+										    DataTextField="class"
+										    DataValueField="class"
+										    ValidationGroup="Group1"
+										    EnableClientScript="false" 
+										    Width='250px'
+										    OnSelectedIndexChanged="getFields"
+										    /> 				
+					</td>
+					
+					<td width="10%" align="right"><b>Field Name :</b></td>
+					<td width="30%">
+						<com:TActiveDropDownList ID="FieldNameDataList"
+											AutoPostBack="false"
+										    DataTextField="field"
+										    DataValueField="field"
+										    ValidationGroup="Group1"
+										    EnableClientScript="false" 
+										    Width='250px'/> 				
+					</td>
+					
+					<td width="20%"></td>
+					
+					
+				</tr>
+				
+				<tr>
+					<td align="right"><b>Work Types :</b></td>
+					<td>
+						<com:TActiveListBox ID="WorkTypesDataList"
+											AutoPostBack="false"
+										    DataTextField="name"
+										    DataValueField="id"
+										    SelectionMode="Multiple" width="250px"
+										    height="100px"
+										    ValidationGroup="Group1"
+										    EnableClientScript="false" 
+										   /> 				
+					</td>
+					<td align="right"><b>Active :</b></td>
+					<td>
+						<com:TDropDownList ID="ActiveDataList"
+											AutoPostBack="false"
+										    DataTextField="name"
+										    DataValueField="id"
+										    ValidationGroup="Group1"
+										    EnableClientScript="false" 
+										    Width='150px'/> 				
+					</td>
+					<td></td>
+				</tr>
+
+				
+				<tr>
+					<td colspan="4">&nbsp;</td>
+				</tr>
+				<tr>
+					<td colspan="3">&nbsp;</td>
+					<td colspan="3">
+						<com:TButton Text="Search" ValidationGroup="Group1" Id="SearchButton" OnClick="searchData" />
+						<com:TButton ID="searching" Text="Searching ..." Enabled="false"/>
+						<com:TButton ID="reset" Text=" Reset " OnClick="resetReload" />
+						<com:TButton ID="AddButton" Text="Add Custom Text" OnClick="add" />	
+						<!--<com:TButton ID="add" Text="Add" Attributes.onclick="return showAddPanel()" />
+						
+					-->
+					</td>
+				</tr>
+			</table>
+		</com:TPanel>
+
+
+	
+	
+	
+
+<!---   ---------------- Adding Panel ---------------- --->	
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" >
+			<!-- //UI change to make it more presentable-->
+			<table width="100%" class="form">
+				<tr>
+					<td colspan="2" class="header">Add Custom Text</th>
+				</tr>
+				<tr>
+					<td><b>Class:<font color=red>*</font></b></td>
+					<td>
+						 <com:TActiveDropDownList ID="entityList" 
+												onSelectedIndexChanged="Page.changeEntity"
+												AutoPostBack="true">
+												<prop:ClientSide OnLoading="$('changeClass').show();"  OnComplete="$('changeClass').hide();" />
+											</com:TActiveDropDownList>
+											<com:TRequiredFieldValidator ControlToValidate="entityList" ErrorMessage="<br />Entity Required" 
+												ValidationGroup="Group1" EnableClientScript="true" 
+												Display="Dynamic"
+												/>
+					
+					</td>
+				</tr>
+				<tr>
+					<td><b>Field:</b></td>
+					<td>
+						<com:TActiveDropDownList ID="fieldList" AutoPostBack="false" /> <img id="changeClass" src="/themes/images/ajax-loader.gif" style='display:none;'/>
+					</td>
+				</tr>
+						
+				<tr>
+					<td><b>Work Types:</b></td>
+				    <td>
+								<com:TListBox ID="workTypeList"
+									SelectionMode="Multiple"
+									AutoPostBack="false"
+									DataTextField="longName"
+									DataValueField="id"
+									ValidationGroup="Group1"
+									Width="95%"
+									Rows="8"
+									/>
+								<br />
+								<com:TListControlValidator
+									ControlToValidate="workTypeList"
+									ErrorMessage="You must select a worktype" 
+									MinSelection="1"
+									EnableClientScript="true" 
+									ValidationGroup="Group1"
+									/>
+					</td>
+				</tr>
+						
+				<tr>
+					<td><b>Text:</b></td>
+					<td>
+						<com:TTextBox ID="text" AutoPostBack="false" ValidationGroup="Group1" Width="300px"/>
+						<com:TRequiredFieldValidator ControlToValidate="text" ErrorMessage="Custom Text Required" ValidationGroup="Group1" EnableClientScript="true" />
+					</td>
+				</tr>
+				<tr><td colspan="2"><b>NOTE: </b><font color=red>*</font>- indicates mandatory values</td></tr>
+				<tr>
+					<td colspan="2" class="footer">
+						<com:TButton ID="EditButton" Text="Save" Onclick="save"  ValidationGroup="Group1" />
+						<com:TButton ID="CancelEditButton" Text="Cancel" Onclick="cancel" />
+					</td>
+				</tr>					
+			</table>	
+		</com:TPanel>
+<!---   ---------------- Editing Panel Ends Here---------------- --->					
+		<com:TPanel ID="ListingPanel">
+			<table width="100%" class="DataListTitle">
+				<tr><th><com:TLabel Text="List of Custom Text" /></th></tr>
+			</table>
+			
+			<br />
+			
+			<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem" 
+					     OnEditCommand="edit"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList" 
+					     ItemStyle.CssClass="DataListItem" 
+					     AlternatingItemStyle.CssClass="DataListAlterItem" 
+					     EditItemStyle.CssClass="DataListEditItem" 
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="true" PageSize="20" EnableViewState="true">
+				
+			    <prop:HeaderTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<th width="20%">Class</th>
+							<th width="20%">Field</th>
+							<th width="20%">WorkType</th>
+							<th width="20%">Text</th>
+							<th width="10%">Active</th>
+							<th width="10%">&nbsp;</th>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%">
+						<tr valign="top">
+							<td width="20%"><%# $this->DataItem->getClass() %></td>
+							<td width="20%"><%# $this->DataItem->getField() %></td>
+							<td width="20%">
+									<%# $this->DataItem->getWorkType()->getContract() %>
+									<%# $this->DataItem->getWorkType()->getTypeName() %>
+							</td>
+							<td width="20%"><%# $this->DataItem->getText() %></td>
+							<td width="10%">
+				  				<com:TCheckBox ID="Active" 
+									Checked="<%# $this->DataItem->getActive() %>" 
+									AutoPostBack="true" 
+									OnCheckedChanged="Page.toggleActive"
+									Attributes.OnClick="return confirmDeactivate(<%# $this->DataItem->getActive() %>);" />
+							
+							</td>
+							<td width="10%"><com:TImageButton ImageUrl="../../../themes/images/edit.png" Text="Edit" CommandName="edit" ToolTip="Edit Record" /></td>					
+						</tr>
+					</table>	
+				</prop:ItemTemplate>
+				
+				<prop:EditItemTemplate>
+					<!-- //UI change to make it more presentable-->
+					<table width="100%" class="form">
+						<tr>
+							<td colspan="2" class="header">Edit Custom Text</th>
+						</tr>
+						<tr>
+							<td width="20%"><b>Class:<font color=red>*</font></b></td>
+							<td width="80%">
+								<com:TTextBox ID="entityList" AutoPostBack="false" ValidationGroup="Group2" Text="<%# $this->DataItem->getClass() %>" Width="300px"/>
+							</td>
+						</tr>
+						<tr>
+							<td><b>Field:<font color=red>*</font></b></td>
+							<td>
+								<com:TTextBox ID="fieldList" AutoPostBack="false" ValidationGroup="Group2" Width="300px" Text="<%# $this->DataItem->getField() %>" />
+							</td>
+						</tr>
+						
+						<tr><td >						
+							<b>Work Types:<font color=red>*</font></b>
+							</td><td>
+								<com:TListBox ID="workTypeList"
+									SelectionMode="Single"
+									AutoPostBack="false"
+									DataTextField="longName"
+									DataValueField="id"
+									ValidationGroup="Group2"
+									Width="95%"
+									Rows="8"
+									/>
+								<br />
+								<com:TListControlValidator
+									ControlToValidate="workTypeList"
+									ErrorMessage="You must select a worktype" 
+									MinSelection="1"
+									EnableClientScript="true" 
+									ValidationGroup="Group2"
+									/>
+							</td>					
+						</tr>
+						
+						<tr>
+							<td><b>Text:<font color=red>*</font></b></td>
+							<td>
+								<com:TTextBox ID="text" AutoPostBack="false" ValidationGroup="Group2" Width="300px" Text="<%# $this->DataItem->getText() %>" />
+							</td>
+						</tr>
+						<tr><td colspan="2"><b>NOTE: </b><font color=red>*</font>- indicates mandatory values</td></tr>
+						<tr>
+							<td colspan="2">
+								<table width="100%" class="form">
+								<tr>
+									<td style="background:none;border:0;color:#ffffff" class="footer">
+										Last Updated on <b><com:TLabel ID="Updated" /></b> by <b><com:TLabel ID="UpdatedById"  /></b>	
+									</td>
+									<td class="footer" style="background:none;border:0;text-align:right;">
+										<com:TButton ID="EditButton" Text="Save" CommandName="update" ValidationGroup="Group2" />
+										<com:TButton ID="CancelEditButton" Text="Cancel" CommandName="cancel" />
+									</td>
+								</tr>
+								</table>
+							</td>
+						</tr>
+					</table>							
+				</prop:EditItemTemplate>
+								
+			    <prop:FooterTemplate>
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="3">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->getPage()->ItemCountValue->Value %> records
+								</div>
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>				
+			</com:TDataList>
+		</com:TPanel>		
+
+		<com:TPanel ID="PaginationPanel">		
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>			
+	</div>
+</com:TContent>

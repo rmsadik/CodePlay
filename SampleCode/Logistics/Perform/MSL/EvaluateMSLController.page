@@ -1,0 +1,278 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+	<script type="text/javascript">
+	    var mouseX;
+	    var mouseY;
+	    function getcords(e)
+	    {
+	        mouseX = Event.pointerX(e);
+	        mouseY = Event.pointerY(e);
+	    }
+	    Event.observe(document, 'mousemove', getcords);
+
+	    function popup(msg)
+	    {
+	        $('detailsBox').innerHTML=msg;
+	        $('detailsBox').style.display='';
+	        $('detailsBox').style.top = (mouseY+10)+'px';
+	        $('detailsBox').style.left = (mouseX+10)+'px';
+	    }
+	    function kill()
+	    {
+	        $('detailsBox').innerHTML='';
+	        $('detailsBox').style.display='none';
+	    }
+
+		function addMSLClicked()
+		{
+			if ($F('<%= $this->hidden_addMSLWhId->getClientId() %>') == '')
+			{
+				alert('You must select a warehouse from the auto-complete.');
+				return false;
+			}
+		}
+		function openWindow(path)
+		{
+			window.open('/' + path + '/' + $F('<%= $this->warehouseIdSubmit->getClientId() %>') + '/');
+			return false;
+		}
+
+		function searchCloneFrom(){
+			$('<%= $this->cloneFromButton->getClientId() %>').disabled = true;
+			$('<%= $this->setWarehouseCloneFrom->getClientId() %>').value = 1;
+			$('<%= $this->SearchButton2->getClientId() %>').click();
+		}
+
+		function firstSearchButtonClicked()
+		{
+			$('<%= $this->firstSearchButtonClicked->getClientId() %>').value = 1;
+		}
+
+		function hideClonePanel()
+		{
+			$('<%= $this->clonePanel->getClientId() %>').style.display = "none";
+		}
+		function showModal()
+		{
+			Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, title: 'Aborting Site Audit...<br>Please be patient. Thank you.'});Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, title: 'Cloning MSL...<br>Please be patient. Thank you.'});
+			return true;
+		}
+
+
+	</script>
+	<div ID="detailsBox" style="position:absolute; background-color: black; color:white; z-index: 100; display:none; padding: 5px;"></div>
+	<com:THiddenField ID="firstSearchButtonClicked" />
+	<com:TButton ID="SearchButton2" Text="Search" onCommand="search" Style="display:none;" />
+	<com:TActiveLabel ID="jsLbl" Style="display:none;"/>
+	<com:THiddenField ID="searchAll" />
+	<com:THiddenField ID="setWarehouseCloneFrom" Value="" />
+	<com:THiddenField ID="SearchString" />
+	<com:THiddenField ID="focusObject" />
+	<com:THiddenField ID="focusObjectArgument" />
+	<br />
+
+	<com:TTextBox ID="SearchText" visible="false" Text="1" />
+	<div>
+		<b><com:TLabel ID="UserLabel" Style="color:#ffffff"/></b>
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" ></com:TPanel>
+
+<!---   ---------------- Listing Panel Starts---------------- --->
+		<table width="100%"><tr><td width="*" valign="top">
+		<com:TPanel Style="width:100%">
+			<table width="100%" border="0">
+				<tr>
+					<td style="width: 150px">For contract : </td>
+					<td colspan="2">
+						<com:TDropDownList ID="ContractList" DataValueField="0" DataTextField="1" />
+					</td>
+				</tr>
+				<tr>
+					<td>Sort result by : </td>
+					<td>
+						<com:TDropDownList ID="SortResultList" DataValueField="0" DataTextField="1" />
+						<com:TDropDownList ID="SortOrderList" DataValueField="0" DataTextField="1" />
+					</td>
+				</tr>
+				<tr>
+					<td>&nbsp;</td>
+					<td>
+						<com:TButton ID="SearchButton" Text="Search Tree Location" onClick="search" Attributes.onClick="firstSearchButtonClicked()" />
+					</td>
+				</tr>
+				<tr>
+					<td colspan='2'><br><hr><br></td>
+				</tr>
+				<tr>
+					<td>Search all (<%% echo $this->getWarehouseCategoryNamesAllowedForClone(); %>) : </td>
+					<td>
+						<com:Application.controls.EntityAutoComplete.HYWarehouseBreadcrumbComplete
+							IncludeWarehouseCategoryIds="15"
+							ExcludeIgnoreInStockCount='true'
+							ClassName="EvaluateMSLController"
+							ID="warehouseCloneTo"
+							ResultPanel.CssClass="hydraautocomplete"
+							PageMethod="setCloneTo"
+							SearchLimit="10"
+							width="93%" />
+					</td>
+					<td width="122px">
+						<com:TButton ID="SearchButtonAll" Text="Search" onCommand="search" Attributes.onclick="$('<%= $this->searchAll->getClientId() %>').value=1;" />
+					</td>
+				</tr>
+				<tr>
+				    <td colspan="3">
+					   <com:TPanel ID="clonePanel" style="float:left;display:none" >
+					       <table border="0" width="100%">
+								<td width="149px"><com:TLabel ID="cloneLabel" Text="Clone MSLs from :" style="float:left;"/></td>
+								<td>
+										<com:Application.controls.EntityAutoComplete.HYWarehouseBreadcrumbComplete
+											IncludeWarehouseCategoryIds="15"
+											ExcludeIgnoreInStockCount='true'
+											ClassName="EvaluateMSLController"
+											ID="warehouseCloneFrom"
+											ResultPanel.CssClass="hydraautocomplete"
+											SearchLimit="10"
+											PageMethod="setCloneFrom"
+											width="94%" />
+								</td>
+								<td width="122px">
+									    <com:Application.controls.HYLock Feature="pages_all,feature_allow_clone_MSL">
+										   <com:TButton ID="cloneFromButton" Enabled="false" Text="Clone MSLs" onClick="cloneMSL" Attributes.OnClick="return showModal()" style="margin-top:3px;"/>
+									    </com:Application.controls.HYLock>
+								</td>
+							</table>
+					   </com:TPanel>
+					</td>
+				</tr>
+			</table>
+			<table width="100%" border="0">
+				<tr>
+					<td colspan="2" style="text-align:right;">
+						<com:Application.controls.HYLock Feature="pages_all,feature_allow_msl_edit">
+							<com:TActivePanel id="addMslPanel">
+								<hr style="margin: 10px 0px 10px 0px" />
+								<table border="0" width="100%">
+									<tr>
+										<td align="left">
+											<com:Application.controls.EntityAutoComplete.HYWarehouseBreadcrumbComplete ID="addMSLAC" ResultPanel.CssClass="hydraautocomplete" SearchLimit="10" width="95%" PageMethod="addMSLSuggestionSelected" PageOnExtraSuggestMethod="addMSLExtraSuggest" />
+											<com:TActiveHiddenField ID="hidden_addMSLWhId" />
+										</td>
+										<td width="80px"><com:TButton ID="addMSL" Text="Add MSL Location" onClick="Page.addMSL" Attributes.onclick="return addMSLClicked();"/></td>
+									</tr>
+								</table>
+							</com:TActivePanel>
+						</com:Application.controls.HYLock>
+					</td>
+				</tr>
+				<tr><td colspan="2"><hr style="margin: 10px 0px 10px 0px" /></td></tr>
+				<tr>
+					<td>
+						<com:TLabel ID="WarehouseLabel" Style="font-weight:bold" />
+
+					</td>
+					<td style="text-align:right; width: 250px">
+						<com:Application.controls.HYLock Feature="pages_all,feature_allow_msl_edit">
+							<com:TButton ID="editMSL" Text="Edit MSL" Attributes.onclick="return openWindow('storagelocationminimumlevel');"/>
+							<com:TButton ID="addGroupMSL" Text="Edit Group MSL" Attributes.onclick="return openWindow('parttypegroupminimumlevel');" />
+						</com:Application.controls.HYLock>
+					</td>
+				</tr>
+				<tr><td colspan="2"><com:TActiveLabel ID="sohLabel" Style="color:blue;font-weight:bold;" /></td></tr>
+			</table>
+			<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem"
+						 OnEditCommand="edit"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList"
+						 width="100%"
+						 AllowPaging="false" AllowCustomPaging="false" PageSize="10" EnableViewState="true">
+
+			    <prop:HeaderTemplate>
+				    <table width="100%" cellspacing="0" cellpadding="0" border="0">
+			    		<tr style="height: 35px;">
+							<th style="border-bottom: gray solid 1px; width:10%;">Part Code</th>
+							<th style="border-bottom: gray solid 1px;" colspan="2">Part Type</th>
+			    			<th style="border-bottom: gray solid 1px; width: 50px; text-align:right">MSL</th>
+			    			<th style="border-bottom: gray solid 1px; width: 50px; text-align:right">GSOH</th>
+			    			<th style="border-bottom: gray solid 1px; width: 30px; text-align:right">&nbsp;</th>
+			    			<th style="border-bottom: gray solid 1px; width: 40px; text-align:center;">SF</th>
+			    			<th style="border-bottom: gray solid 1px; width: 40px; text-align:right;">Days</th>
+			    		</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" cellspacing="0" cellpadding="0"  border="0">
+						<tr class="<%# $this->Page->getStyle($this->getItemIndex()) %>">
+							<td style="padding-top: 8px; padding-bottom: 8px; width: 10%; "><a onMouseover="popup('Last Updated On : <%# $this->DataItem['updatedOn'] %> (UTC) By : <%# $this->DataItem['updatedBy'] %>');" onMouseout="kill();"" ><%# $this->DataItem['partCode'] %></a></td>
+							<td style="padding-top: 8px; padding-bottom: 8px;"><%# $this->DataItem['partTypeName'] %></td>
+							<td style="padding-top: 8px; padding-bottom: 8px; width: 50px; text-align:right"><%# $this->DataItem['mslQty'] %></td>
+							<td style="padding-top: 8px; padding-bottom: 8px; width: 50px; text-align:right"><%# $this->DataItem['soh'] %></td>
+							<td style="padding-top: 8px; padding-bottom: 8px; width: 30px; text-align:right">
+						        <com:Application.controls.HYLock Feature="pages_all,feature_showEditPen_AddMSL">
+								    <com:TImageButton ImageUrl="/themes/images/edit.png" Text="Edit" CommandName="edit" ToolTip="Edit MSL" />
+						        </com:Application.controls.HYLock>
+							</td>
+							<td style="padding-top: 8px; padding-bottom: 8px; width: 40px; text-align:center "><%# $this->DataItem['status'] %></td>
+							<td style="padding-top: 8px; padding-bottom: 8px; width: 40px; text-align:center"><%# $this->DataItem['daysSince'] %></td>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+
+				<prop:EditItemTemplate>
+					<table width="100%" cellspacing="0" cellpadding="0">
+						<tr style="background-color:#FFFFCC; color: black">
+							<td style="padding-top: 7px; padding-bottom: 7px; padding-right: 5px; width: 10%; "><%# $this->DataItem['partCode'] %></td>
+							<td style="padding-top: 7px; padding-bottom: 7px; padding-right: 5px"><%# $this->DataItem['partTypeName'] %></td>
+							<td style="padding-top: 7px; padding-bottom: 7px; padding-right: 5px; width: 5%; text-align:right">
+								<com:TTextBox ID="NewMslQty" Text="<%# $this->DataItem['mslQty'] %>" Width="25px" Style="text-align:right" />
+							</td>
+							<td style="padding-top: 7px; padding-bottom: 7px; padding-right: 5px; width: 5%; text-align:right"><%# $this->DataItem['soh'] %></td>
+							<td style="padding-top: 7px; padding-bottom: 7px; padding-right: 5px; width: 20%; text-align:right ">
+								<com:Application.controls.HYLock Feature="pages_all,feature_allow_save_MSL">
+									<com:TButton ID="EditButton" Text="Save" CommandName="update" ValidationGroup="Group1" />
+								</com:Application.controls.HYLock>
+								<com:TButton ID="CancelEditButton" Text="Cancel" CommandName="cancel" />
+							</td>
+						</tr>
+					</table>
+				</prop:EditItemTemplate>
+
+			    <prop:FooterTemplate>
+			    	<table width="100%" cellspacing="0" cellpadding="0">
+						<tr height="25">
+							<th style="height:25px">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Parent->VirtualItemCount %> MSLs
+								</div>
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>
+			</com:TDataList>
+		</com:TPanel>
+
+		<com:TPanel ID="PaginationPanel">
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>
+		</td>
+		<td width="250" valign="top">
+			<com:Application.controls.HYWHTree ID="warehouse" hidden="warehouseid" Width="250" GetTreeFunction="getMSLTree" />
+			<com:THiddenField ID="warehouseid" VALUE="" />
+			<com:THiddenField ID="warehouseIdSubmit" Value="" />
+		</td>
+		</tr>
+		</table>
+	</div>
+</com:TContent>

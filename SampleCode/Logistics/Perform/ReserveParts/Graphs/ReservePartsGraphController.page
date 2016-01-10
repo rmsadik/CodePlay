@@ -1,0 +1,165 @@
+<com:TContent ID="MainContent">
+    <com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+
+    <com:TActiveLabel ID="jsLbl" Text="" />
+    <com:THiddenField ID="refreshingPage" value="true" />
+    <com:TActiveHiddenField ID="jsonPreferences" value="" />
+
+    <script type="text/javascript">
+
+        function cycleGraph(optionIndex)
+        {
+            if (selections.length == 0 && optionIndex == null) //we only want to reload if it is NOT coming from a click and there are now more to cycle through
+            {
+                reloadPage();
+                return;
+            }
+
+            if (optionIndex == null)
+            {
+                optionIndex = selections.shift();
+            }
+            if (options[optionIndex])
+            {
+                chart = new Highcharts.Chart(options[optionIndex]);
+            }
+        }
+
+        function restartCycle()
+        {
+            selections = originalSelections.slice(0);
+            cycleGraph();
+        }
+
+        function reloadPage()
+        {
+            this.cycleCounter.stop();
+            mb.showLoading('reloading data');
+            window.location.href = window.location.href;
+        }
+
+        function chkChange(chk)
+        {
+            var classList = chk.className;
+            var checked = chk.checked;
+
+            if (classList.indexOf('parentChk') != -1 || classList.indexOf('parentWhChk') != -1) // select all box
+            {
+                var kids = document.getElementsByClassName(chk.getAttribute('data-childClass')); //get the children
+                for (var i=0; i<kids.length; i++)
+                {
+                    kids[i].checked = checked;
+                }
+            }
+            else //it means we've clicked on a child box
+            {
+                var parent = document.getElementById(chk.className + '_ALL');
+
+                var allChecked = true;
+                var siblings = document.getElementsByClassName(chk.className);
+                for (var i=0; i<siblings.length; i++)
+                {
+                    if (!siblings[i].checked)
+                          allChecked = false;
+                }
+                parent.checked = allChecked;
+            }
+        }
+
+        function savePrefs()
+        {
+            var json = {'chks': {}, 'status': {}};
+
+            var parents = document.getElementsByClassName('parentChk');
+            for (var i=0; i<parents.length; i++)
+            {
+                if (parents[i].checked)                                            //if parent is checked, save it and continue
+                {
+                    if (parents[i].className.indexOf('frStatusChk_ALL') != -1)
+                       json['status'][parents[i].id] = 'ALL';
+                    else
+                       json['chks'][parents[i].id] = 'ALL';
+                }
+
+                var kids = document.getElementsByClassName(parents[i].getAttribute('data-childClass'));
+                for (var j=0; j<kids.length; j++)
+                {
+                    if (kids[j].checked)
+                    {
+                        if (kids[j].className.indexOf('frStatusChk') != -1)
+                            json['status'][kids[j].id] = kids[j].value;
+                        else
+                            json['chks'][kids[j].id] = kids[j].value;
+                    }
+
+                    var linkedClass = kids[j].getAttribute('data-linkedClass');
+                    if (linkedClass != null)
+                    {
+                        var stateWhs = document.getElementsByClassName(linkedClass);
+                        for (var x=0; x<stateWhs.length; x++)
+                        {
+                            //find the parent first up
+                            if (x == 0)
+                            {
+                                var p = document.getElementById(stateWhs[x].className + '_ALL');
+                                if (p && p.checked)
+                                    json['chks'][p.id] = 'ALL';
+                            }
+                            if (stateWhs[x].checked)
+                            {
+                                json['chks'][stateWhs[x].id] = stateWhs[x].value;
+                            }
+                        }
+                    }
+                }
+            }
+
+            var msg = [];
+            if (Object.keys(json['status']).length == 0)
+                msg.push('You must select at least one Status to be displayed.');
+
+            if (Object.keys(json['chks']).length == 0)
+                msg.push('You must select at least one State or Facility to be displayed.');
+
+            if (msg.length > 0)
+            {
+                alert(msg.join("\n\n"));
+                return;
+            }
+
+            $('<%= $this->jsonPreferences->getClientId() %>').value = Object.toJSON(json);
+            mb.showLoading('saving preferences');
+        }
+
+        function togglePrefs(btn)
+        {
+            if (btn.value == 'Show Graph Preferences')
+            {
+                btn.value = 'Hide Graph Preferences';
+                $('infoPanel').style.display = 'block';
+                $('prefPanelWrapper').show();
+            }
+            else
+            {
+                btn.value = 'Show Graph Preferences';
+                $('infoPanel').style.display = 'none';
+                $('prefPanelWrapper').hide();
+            }
+        }
+    </script>
+
+    <com:TActivePanel Id="frGraphPanel" style="width:100%; height:800px; display:none;"/>
+    <br />
+    <input type="button" style="margin-left:20px; margin-right:10px;" value="Show Graph Preferences" onclick="return togglePrefs(this);" />
+    <input type="button" style="margin-left:20px; margin-right:10px; display:none;" value="Restart Graph Cycle" onclick="restartCycle();" id="restartBtn" />
+    <input type="button" style="margin-left:20px; margin-right:10px; display:none;" value="Reload Graph Data" onclick="reloadPage();" id="reloadBtn" />
+    <div id="infoPanel" style="width:90%; text-align:center; padding-top:10px; font-style:italic; font-size:16px; display:block;">Select what graphs you would like to view, they will be cycled every <com:TActiveLabel ID="cycleRateSecsLbl" Text="?" /> seconds.  All graphs are grouped by FR status, and facility level graphs are also grouped by priority.</div>
+
+    <div id="prefPanelWrapper">
+        <com:TActivePanel ID="prefPanel" Style="margin: 15px; padding:15px; border:2px solid #0099FF; border-radius:5px;-moz-border-radius:5px">
+            <com:TActivePanel Id="prefPanelContent" />
+            <com:TActiveButton ID="savePrefBtn" onclick="Page.savePrefs" Attributes.onclick="return savePrefs();" Text="Save Graph Preferences"/>
+        </com:TActivePanel>
+    </div>
+    <%= $this->Page->setBasicTheme() %>
+</com:TContent>

@@ -1,0 +1,202 @@
+<com:TContent ID="MainContent">
+	<br />
+	<br />
+	<div>
+		<b><com:TLabel ID="UserLabel" Style="color:#ffffff"/></b>
+		<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel" DefaultButton="SearchButton">
+			<table width="100%">
+				<tr>
+					<td width="100%">
+						<table width="100%">
+							<tr>
+								<th colspan="2" style="font-weight: bolder;"><%[PartType.searchLabel]%></th>
+							</tr>
+							<tr>
+								<td width="10%"><%[PartType.searchPartType]%>:<span style="color: red;">*</span></td>
+								<td>
+									<com:TDropDownList ID="SearchPartType" PromptText="All" PromptValue="0" DataTextField="name" DataValueField="id" TabIndex="1">
+										<com:TListItem Text="Part Code" Value="1" />
+						  				<com:TListItem Text="Part Name" Value="2" />
+							  		</com:TDropDownList>
+							  		<com:TTextBox ID="SearchText" AutoPostBack="false" width="80%" TabIndex="0" />
+							  	</td>
+							  </tr>
+							  <tr>
+							  	<td><%[PartType.searchContract]%>:</td>
+                                                             <td>  <com:Application.controls.HYAutoComplete ID="ContractText" 
+												Suggestions.DataKeyField="id"
+												ResultPanel.ScrollBars="Auto"
+												ResultPanel.CssClass="hydraautocomplete"
+												Type="Contract"	/> </td>
+							  	<td><com:TButton ID="SearchButton" Text=" Search " OnClick="search" /></td>
+							  </tr>
+						</table>
+						
+						<com:THiddenField ID="SearchString" />
+						<com:THiddenField ID="focusObject" />
+						<com:THiddenField ID="focusObjectArgument" />
+					</td>
+					<td width="20%">				
+					</td>
+				</tr>
+			</table>
+			<br /><hr /><br />
+		</com:TPanel>
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" ></com:TPanel>
+
+<!---   ---------------- Listing Panel Starts---------------- --->					
+		<com:TPanel>
+			<br />
+			<com:TDataList ID="DataList" DataKeyField="0" OnSelectedIndexChanged="selectItem"
+						 RepeatLayout="Raw"
+						 OnEditCommand="edit"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList" 
+					     ItemStyle.CssClass="DataListItem" 
+					     AlternatingItemStyle.CssClass="DataListAlterItem" 
+					     EditItemStyle.CssClass="DataListEditItem" 
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="true" PageSize="10" EnableViewState="true">
+				
+			    <prop:HeaderTemplate>
+					<table width="100%" class="DataListTitle">
+						<tr>
+							<th>
+								<com:TLabel ID="listLabel" Text="<%[ PartType.list ]%>" /> 
+							</th>
+						</tr>
+					</table>			    
+					<table width="100%" height="25" class="DataList">
+					<thead>
+						<tr>
+							<th width="50%"><%[ PartType.name ]%></th>
+							<th width="20%"><%[ PartType.alias ]%></th>
+							<th width="20%"><%[ PartType.contract ]%></th>
+							<th width="*"></th>
+						</tr>
+					</thead>
+					<tbody>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+						<tr class="<%# $this->Page->getStyle($this->getItemIndex()) %>">
+							<td><%# $this->DataItem[1] %></td>
+							<td><%# $this->DataItem[2] %></td>
+							<td><%# $this->DataItem[3] %></td>
+							<td style="text-align:right;"><com:TImageButton ImageUrl="../../../themes/images/grey_plus.gif" Text="Edit" CommandName="edit" ToolTip="Show Record" /></td>
+						</tr>
+				</prop:ItemTemplate>
+			
+				<prop:EditItemTemplate>
+						<tr>
+							<td colspan="4" class="DataListEditItem" style="padding:5px 0px 5px 0px">										
+								<table width="100%" cellspacing="0" cellpadding="0">
+									<tr>
+										<td style='padding:0'>
+											<table width="100%" border="0" class="DataList">
+												<thead>
+													<tr>
+														<th width="30%">Name</th>
+														<th width="60%">Value</th>
+													</tr>
+												</thead>
+												<tbody>
+													<tr class="<%# $this->Page->getStyle(0) %>">
+														<td><%[ PartType.name ]%></td>
+														<td><com:TLabel ID="partTypeName" /></td>
+													</tr>
+													<tr class="<%# $this->Page->getStyle(1) %>">
+														<td><%[ PartType.description ]%></td>
+														<td><com:TLabel ID="partTypeDescription" /></td>
+													</tr>
+													<tr class="<%# $this->Page->getStyle(1) %>">
+														<td>Kit Type</td>
+														<td><com:TLabel ID="partTypeKitType" /></td>
+													</tr>
+													<tr class="<%# $this->Page->getStyle(2) %>">
+														<td><%[ PartType.make ]%></td>
+														<td><com:TLabel ID="partTypeMake" /></td>
+													</tr>								
+													<tr class="<%# $this->Page->getStyle(3) %>">
+														<td><%[ PartType.model ]%></td>
+														<td><com:TLabel ID="partTypeModel" /></td>
+													</tr>
+													<tr class="<%# $this->Page->getStyle(4) %>">
+														<td><%[ PartType.version ]%></td>
+														<td><com:TLabel ID="partTypeVersion" /></td>
+													</tr>
+													<tr class="<%# $this->Page->getStyle(5) %>">
+														<td><%[ PartType.repairable ]%>											
+														</td>
+														<td><com:TImage ID="partTypeRepairable" /></td>
+													</tr>
+													<tr class="<%# $this->Page->getStyle(6) %>">
+														<td><%[ PartType.partTypeGroup ]%></td>
+														<td><com:TLabel ID="partTypeGroups" /></td>
+													</tr>
+													<tr class="<%# $this->Page->getStyle(7) %>">
+														<td><%[ PartType.partTypeAlias ]%></td>
+														<td><com:TLabel ID="partTypeAlias" /></td>
+													</tr>
+													<tr class="<%# $this->Page->getStyle(8) %>">
+														<td><%[ PartType.contracts ]%></td>
+														<td><com:TLabel ID="partTypeContracts" /></td>
+													</tr>
+													<tr class="<%# $this->Page->getStyle(9) %>">
+														<td><%[ PartType.manufacturer ]%></td>
+														<td><com:TLabel ID="partTypeManufacturer" /></td>
+													</tr>
+													<tr class="<%# $this->Page->getStyle(10) %>">
+														<td><%[ PartType.suppliers ]%></td>
+														<td><com:TLabel ID="partTypeSuppliers" /></td>
+													</tr>								
+													<tr class="<%# $this->Page->getStyle(11) %>">
+														<td>Part Instance Aliases</td>
+														<td><com:TLabel ID="mandatoryFields" /></td>
+													</tr>								
+												</tbody>
+											</table>										
+										</td>
+										<td valign="top" style="text-align:right">
+											<com:TImageButton ID="CancelEditButton" ImageUrl="../../../themes/images/grey_minus.gif" Text="Back" CommandName="cancel" 
+												ToolTip="Collapse Record" />
+										</td>
+									</tr>
+								</table>
+							</td>		
+						</tr>
+							
+				</prop:EditItemTemplate>
+							
+			    <prop:FooterTemplate>
+			    		</tbody>
+			    		<tfoot>
+						<tr>
+							<th colspan="4">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Parent->VirtualItemCount %> Parts
+								</div>
+							</th>
+						</tr>
+						</tfoot>
+					</table>
+				</prop:FooterTemplate>				
+			</com:TDataList>
+		</com:TPanel>		
+
+		<com:TPanel ID="PaginationPanel">		
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>			
+	</div>
+</com:TContent>

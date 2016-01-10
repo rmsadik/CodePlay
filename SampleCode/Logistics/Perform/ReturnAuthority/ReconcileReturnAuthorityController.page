@@ -1,0 +1,606 @@
+<%@MasterClass="Application.layouts.NoExtJs.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+
+<com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+
+<script type="text/javascript">
+
+    function confirmDeactivate(active)
+    {
+        var msg = 'ACTIVATE';
+        if (active == 1)
+            var msg = 'DEACTIVATE';
+
+        if (!confirm('Are you sure you want to ' + msg + ' this purchase order?'))
+            return false;
+    }
+
+    function confirmWarning()
+    {
+    	$("<%= $this->confirmWarning->getClientId() %>").value = 'confirm';
+        $('<%= $this->searchClientRaNo->getClientId()%>').value = document.getElementById('rmaNo').value;
+        $('<%= $this->searchPartsBtn->getClientId()%>').click();
+
+    	mb.hide();
+    }
+
+    function cancelWarning()
+    {
+    	$("<%= $this->confirmWarning->getClientId() %>").value = ''
+        mb.hide();
+    }
+
+    function confirmRMAWarning()
+    {
+    	$("<%= $this->confirmRMAWarning->getClientId() %>").value = 'confirm';
+    	mb.hide();
+    }
+
+    function cancelRMAWarning()
+    {
+    	$("<%= $this->confirmRMAWarning->getClientId() %>").value = ''
+
+        $('<%= $this->treePanel->getClientId()%>').style.display = 'none';
+        $("<%= $this->toLocationLbl->getClientId() %>").innerHTML = 'none';
+        $('<%= $this->ToLocationPanel->getClientId()%>').style.display = 'block';
+        $("<%= $this->scanPartsFromRepairerPanel->getClientId()%>").style.display = 'none';
+
+        mb.hide();
+    }
+
+    function toggleButton(receivedBtnId, visibleBtnId)
+    {
+        var notReceivedBtnId = receivedBtnId.replace('receivedBtn', 'notReceivedBtn');
+        var receivingBtnId = receivedBtnId.replace('receivedBtn', 'receivingBtn');
+
+        $(notReceivedBtnId).style.display = 'none';
+        $(receivingBtnId).style.display = 'none';
+        $(receivedBtnId).style.display = 'none';
+
+        $(visibleBtnId).style.display = '';
+
+        $('<%= $this->Page->searchBtn->getClientId() %>').disabled = true;
+        $('<%= $this->Page->barcodeFromRepairer->getClientId() %>').disabled = true;
+    }
+
+    function toggleEditPanel()
+    {
+        var editPanel = $('<%= $this->Page->EditPanel->getClientId() %>');
+        if (editPanel.style.display == 'none')
+        {
+            editPanel.style.display = '';
+            return false;
+        }
+        else
+        {
+            editPanel.style.display = 'none';
+            return false;
+        }
+    }
+
+    function doEnterBehavior(event,btnId)
+    {
+        if((event.which && event.which == 13) || (event.keyCode && event.keyCode == 13))
+        {
+            $(btnId).click();
+            return false;
+        }
+        return true;
+    }
+
+    function getQtyReturned()
+    {
+        var rQty = 0;
+        var regEx = /^[1-9][0-9]*$/;
+        while (!regEx.test(rQty))
+        {
+            $('<%= $this->Page->EditPanel->getClientId() %>').value = "0";
+            rQty = prompt('Enter the quantity returned', 1);
+            if (rQty == null)
+            {
+                $('<%= $this->Page->barcodeFromRepairer->getClientId() %>').value = '';
+                $('<%= $this->Page->promptForQty->getClientId() %>').value = 0;
+                mb.hide();
+                return false;
+            }
+        }
+        $('<%= $this->Page->promptForQty->getClientId() %>').value = 0;
+        $('<%= $this->Page->qtyReturned->getClientId() %>').value = rQty;
+        mb.hide();
+        $('<%= $this->Page->searchBtn->getClientId() %>').click();
+        return false;
+    }
+
+    function showLocationPanel(el)
+    {
+        var locnPanel = $('<%= $this->ToLocationPanel->getClientId()%>');
+        if (locnPanel.style.display == 'none')
+        {
+            treeJs.initTree();
+            el.value = 'Hide Tree';
+            el.style.display = 'none';
+            locnPanel.style.display = 'block';
+            return false;
+        }
+        else
+        {
+            el.value = 'Change Location';
+            el.style.display = '';
+            locnPanel.style.display = 'none';
+            return false;
+        }
+    }
+
+    function populateToLocation(whId, hideScanPanel)
+    {
+        submitFields = [];
+        submitFields['method'] = 'validateReconcileRaLocation';
+        submitFields['whId'] = whId;
+
+        $("<%= $this->toLocationLbl->getClientId() %>").innerHTML = '';
+        $("<%= $this->scanPartsFromRepairerPanel->getClientId()%>").style.display = 'none';
+        new Ajax.Request
+        (
+               '/ajax',
+               {
+                   method: 'post',
+                   parameters: submitFields,
+                   onSuccess: function(req)
+                   {
+                        var json = req.responseText.evalJSON();
+                        if (json.error)
+                        {
+                            $("<%= $this->toLocationLbl->getClientId() %>").innerHTML = '<span style="color:red; font-size:12px;">' + json.error + '</span>';
+                            $("<%= $this->scanPartsFromRepairerPanel->getClientId()%>").style.display = 'none';
+                        }
+                        else
+                        {
+                            $("<%= $this->toLocationLbl->getClientId() %>").innerHTML = '<span style="color:green;">' + json.result.bread + '</span>';
+                            if (hideScanPanel == false)
+                            {
+                            	$("<%= $this->scanPartsFromRepairerPanel->getClientId()%>").style.display = '';
+                            	$("<%= $this->barcodeFromRepairer->getClientId()%>").focus();
+                            }
+                        }
+                       console.log(req.responseText.evalJSON());
+                   },
+                   onFailure: function(req)
+                   {
+                        $("<%= $this->toLocationLbl->getClientId() %>").innerHTML = '<span style="color:red; font-size:12px;">' + re.responseText + '</span>';
+                        $("<%= $this->searchBtn->getClientId()%>").disabled = true;
+                        $("<%= $this->scanPartsFromRepairerPanel->getClientId()%>").style.display = 'none';
+                   }
+               }
+        );
+    }
+
+    function changeTreeNode(node)
+    {
+        if (node == null)
+            return;
+
+        if ($("<%= $this->currNodeId->getClientId() %>").value == '')
+        {
+            $("<%= $this->currNodeId->getClientId() %>").value = node.data.id;
+            return;
+        }
+
+        if (node.data.id != ($("<%= $this->currNodeId->getClientId() %>").value)) //if we're changing nodes then we want to check parts allow via Ajax
+        {
+            $("<%= $this->currNodeId->getClientId() %>").value = node.data.id;
+            populateToLocation(node.data.id, false);
+        }
+    }
+
+    function enterToSelectAutoComplete(event, selectBox)
+    {
+        if(!((event.which && event.which == 13) || (event.keyCode && event.keyCode == 13)))
+            return true;
+
+        $(selectBox).getElementsBySelector('li').each(function(item)
+        {
+            if (item.hasClassName('selected')) {
+                $(item).click();
+                return true;
+            }
+        });
+        return true;
+    }
+
+    function togglePartTypeSelect(visible, elId)
+    {
+        alert(document.getElementById(elId));
+
+        if (visible)
+            $(elId).style.display = '';
+        else
+            $(elId).style.display = 'none';
+    }
+
+    function validateRepairerSearch(el)
+    {
+    	if ($("<%= $this->thirdPartyList->getClientId() %>").value == '')
+    	{
+    	    alert('Please select a Repairer.');
+    	    return false;
+    	}
+    	mb.showLoading('searching repairer');
+    	return true;
+    }
+
+    function validateClientRaSearch(el)
+    {
+    	var infoMsgs = [];
+    	if ($("<%= $this->thirdPartyList->getClientId() %>").value != '')
+    	{
+    		infoMsgs.push("You must click the 'Change Repairer' button if you want to reconcile from a different repairer.");
+    		infoMsgs.push("\n\r");
+    	}
+
+    	var errMsgs = [];
+    	if ($("<%= $this->repairerWhId->getClientId() %>").value == '')
+        {
+    		errMsgs.push('Please select a Repairer.');
+        }
+    	if ($("<%= $this->searchClientRaNo->getClientId() %>").value == '')
+    	{
+    		errMsgs.push('Please enter a Client RA No.');
+    	}
+    	if (errMsgs.length > 0)
+    	{
+    		alert(infoMsgs.join("\n\r") + errMsgs.join("\n\r"));
+    		return false;
+    	}
+    	else if (infoMsgs.length > 0)
+        {
+            alert(infoMsgs.join("\n\r"));
+        }
+    	mb.showLoading('searching for parts');
+    	return true;
+    }
+
+    function multipleRadioClicked(radio)
+    {
+        if (confirm("Are you sure you want to select this part?"))
+        {
+            $('<%= $this->bypassPartSearchUsingPiId->getClientId()%>').value = radio.value;
+            mb.hide();
+            $('<%= $this->searchBtn->getClientId()%>').click();
+        }
+    }
+
+    function reconfirmAliasesClicked()
+    {
+    	$('<%= $this->bypassPartSearchUsingPiId->getClientId()%>').value = '';
+    	$('<%= $this->reconfirm->getClientId()%>').value = 'reconfirm';
+        $('<%= $this->barcodeFromRepairer->getClientId()%>').value = document.getElementById('serialNo').value;
+        $('<%= $this->searchBtn->getClientId()%>').click();
+     //   mb.hide();
+    }
+
+    function optimizeAfterReconfirm()
+    {
+     	document.getElementById('confirmAliasBtn').value = "Confirm After Edit";
+    	document.getElementById('confirmAliasBtn').style.border = "2px solid green";
+    	document.getElementById('editAliasBtn').value = "Edit Again";
+    	document.getElementById('editAliasBtn').style.border = "2px solid red";
+        document.getElementById('cancelBtn').style.display = "none";
+    }
+
+    function confirmAliasesClicked(piId)
+    {
+    	$('<%= $this->bypassPartSearchUsingPiId->getClientId()%>').value = piId;
+    	$('<%= $this->reconfirm->getClientId()%>').value = '';
+        mb.hide();
+        $('<%= $this->searchBtn->getClientId()%>').click();
+    }
+
+    function cancelConfirmClicked()
+    {
+    	$('<%= $this->bypassPartSearchUsingPiId->getClientId()%>').value = '';
+        mb.hide();
+    }
+
+    function editAliasesClicked(e,piId)
+    {
+        document.getElementById('ConfirmAlias').tBodies[0].children.item(0).hide();
+        document.getElementById('confirmAliasBtn').style.display = "none";
+
+        if(document.getElementById('cancelBtn'))
+            document.getElementById('cancelBtn').style.display = "none";
+
+        document.getElementById('editAliasBtn').style.display = "none";
+
+        document.getElementById('reconfirmAliasBtn').style.display = "";
+        document.getElementById('reconfirmAliasBtn').value = "Refresh";
+        document.getElementById('reconfirmAliasBtn').style.border = "2px solid green";
+        window.open('/reregisterparts/true/' + piId + '/');
+    }
+
+    document.observe("dom:loaded", function()
+    {
+        if ($('<%= $this->Page->promptForQty->getClientId() %>').value != "0")
+        {
+            getQtyReturned();
+        }
+    });
+
+    Event.observe(window, 'load', function()
+    {
+        //we don't have a to location selected in the tree
+        if ($("<%= $this->repairerWhId->getClientId() %>").value == '')
+        {
+            $('<%= $this->thirdPartyList->getClientId()%>').focus();
+        }
+        else if ($("<%= $this->onLoadAction->getClientId() %>").value == 'treeSelection')
+        {
+            $('<%= $this->treePanel->getClientId()%>').style.display = '';
+            $("<%= $this->toLocationLbl->getClientId() %>").innerHTML = '';
+            $('<%= $this->ToLocationPanel->getClientId()%>').style.display = 'block';
+            $("<%= $this->scanPartsFromRepairerPanel->getClientId()%>").style.display = 'none';
+            setTimeout(function() {treeJs.initTree();}, 1000);
+        }
+        else if ($("<%= $this->onLoadAction->getClientId() %>").value == 'locationSelected')
+        {
+            populateToLocation($("<%= $this->currNodeId->getClientId() %>").value, false);
+            $('<%= $this->treePanel->getClientId()%>').style.display = '';
+            $('<%= $this->ToLocationPanel->getClientId()%>').style.display = 'none';
+            $('<%= $this->showTreeBtn->getClientId()%>').value = 'Change Location';
+            $('<%= $this->showTreeBtn->getClientId()%>').style.display = '';
+        }
+        else if ($("<%= $this->onLoadAction->getClientId() %>").value == 'hideScanPanel')
+        {
+            populateToLocation($("<%= $this->currNodeId->getClientId() %>").value, true);
+            $('<%= $this->treePanel->getClientId()%>').style.display = '';
+            $('<%= $this->ToLocationPanel->getClientId()%>').style.display = 'none';
+            $('<%= $this->showTreeBtn->getClientId()%>').value = 'Change Location';
+            $('<%= $this->showTreeBtn->getClientId()%>').style.display = '';
+            $("<%= $this->scanPartsFromRepairerPanel->getClientId()%>").style.display = 'none';
+            $("<%= $this->searchClientRaNo->getClientId()%>").focus();
+        }
+        else
+        {
+            $('<%= $this->searchClientRaNo->getClientId()%>').focus();
+        }
+        $("<%= $this->onLoadAction->getClientId() %>").value = '';
+    });
+
+</script>
+    <com:THiddenField ID="taskToProgress" />
+    <com:TActiveHiddenField id="reconcileStartTime" Value="" />
+    <com:TActiveHiddenField id="bypassPartSearchUsingPiId" Value="" />
+    <com:TActiveHiddenField id="reconfirm" Value="" />
+    <com:TActiveHiddenField id="confirmRMAWarning" Value="" />
+    <com:TActiveHiddenField id="confirmWarning" Value="" />
+    <com:TActiveHiddenField id="onLoadAction" Value=""/>
+    <com:TActiveHiddenField id="repairerWhId" Value=""/>
+    <com:TActiveHiddenField id="clientRaNo" Value=""/>
+    <com:TActiveHiddenField id="currNodeId" Value=""/>
+    <com:TActiveHiddenField id="currNodePath" Value=""/>
+    <com:TActiveHiddenField ID="promptForQty" Value="0" />
+    <com:TActiveHiddenField ID="qtyReturned" Value="0" />
+    <com:TActiveHiddenField ID="activeMessage" Value="" />
+    <com:TActiveLabel ID="jsLbl" Style="display:none;"/>
+
+    <com:Application.controls.HYLock Feature="pages_all,page_ra_bulkloadClientRmaNumber">
+        <div style="width:100%; text-align:right;">
+	        <com:THyperLink
+	                Text="Click here if you need to first bulkload Client RMA data"
+	                Target="_blank"
+	                Attributes.onClick="window.open('/bulkload/RA/clientRma/'); return false;"
+	                NavigateUrl = "javascript:void(0)" />
+        </div>
+        <br />
+    </com:Application.controls.HYLock>
+    <div>
+        <com:TPanel ID="SearchAddPanel" CssClass="SearchPanel" DefaultButton="fakeBtn">
+            <com:TActiveButton ID="fakeBtn" Attributes.onclick="return false" Style="display:none;" />
+            <table border="0" width="100%">
+                <tr>
+                    <td>
+                        <table border="0" width="100%">
+                            <tr>
+                                <td width="120px"><b>Repairer:</b></td>
+                                <td width="280px">
+                                    <com:Application.controls.EntityAutoComplete.HY3rdPartyComplete
+                                        ID="thirdPartyList"
+                                        ResultPanel.CssClass="hydraautocomplete"
+                                        width="90%"
+                                        Attributes.onkeydown="return enterToSelectAutoComplete(event, '<%= $this->thirdPartyList->ResultPanel->getClientId()%>');"/>
+                                 </td>
+                                <td width="150px"><com:TButton ID="searchRepairerBtn" Text=" Search Repairer " OnClick="Page.searchRepairer" Width="140px" Attributes.onclick="return validateRepairerSearch(this);" /></td>
+                                <td style="padding-left:10px; font-weight:bold; font-size:16px;"><com:TActiveLabel ID="currentRepairerLbl"/><com:TActiveLabel ID="clientRaReqLbl" style="padding-left:10px; color:red; font-size:11px;"/></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <com:TActivePanel ID="clientRaPanel" style="display:none;">
+                            <table border="0" width=100%">
+                                <tr>
+                                    <td width="120px"><b>Client RMA No:</b> <span style="color:red;">*</span></td>
+                                    <td width="280px"><com:TTextBox ID="searchClientRaNo" AutoPostBack="false" width="90%" Attributes.onkeydown="return doEnterBehavior(event,'<%= $this->searchPartsBtn->getClientId()%>');" /></td>
+                                    <td width="150px"><com:TButton ID="searchPartsBtn" Text=" Search For Parts " OnClick="Page.search" Width="140px" Attributes.onclick="return validateClientRaSearch(this);" /></td>
+                                    <td style="padding-left:10px; font-weight:bold; font-size:16px;"><com:TActiveLabel ID="currentClientRALbl"/></td>
+                                </tr>
+                            </table>
+                        </com:TActivePanel>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <com:TActivePanel ID="treePanel" Style="display:none;">
+                            <table border="0" width="100%">
+                                <tr>
+                                    <td width="120px"><b>Move Parts to:</b></td>
+                                    <td width="280px">
+                                        <com:TPanel ID="ToLocationPanel" Style="display:block;">
+                                            <com:Application.controls.HYWHTree.HYWHTree ID="whTree" HideTree="true" RootMode="DefaultWarehouse" ClickExtraJavascript="changeTreeNode(node)" BeforeExpandExtraJavascript="changeTreeNode(node)"/>
+                                        </com:TPanel>
+                                    </td>
+                                    <td width="150px" style="vertical-align:top;"><com:TButton ID="showTreeBtn" Text=" Select Location" Width="140px" Attributes.onclick="return showLocationPanel(this);" Style="display:none;"/></td>
+                                    <td style="vertical-align:top; padding-left:10px; font-weight:bold; font-size:14px;"><com:TActiveLabel ID="toLocationLbl" Text=""/></td>
+                                </tr>
+                            </table>
+                        </com:TActivePanel>
+                    </td>
+                </tr>
+            </table>
+            <com:THiddenField ID="SearchString" />
+            <com:THiddenField ID="focusObject" />
+            <com:THiddenField ID="focusObjectArgument" />
+        </com:TPanel>
+
+        <br /><hr /><br />
+
+        <com:TActivePanel ID="scanPartsFromRepairerPanel" Style="display:none;">
+            <table width="100%">
+                <tr>
+                    <td width="100%">
+                        <table width="100%" border="0">
+                            <tr>
+                                <td width="70%" align="left">
+                                    <table width="100%">
+                                        <tr>
+                                            <td valign="middle" style="vertical-align:middle;">Barcode<br />Client Asset No<br />Manuf. Serial No</td>
+                                            <td valign="middle" style="vertical-align:middle;">
+                                                <com:TActiveTextBox ID="barcodeFromRepairer" Attributes.onkeydown="return doEnterBehavior(event,'<%= $this->searchBtn->getClientId()%>');"/>
+		                                        <com:TDropDownList ID="partStatusList" DataTextField="name" DataValueField="id"/> <span style="color:red;">*</span>
+		                                        <com:TButton
+			                                        ID="searchBtn"
+			                                        Text=" Receive Part "
+			                                        Attributes.onclick="mb.showLoading('searching');"
+			                                        onClick="Page.searchPartInstanceFromRepairer"
+			                                        />
+			                                </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                                <td width="30%" align="left">
+                                    <com:TLabel ID="RepairCodeLabel" />&nbsp;
+                                    <com:TDropDownList ID="RepairCodeList" visible="false"  DataTextField="code" DataValueField="id" />
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td align="right">
+                        &nbsp;
+                    </td>
+                </tr>
+            </table>
+        </com:TActivePanel>
+
+        <br /><hr /><br />
+
+        <com:TActivePanel ID="partsInRepairerPanel">
+
+            <com:TActiveHiddenField id="reconciledParts" />
+            <com:TActiveHiddenField id="receivingRapQtys" />
+            <com:TActiveHiddenField id="receivingRapIds" />
+            <com:TActiveHiddenField id="receivingRepairCodes" />
+            <com:TActiveHiddenField id="oldrepaircode" />
+
+            <br />
+
+            <com:TActivePanel ID="selectPtPanel" GroupingText="Select Part Type for Registration" Visible="false">
+                <table width="100%">
+                    <tr>
+                        <td width="430px"><com:Application.controls.EntityAutoComplete.HYPartTypeComplete ID="partType" Attributes.onkeydown="return doEnterBehavior(event,'<%= $this->registerPartBtn->getClientId()%>');" ResultPanel.CssClass="hydraautocomplete" width="400px" SearchLimit="50" />
+                        <td><com:TButton ID="registerPartBtn" Text=" Register Part " Attributes.onclick="mb.showLoading('validating');" onClick="Page.registerPartClicked" /></td>
+                    </tr>
+                </table>
+            </com:TActivePanel>
+
+            <br />
+
+            <table width="100%">
+                <tr>
+                    <td style="text-align:center;font-weight:bold;font-size:15px;">
+                        <com:TActiveLabel Style="color:green;" id="infoMsg" />
+                        <com:TActiveLabel Style="color:red;" id="errMsg" />
+                        <com:TActiveLabel Style="color:orange;" id="warningMsg" />
+                    </td>
+                </tr>
+            </table>
+            <br />
+            <table width="100%">
+                <tr>
+                    <td colspan="6">
+                        <com:TActivePanel ID="dataListPanel" Visible="false">
+                            <com:TDataList ID="partsInRepairer" OnSelectedIndexChanged="selectItem"
+                                         CssClass="DataList"
+                                         ItemStyle.CssClass="DataListItem"
+                                         AlternatingItemStyle.CssClass="DataListAlterItem"
+                                         EditItemStyle.CssClass="DataListEditItem"
+                                         width="100%"
+                                         EnableViewState="true">
+
+                                <prop:HeaderTemplate>
+                                    <table width="100%" height="20" border="0">
+                                        <tr>
+                                            <th width="4%" style="text-align:center;">&nbsp;</th>
+                                            <th width="8%" style="text-align:center;">Qty<br />Outstanding</th>
+                                            <th width="8%" style="text-align:center;">Qty<br />Reconciled</th>
+                                            <th width="15%" style="text-align:center;">Part Code</th>
+                                            <th>Part Name</th>
+                                        </tr>
+                                    </table>
+                                </prop:HeaderTemplate>
+
+                                <prop:ItemTemplate>
+                                    <com:THiddenField id="ptId" Value="<%# $this->DataItem['ptId']%>" />
+                                    <com:THiddenField id="qtySent" Value="<%# $this->DataItem['qtySent']%>" />
+                                    <com:THiddenField id="qtyReturned" Value="<%# $this->DataItem['qtyReturned']%>" />
+                                    <com:THiddenField id="availableToReceive" Value="<%# ($this->DataItem['qtySent'] > $this->DataItem['qtyReturned'] ? true : false) %>" />
+                                    <com:TActivePanel Visible="<%# $this->DataItem['visible']%>">
+                                        <table width="100%" height="25" border="0">
+                                            <tr>
+                                                <td width="4%" style="text-align:center;">
+                                                    <com:TActiveImageButton ID="receivedBtn" ImageUrl="../../../themes/images/big_yes.gif" Tooltip="Fully Received..." Style="<%# ($this->DataItem['qtyReturned'] < $this->DataItem['qtySent']) ? 'display:none':'' %>" />
+                                                    <com:TActiveImageButton ID="notReceivedBtn" ImageUrl="../../../themes/images/big_no.gif" Tooltip=" <%# ($this->DataItem['qtyReturned'] == 0) ? 'Not Received...':'Partially Received...' %> " Style="<%# ($this->DataItem['qtyReturned'] < $this->DataItem['qtySent']) ? '':'display:none' %>" />
+                                                    <com:TActiveImageButton ID="receivingBtn" ImageUrl="../../../themes/images/save_icon.png" Tooltip=" Receiving... " Style="display:none;" />
+                                                </td>
+                                                <td width="8%" style="text-align:center; font-size:18px;"><%# $this->DataItem['qtyLeft']%></td>
+                                                <td width="8%" style="text-align:center; font-size:18px; color:green;"><%# $this->DataItem['qtyReconciled']%></td>
+                                                <td width="15%" style="text-align:center;"><%# $this->DataItem['partCode']%></td>
+                                                <td><%# $this->DataItem['partDescription']%></td>
+                                            </tr>
+                                        </table>
+                                    </com:TActivePanel>
+                                </prop:ItemTemplate>
+
+                                <prop:FooterTemplate>
+                                    <table width="100%" height="20" border="0">
+                                        <tr><th>&nbsp;</th></tr>
+                                    </table>
+                                </prop:FooterTemplate>
+                            </com:TDataList>
+                        </com:TActivePanel>
+                    </td>
+                </tr>
+            </table>
+        </com:TActivePanel>
+
+        <com:TPanel ID="PaginationPanel">
+            <table width="100%" height="25">
+                <tr>
+                    <th colspan="2" align="left">
+                        Select Page:
+                        <com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+                    </th>
+                    <th colspan="3" align="right">
+                        Go To Page:
+                        <com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+                    </th>
+                </tr>
+            </table>
+        </com:TPanel>
+    </div>
+
+            <!---   ---------------- Adding Panel ---------------- --->
+        <com:TActivePanel ID="EditPanel" CssClass="AddPanel" Style="padding:10px;display:none;">
+        </com:TActivePanel>
+        <!---   ---------------- End of  Adding Panel ---------------- --->
+
+</com:TContent>

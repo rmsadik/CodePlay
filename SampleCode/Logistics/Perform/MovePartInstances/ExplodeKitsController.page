@@ -1,0 +1,75 @@
+<com:TContent ID="MainContent">
+	<com:THiddenField ID="focusObject" />
+	<com:THiddenField ID="focusObjectArgument" />
+	<com:THiddenField ID="SearchString" />
+	<com:THiddenField ID="tobeExploded" />
+	<br/>
+	<br/>
+	<com:TPanel ID="ScanningPanel">
+		<table width="100%">
+			<tr>
+				<td width="100%"">
+					<com:TTextBox ID="kitBarcode" width="40"/>
+					<com:TButton ID="ViewPartsBtn" onClick="attemptToExplode" Text="Add to List" />
+				</td>
+			</tr>
+		</table>
+	</com:TPanel>
+	
+	<com:TActivePanel ID="outer" Display="None" ScrollBars="Auto" CssClass="BackgroundPanel" />
+	<div>
+		<com:TActivePanel ID="inner" Display="None" ScrollBars="Auto" CssClass="ResultFrontPanel" Style="top: 35%; left: 35%; width: 25%; height: 10%; background-color:#C0C0C0">
+			<div align="center">
+				Kit is not an Exploding Kit. Do you wish to continue?
+				<br/><br/>
+				<com:TButton ID="yes" Text="Yes" OnClick="addToList" />
+				<com:TButton ID="no" Text="No" OnClick="returnPage"/>
+			</div>
+		</com:TActivePanel>
+	</div>
+
+	<br/><br/>
+	<com:TLabel Id="showWithinPartLabel"  />
+		
+	<com:TDataList ID="DataList" DataKeyField="0" OnSelectedIndexChanged="selectItem" 
+	     CssClass="DataList" 
+	     ItemStyle.CssClass="DataListItem" 
+	     AlternatingItemStyle.CssClass="DataListAlterItem" 
+	     EditItemStyle.CssClass="DataListEditItem" 
+		 width="100%"
+		 EnableViewState="true">
+		<prop:HeaderTemplate>
+			<table width="100%">
+				<tr>
+					<td width="12%">Serial Number</td>
+					<td width="30%">Part Description</td>
+					<td width="*">Location</td>
+					<td width="3%">&nbsp;</td>
+				</tr>
+			</table>
+		</prop:HeaderTemplate>
+			
+		<prop:ItemTemplate>
+			<table width="100%">
+				<tr>
+					<td width="12%"><%# $this->DataItem['1'] %></td>
+					<td width="30%"><%# $this->DataItem['2'] %></td>
+					<td width="*"><%# $this->DataItem['3'] %></td>
+					<td width="3%" style="text-align:right">
+						<com:TImageButton ImageUrl="../../../themes/images/delete.png" Text="Remove From List" OnClick="Page.cancelFromList" ToolTip="Remove from List" />
+					</td>
+				</tr>
+			</table>
+		</prop:ItemTemplate>
+		
+		<prop:EditItemTemplate/>
+
+	    <prop:FooterTemplate>
+		    <table width="100%">
+		    	<tr><td width="100%" style="text-align:center">&nbsp;</td></tr>
+		    </table>
+		</prop:FooterTemplate>			
+	</com:TDataList>					
+	<com:TButton ID="explodeAllBtn" Text="Explode All" OnClick="Page.explodeKits" Attributes.OnClick="return confirm('This will explode the kits and deactivate them.\nContinue?');" />
+	<com:TPanel ID="PaginationPanel" />		
+</com:TContent>

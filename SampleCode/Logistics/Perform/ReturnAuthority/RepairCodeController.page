@@ -1,0 +1,207 @@
+<%@ MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<br />
+	<div>
+		<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel">
+			<table width="100%">
+				<tr>
+					<td width="40%">
+						<com:THiddenField ID="SearchString" />
+						<com:THiddenField ID="focusObject" />
+						<com:THiddenField ID="focusObjectArgument" />
+						<com:THiddenField ID="rcId" />
+					</td>
+					<td width="60%" align="right">
+						<com:TButton ID="AddButton" Text="Add New Repair Code" OnClick="add" />		
+					</td>
+				</tr>
+			</table>
+		</com:TPanel>
+		
+<!---   ---------------- Adding Panel ---------------- --->	
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" >
+			<table width="100%">
+				<tr valign="top">
+					<td width="30%">
+						Code:<br />
+						<com:TTextBox Id="code"/> <br />
+						<com:TRequiredFieldValidator ControlToValidate="code" ErrorMessage="Code Required" ValidationGroup="Group1" EnableClientScript="true" />
+						<br />
+						On Charge: <br />
+						<com:TDropDownList ID="onCharge">
+							<com:TListItem Value="YES" Text="YES" Selected="true" />
+  							<com:TListItem Value="NO" Text="NO" />
+  						</com:TDropDownList>
+  						<br />	 <br />
+						Definition:<br /> 
+						<com:TTextBox Id="definition" TextMode="MultiLine"/> 
+						<com:TRequiredFieldValidator ControlToValidate="definition" ErrorMessage="Definition Required" ValidationGroup="Group1" EnableClientScript="true" />
+					</td>
+					<td width="30%">
+						Cause Code:<br />
+						<com:TTextBox Id="causeCode"/> <br /> <br />
+						Cost To BC $:<br />
+						<com:TTextBox Id="costToBc"/>
+						<com:TDataTypeValidator ControlToValidate="costToBc" DataType="Float" ErrorMessage="Decimal number Required" ValidationGroup="Group1" EnableClientScript="true" /> 
+						<br /><br />
+						TM Parts $:<br />
+						<com:TTextBox Id="tmPartsCost" /> 
+						<com:TDataTypeValidator ControlToValidate="costToBc" DataType="Float" ErrorMessage="Decimal number Required" ValidationGroup="Group1" EnableClientScript="true" /> 
+					</td>
+					<td width="30%">
+						Travel $:<br />
+						<com:TTextBox Id="travelCost"/> <br />
+						<br />
+						Labour $:<br />
+						<com:TTextBox Id="labourCost" /><br /> <br />
+						Notes:<br />
+						<com:TTextBox Id="notes" TextMode="MultiLine"/> 
+					</td>
+					<td width="10%">
+						<com:TButton ID="SaveAddButton" Text="Save" Onclick="save" ValidationGroup="Group1" /> <br /> <br />
+						<com:TButton ID="CancelSaveAddButton" Text="Cancel" Onclick="cancel" />
+					</td>
+				</tr>
+			</table>	
+		</com:TPanel>
+<!---   ---------------- Adding Panel Ends Here---------------- --->
+
+<!---   ---------------- Listing Panel Starts---------------- --->
+		<com:TLabel ID="ListingLabel" style="font-weight:bold"/>			
+		<com:TPanel ID="ListingPanel">	
+			
+		<com:TDataList ID="DataList" AllowPaging="false" AllowCustomPaging="false" 
+						EnableViewState="true" OnEditCommand="edit" OnUpdateCommand="save" OnCancelCommand="cancel"
+						EditItemStyle.CssClass="DataListEditItem"  CssClass="DataList" ItemStyle.CssClass="DataListItem" 
+						AlternatingItemStyle.CssClass="DataListAlterItem" >
+				
+			    <prop:HeaderTemplate>
+			    	<table width="100%">
+			    		<tr>
+			    			<th width="5%">
+			    					Code
+			    			</th>
+			    			<th width="10%">
+			    					Definition
+			    			</th>
+			    			<th width="10%">
+			    					Cause Code
+			    			</th>
+			    			<th width="5%">
+			    					On Charge
+			    			</th>
+			    			<th width="10%">
+			    					Cost To BC
+			    			</th>
+			    			<th width="10%">
+			    					TM Parts Cost
+			    			</th>
+			    			<th width="10%">
+			    					Travel Cost
+			    			</th>
+			    			<th width="10%">
+			    					Labour Cost
+			    			</th>
+			    			<th width="10%">
+			    					Notes
+			    			</th>
+			    			<th width="10%">&nbsp;</th>
+			    		</tr>
+			    	</table>
+			    </prop:HeaderTemplate>
+				<prop:ItemTemplate>
+			    	<table width="100%">
+			    		<tr>
+			    			<td width="5%">
+			    				<%# $this->DataItem[1] %>
+			    			</td>
+			    			<td width="10%">
+			    				<%# $this->DataItem[2] %>
+			    			</td>
+			    			<td width="10%">
+			    				<%# $this->DataItem[3] %>
+			    			</td>
+			    			<td width="5%">
+			    				<%# $this->DataItem[4] %>
+			    			</td>
+			    			<td width="10%">
+			    				<%# $this->DataItem[5] %>
+			    			</td>
+			    			<td width="10%">
+			    				<%# $this->DataItem[6] %>
+			    			</td>
+			    			<td width="10%">
+			    				<%# $this->DataItem[7] %>
+			    			</td>
+			    			<td width="10%">
+			    				<%# $this->DataItem[8] %>
+			    			</td>
+			    			<td width="10%">
+			    				<%# $this->DataItem[9] %>
+			    			</td>
+			    			<td width="10%">
+			    				<com:TImageButton ImageUrl="/themes/images/delete.png" Text="Delete" ToolTip="Delete Record" onCommand="Page.delete" CommandParameter="<%# $this->DataItem[0] %>"/>
+			    				&nbsp;&nbsp;
+			    				<com:TImageButton ImageUrl="/themes/images/edit.png" Text="Edit" CommandName="edit" ToolTip="Edit Record"   />
+			    			</td>
+			    		</tr>
+			    	</table>
+				</prop:ItemTemplate>
+				<prop:EditItemTemplate>
+						<table width="100%">
+							<tr valign="top">
+								<td width="30%">
+									Code:<br />
+									<com:TTextBox Id="code"/> <br />
+									<com:TRequiredFieldValidator ControlToValidate="code" ErrorMessage="Code Required" ValidationGroup="Group1" EnableClientScript="true" />
+									<br />
+									On Charge: <br />
+									<com:TDropDownList ID="onCharge">
+										<com:TListItem Value="YES" Text="YES" Selected="true" />
+			  							<com:TListItem Value="NO" Text="NO" />
+			  						</com:TDropDownList>
+			  						<br />	 <br />
+									Definition:<br /> 
+									<com:TTextBox Id="definition" TextMode="MultiLine"/> 
+									<com:TRequiredFieldValidator ControlToValidate="definition" ErrorMessage="Definition Required" ValidationGroup="Group1" EnableClientScript="true" />
+								</td>
+								<td width="30%">
+									Cause Code:<br />
+									<com:TTextBox Id="causeCode"/> <br /> <br />
+									Cost To BC $:<br />
+									<com:TTextBox Id="costToBc"/>
+									<com:TDataTypeValidator ControlToValidate="costToBc" DataType="Float" ErrorMessage="Decimal number Required" ValidationGroup="Group1" EnableClientScript="true" /> 
+									<br /><br />
+									TM Parts $:<br />
+									<com:TTextBox Id="tmPartsCost" /> 
+									<com:TDataTypeValidator ControlToValidate="costToBc" DataType="Float" ErrorMessage="Decimal number Required" ValidationGroup="Group1" EnableClientScript="true" /> 
+								</td>
+								<td width="30%">
+									Travel $:<br />
+									<com:TTextBox Id="travelCost"/> <br />
+									<br />
+									Labour $:<br />
+									<com:TTextBox Id="labourCost" /><br /> <br />
+									Notes:<br />
+									<com:TTextBox Id="notes" TextMode="MultiLine"/> 
+								</td>
+								<td width="10%">
+									<com:TButton ID="SaveAddButton" Text="Save" CommandName="update" ValidationGroup="Group1" /> <br /> <br />
+									<com:TButton ID="CancelSaveAddButton" Text="Cancel" CommandName="cancel" />
+								</td>
+							</tr>
+						</table>	
+				</prop:EditItemTemplate>	
+			     <prop:FooterTemplate>
+				    <table width="100%" height="25">
+						<tr>
+							<th >
+								
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>				
+		</com:TDataList>
+		</com:TPanel>
+		<com:TPanel ID="PaginationPanel" />		
+</com:TContent>

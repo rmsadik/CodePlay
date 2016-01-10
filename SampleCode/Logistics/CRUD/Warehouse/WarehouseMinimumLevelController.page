@@ -1,0 +1,441 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+
+	<com:TActiveLabel ID="jsLbl" Style="display:none;" />
+	<com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+
+	<script type="text/javascript">
+
+		//called when the user clicks on the top add supp wh button
+		function addSuppWhClickedTop()
+		{
+			$('<%= $this->addSuppWhBtnTop->getClientId() %>').hide();
+			$('<%= $this->addSuppWhImgTop->getClientId() %>').hide();
+
+			$('<%= $this->addSuppWhPanel->getClientId() %>').show();
+
+			$('<%= $this->addSuppWh->getClientId() %>').focus();
+			return false;
+		}
+
+		//called after the add or move supp wh has happened, re-fires the search event
+		function afterAddOrMoveSuppWh()
+		{
+			$('<%= $this->addSuppWhBtnTop->getClientId() %>').show();
+			$('<%= $this->addSuppWhImgTop->getClientId() %>').show();
+
+			$('<%= $this->addSuppWhPanel->getClientId() %>').hide();
+
+			$('<%= $this->SearchButton->getClientId() %>').click();
+		}
+
+		//hide and show move supp wh buttons
+		function moveSuppWhClickedBtm()
+		{
+			$('<%= $this->moveSuppWhBtnBtm->getClientId() %>').hide();
+			$('<%= $this->moveSuppWhImgBtm->getClientId() %>').hide();
+
+			$('<%= $this->addSuppWhPanel->getClientId() %>').hide();
+
+			$('<%= $this->addSuppWhBtnTop->getClientId() %>').hide();
+			$('<%= $this->addSuppWhImgTop->getClientId() %>').hide();
+			$('<%= $this->moveSuppWhBtnTop->getClientId() %>').show();
+			$('<%= $this->moveSuppWhImgTop->getClientId() %>').show();
+		}
+
+		//confirm move supp wh
+		function moveSuppWhClickedTop()
+		{
+			var current = $F('<%= $this->currentSuppWhBreadcrumbs->getClientId() %>');
+			var selected = $F('<%= $this->selectedSuppWhBreadcrumbs->getClientId() %>');
+
+			if (current == selected)
+			{
+				alert('You must select a new supplying warehouse...');
+			}
+			else
+			{
+				if (confirm("Are you sure you would like to change the supplying warehouse from\n\n'" + current + "' to '" + selected + "'\n\n for the selected parts?"))
+				{
+					showModalBox();
+					return true;
+				}
+			}
+			return false;
+		}
+
+		//confirm add supp wh
+		function addSuppWhClickedBtm()
+		{
+			var newWhId = $F('<%= $this->hidden_addSuppWhId->getClientId() %>');
+			if (newWhId == '')
+			{
+				alert('You must select a supplying warehouse to add...');
+				return false;
+			}
+			else //check to see if what they're trying to add is already in the list
+			{
+				newWhId = newWhId.split('/').pop();
+
+				var currSupps = $('<%= $this->suppWhList->getClientId() %>');
+				for (var i=0; i<currSupps.options.length; i++)
+				{
+					if (newWhId == currSupps.options[i].value)
+					{
+						alert('The supplying warehouse is already in the list...')
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+
+		//check to see if to display the move supp wh button, after check boxes clicked
+		function toggleMoveButton()
+		{
+			$('<%= $this->moveSuppWhBtnBtm->getClientId() %>').hide();
+			$('<%= $this->moveSuppWhImgBtm->getClientId() %>').hide();
+
+			var anyChecked = false;
+			var boxes = $$('.chkClass');
+			for (var i=0; i<boxes.length; i++)
+			{
+				if (boxes[i].checked)
+				{
+					anyChecked = true;
+					break;
+				}
+			}
+
+			if (anyChecked)
+			{
+				$('<%= $this->moveSuppWhBtnBtm->getClientId() %>').show();
+				$('<%= $this->moveSuppWhImgBtm->getClientId() %>').show();
+
+				$('<%= $this->addSuppWhPanel->getClientId() %>').hide();
+
+				$('<%= $this->addSuppWhBtnTop->getClientId() %>').show();
+				$('<%= $this->addSuppWhImgTop->getClientId() %>').show();
+				$('<%= $this->moveSuppWhBtnTop->getClientId() %>').hide();
+				$('<%= $this->moveSuppWhImgTop->getClientId() %>').hide();
+			}
+		}
+
+		//check box clicked
+		function chkClicked(el)
+		{
+			var topBoxes = $$('.chkAllClass');
+			for (var i=0; i<topBoxes.length; i++)
+			{
+				topBoxes[i].checked = false;
+				break;
+			}
+			toggleMoveButton();
+		}
+
+		//top check box clicked
+		function chkAllClicked(el)
+		{
+			var boxes = $$('.chkClass');
+			for (var i=0; i<boxes.length; i++)
+			{
+				boxes[i].checked = el.checked;
+			}
+			toggleMoveButton();
+		}
+
+		//display the modal box
+		function showModalBox()
+		{
+			mb.showLoading('loading MSLs');
+		}
+
+		//confirm when adding a new MSL
+		function beforeAddMSLClicked()
+		{
+			var current = $F('<%= $this->currentSuppWhBreadcrumbs->getClientId() %>');
+			if ($F('<%= $this->addMSLQtyChanged->getClientId() %>') == "false")
+			{
+				alert('There are no MSLs to add, please enter a quantity');
+				return false;
+			}
+
+			if (confirm("Are you sure you would like to set the MSL quantities to be supplied by warehouse\n\n'" + current + "'?"))
+			{
+				showModalBox();
+				$('<%= $this->addMSLQtyChanged->getClientId() %>').value = "false";
+				return true;
+			}
+			return false;
+		}
+
+		//update the flag to say that an MSL has been changed
+		function addMSLQtyChanged()
+		{
+			$('<%= $this->addMSLQtyChanged->getClientId() %>').value = "true";
+		}
+
+	</script>
+
+	<com:TActiveHiddenField ID="addMSLQtyChanged" Value="false"/>
+
+	<com:THiddenField ID="SearchString" />
+	<com:THiddenField ID="focusObject" />
+	<com:THiddenField ID="focusObjectArgument" />
+	<com:TActiveHiddenField ID="SelectedPartTypeId" />
+	<br />
+	<com:TPanel ID="AddPanel" CssClass="AddPanel" visible="false"></com:TPanel>
+	<table width="100%">
+		<tr>
+			<td colspan="2" width="100%" style="border-bottom: gray solid 1px;" >
+				<table width="100%" border="0">
+					<tr>
+						<td width="200px">Contract:</td>
+						<td colspan="2">
+							<com:Application.controls.HYAutoComplete ID="contract" type="Contract" ResultPanel.CssClass="hydraautocomplete" Width="490px" />
+							<com:TActiveTextBox ID="SearchText" visible="false" />
+						</td>
+					</tr>
+					<tr>
+						<td>Part Type:</td>
+						<td>
+							<com:Application.controls.HYAutoComplete
+								ID="SearchPartType"
+								type="PartType"
+								Attributes.Style="Background-color: #AADDFF;"
+								ResultPanel.CssClass="hydraautocomplete"
+								AutoPostBack="true"
+								PageOnSuggestMethod="findPartType"
+								Suggestions.DataKeyField="0"
+								PageMethod="handleSelectedPartType"
+								Width="490px">
+								<prop:Suggestions.ItemTemplate>
+						            <li><%# $this->Data[1] %></li>
+								</prop:Suggestions.ItemTemplate>
+							</com:Application.controls.HYAutoComplete>
+						</td>
+					</tr>
+					<tr height="20px">
+						<td>Serialised Parts Only?:</td>
+						<td><com:TActiveCheckBox ID="serialisedPartsOnly" Checked="true" /></td>
+					</tr>
+					<tr height="30px">
+						<td colspan="2">
+							<com:TActivePanel ID="supPWhPanel">
+								<table width="100%">
+									<tr>
+										<td width="196px">For Supplying Warehouse:</td>
+										<td>
+											<table width="100%" border="0">
+												<tr>
+													<td>
+														<com:TActiveDropDownList ID="suppWhList" DataValueField="0" DataTextField="1" Width="495px" Style="background-color:#ffc4c4;" OnTextChanged="Page.suppWhChanged" />
+														<com:TActiveHiddenField ID="suppWhId" />
+														<com:TActiveHiddenField ID="currentSuppWhBreadcrumbs" />
+														<com:TActiveHiddenField ID="selectedSuppWhBreadcrumbs" />
+													</td>
+													<td width="50px">
+														<com:TActiveImage ID="addSuppWhImgTop" ImageUrl="../../../themes/images/arrow_left_green_48.png" />
+														<com:TActiveImage ID="moveSuppWhImgTop" ImageUrl="../../../themes/images/arrowleft.png" Style="display:none;" />
+													</td>
+													<td width="200px">
+														   <com:Application.controls.HYLock Feature="pages_all,feature_allow_addSupplyingWarehouse_editMSL">
+	    														<com:TActiveButton ID="addSuppWhBtnTop" Width="200px" Text=" Add Supplying Warehouse " Attributes.onClick="return addSuppWhClickedTop();" />
+														   </com:Application.controls.HYLock>
+														<com:TActiveButton ID="moveSuppWhBtnTop" Width="200px" Text=" Move Supplying Warehouse " Attributes.onClick="return moveSuppWhClickedTop();" onClick="Page.moveSuppWh" Style="display:none;" />
+													</td>
+												</tr>
+											</table>
+										</td>
+									</tr>
+									<tr>
+										<td>&nbsp;</td>
+										<td>
+											<com:TActivePanel id="addSuppWhPanel" Style="display:none;">
+												<table width="100%">
+													<tr>
+														<td>
+															<com:Application.controls.EntityAutoComplete.HYWarehouseBreadcrumbComplete ID="addSuppWh" ResultPanel.CssClass="hydraautocomplete"
+																SearchLimit="10" width="490px"
+																PageMethod="addSuppWhSuggestionSelected"
+																PageOnExtraSuggestMethod="addSuppWhExtraSuggest"
+																MslWarehousesOnly="true"
+																MustHaveEmailAddressAlias="false" />
+															<com:TActiveHiddenField ID="hidden_addSuppWhId" />
+														</td>
+														<td width="50px"><com:TActiveImage ID="addSuppWhImgBtm" ImageUrl="../../../themes/images/arrow_left_green_48.png" /></td>
+														<td width="200px">
+															  <com:Application.controls.HYLock Feature="pages_all,feature_allow_addSupplyingWarehouse_editMSL">
+															      <com:TActiveButton ID="addSuppWhBtnBtm" Width="200px" Text=" Add Supplying Warehouse " Attributes.onClick="return addSuppWhClickedBtm();" onClick="Page.addSuppWh" />
+															  </com:Application.controls.HYLock>
+														</td>
+													</tr>
+													<tr>
+														<td align="center"><span style="font-weight:bold;color:green;">NOTE: Supplying warehouse must have a valid MSL set AND an email<br />address alias to be added (excluding Purchasing warehouses).</span></td>
+													</tr>
+												</table>
+											</com:TActivePanel>
+										</td>
+									</tr>
+								</td>
+							</table>
+						</com:TActivePanel>
+					</td>
+					<tr>
+						<td>&nbsp;</td>
+						<td>
+							<table width="100%" border="0">
+								<tr height="50px">
+									<td>
+										<com:TButton ID="SearchButton" Text=" Search " onCommand="search" />
+										<com:TButton ID="ResetButton" Text=" Reset " onClick="Page.reset" />
+										<com:Application.controls.ResultsPerPageList.ResultsPerPageList ID="resultsPerPageList" />
+									</td>
+									<td width="50px"><com:TActiveImage ID="moveSuppWhImgBtm" ImageUrl="../../../themes/images/arrowleft.png" Style="display:none;" /></td>
+									<td width="200px"><com:TActiveButton ID="moveSuppWhBtnBtm" Width="200px" Text=" Move Supplying Warehouse " Attributes.onClick="return moveSuppWhClickedBtm();" Style="display:none;" /></td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td width="100%" valign="top">
+				<com:TActivePanel id="dataPanel" Style="display:none;">
+					<table width="100%">
+						<tr>
+							<td width="50%" valign="top">
+								<span style='font-weight:bold'>No MSL Set</span>
+								<com:TDataList ID="MSLDataList" DataKeyField="0" RepeatLayout="Raw" OnSelectedIndexChanged="selectItem" OnEditCommand="edit" OnDeleteCommand="deletePartType" OnUpdateCommand="save" OnCancelCommand="cancel"CssClass="DataList"  ItemStyle.CssClass="DataListItem" AlternatingItemStyle.CssClass="DataListAlterItem" EditItemStyle.CssClass="DataListEditItem"  width="100%" AllowPaging="true" AllowCustomPaging="true"  EnableViewState="true">
+								    <prop:HeaderTemplate>
+										<table width="100%" height="25" class="DataList" cellspacing="1" cellpadding="0">
+										<thead>
+											<tr style="height: 25px">
+												<th width="13%"><%[ PartType.partCode ]%></th>
+												<th><%[ PartType.name ]%></th>
+												<th width="7%" style="text-align:right"><%[ PartInstance.quantity ]%></th>
+												<th width="4%" style="text-align:right">
+												    <com:Application.controls.HYLock Feature="pages_all,feature_allow_add_editMSL">
+														<com:TImageButton ImageUrl="../../../themes/images/big_yes.gif" onclick="Page.addMSL" Attributes.onclick="return beforeAddMSLClicked();" />
+												    </com:Application.controls.HYLock>
+												</th>
+											</tr>
+										</thead>
+										<tbody>
+									</prop:HeaderTemplate>
+									<prop:ItemTemplate>
+										<tr class="<%# $this->Page->getStyle($this->getItemIndex()) %>">
+											<td><%# $this->DataItem[2] %></td>
+											<td><%# $this->DataItem[1] %></td>
+											<td>
+										       <com:TTextBox Id="quantity" Style="text-align:right" Columns="2" text="0" AutoPostBack="false" Attributes.OnChange="addMSLQtyChanged();"/>
+											</td>
+											<td width="4%">&nbsp;</td>
+										</tr>
+									</prop:ItemTemplate>
+								    <prop:FooterTemplate>
+								    		</tbody>
+								    		<tfoot>
+											<tr>
+												<th colspan="5">
+													<div style="font-weight: bold; text-align: center;">
+														Total <%# $this->Parent->VirtualItemCount %> Parts
+													</div>
+												</th>
+											</tr>
+											</tfoot>
+										</table>
+									</prop:FooterTemplate>
+								</com:TDataList>
+								<com:TPanel ID="MSLPaginationPanel">
+								    <table width="100%" height="25">
+										<tr>
+											<th colspan="3" align="left">
+												Select Page :
+												<com:TPager ID="MSLPagerList" ControlToPaginate="MSLDataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="MSLPageChanged" />
+											</th>
+											<th colspan="3" align="right">
+												Go To Page :
+												<com:TPager ID="MSLPagerGoTo" ControlToPaginate="MSLDataList" Mode="DropDownList" OnPageIndexChanged="MSLPageChanged" />
+											</th>
+										</tr>
+									</table>
+								</com:TPanel>
+							</td>
+							<td width="50%" valign="top">
+								<span style='font-weight:bold'>Listed entries</span>
+								<com:TDataList ID="DataList" DataKeyField="0" RepeatLayout="Raw" OnSelectedIndexChanged="selectItem" OnEditCommand="edit" OnDeleteCommand="deletePartType" OnUpdateCommand="save" OnCancelCommand="cancel"CssClass="DataList"  ItemStyle.CssClass="DataListItem" AlternatingItemStyle.CssClass="DataListAlterItem" EditItemStyle.CssClass="DataListEditItem"  width="100%" AllowPaging="true" AllowCustomPaging="true" EnableViewState="true">
+								    <prop:HeaderTemplate>
+										<table width="100%" height="25" class="DataList" cellspacing="1" cellpadding="0">
+										<thead>
+											<tr style="height: 25px">
+												<th width="13%"><%[ PartType.partCode ]%></th>
+												<th><%[ PartType.name ]%></th>
+												<th width="7%" style="text-align:right;"><%[ PartInstance.quantity ]%></th>
+												<th width="5%" style="text-align:center;"></th>
+												<th width="5%" style="text-align:center;">
+												    <com:Application.controls.HYLock Feature="pages_all,feature_allow_addSupplyingWarehouse_editMSL">
+												        <com:TActiveCheckBox id="chkAll" CssClass="chkAllClass" Attributes.onClick="return chkAllClicked(this);" Visible="<%# $this->Page->getShowMoveSuppWhCheckBoxes() %>" />
+												     </com:Application.controls.HYLock>
+												 </th>
+											</tr>
+										</thead>
+										<tbody>
+									</prop:HeaderTemplate>
+									<prop:ItemTemplate>
+										<tr class="<%# $this->Page->getStyle($this->getItemIndex()) %>">
+											<td><%# $this->DataItem[3] %></td>
+											<td><%# $this->DataItem[1] %></td>
+											<td>
+        										<com:TTextBox Id="quantity"  Columns="2" Style="text-align:right" text="<%# $this->DataItem[2] %>" AutoPostBack="false"  />
+											</td>
+											<td style="text-align:center;">
+											     <com:Application.controls.HYLock Feature="pages_all,feature_allow_add_editMSL">
+											         <com:TImageButton CommandName="id" CommandParameter="<%# $this->DataItem[0] %>" ImageUrl="../../../themes/images/big_yes.gif" oncommand="Page.updateMSL" Attributes.onclick="showModalBox();" />
+											     </com:Application.controls.HYLock>
+											</td>
+											<td style="text-align:center;">
+											     <com:Application.controls.HYLock Feature="pages_all,feature_allow_addSupplyingWarehouse_editMSL">
+											         <com:TActiveCheckBox id="chk" CssClass="chkClass" Attributes.onClick="return chkClicked(this);" Visible="<%# $this->Page->getShowMoveSuppWhCheckBoxes() %>" />
+											     </com:Application.controls.HYLock>
+										    </td>
+										</tr>
+									</prop:ItemTemplate>
+								    <prop:FooterTemplate>
+								    		</tbody>
+								    		<tfoot>
+											<tr>
+												<th colspan="5">
+													<div style="font-weight: bold; text-align: center;">
+														Total <%# $this->Parent->VirtualItemCount %> Parts
+													</div>
+												</th>
+											</tr>
+											</tfoot>
+										</table>
+									</prop:FooterTemplate>
+								</com:TDataList>
+								<com:TPanel ID="PaginationPanel">
+								    <table width="100%" height="25">
+										<tr>
+											<th colspan="3" align="left">
+												Select Page :
+												<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+											</th>
+											<th colspan="3" align="right">
+												Go To Page :
+												<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+											</th>
+										</tr>
+									</table>
+								</com:TPanel>
+							</td>
+						</tr>
+					</table>
+				</com:TActivePanel>
+			</td>
+		</tr>
+	</table>
+
+</com:TContent>

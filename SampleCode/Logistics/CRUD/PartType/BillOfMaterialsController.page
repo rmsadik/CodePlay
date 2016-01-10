@@ -1,0 +1,223 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+<script type="text/javascript">
+function prepart(id)
+{
+	if(id == 1)
+	{
+		document.getElementById('partgroupwrapper').style.display='none'; 
+		document.getElementById('partwrapper').style.display='block';
+	}
+	else if(id == 2)
+	{
+		document.getElementById('partgroupwrapper').style.display='block'; 
+		document.getElementById('partwrapper').style.display='none';
+	}
+}
+
+</script>
+	<div>
+		<com:THiddenField ID = "hiddenPageSource" />
+		<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel">
+			<table width="100%">
+				<tr>
+					<td width="80%">
+						<com:TLabel ID="pageLabel" Attributes.style='font-weight:bold' Text='Bill of Materials' />
+						<com:TLabel ID="BillOfMaterialsLabel" />
+						<com:THiddenField ID="SearchString" />
+						<com:THiddenField ID="focusObject" />
+						<com:THiddenField ID="focusObjectArgument" />												
+					</td>
+					<td style='text-align:right'>
+						<!-- <com:TImageButton ID="BackButton123" ImageUrl="../../../themes/images/back.gif" onClick = "goBackToPreviousPage" Attributes.OnClick="history.back(); history.go(0); return false;" ToolTip="Back" Visible="true"/>  -->
+						<com:TImageButton ID="BackButton" ImageUrl="../../../themes/images/back.gif" onClick = "goBackToPreviousPage" ToolTip="Back" Visible="true"/>
+						<br/>
+						<com:TButton ID="AddButton" Text="Add Component Part" OnClick="add" />	
+					</td>
+				</tr>
+			</table>
+		</com:TPanel>
+		<com:TPanel ID="FirstPanel">
+			<table width="100%" border=0>
+				<tr>
+					<td style='width: 100px'>Part Type</td>
+					<td style='width:330px'>
+						<com:Application.controls.EntityAutoComplete.HYPartTypeComplete ID="recipeForPartType" type="PartType" ResultPanel.CssClass="hydraautocomplete" Width="300px" />
+					</td>			
+					<td>
+						<com:TButton ID="LookupButton" Text="Lookup" OnClick="goToNextScreen" />	
+					</td>
+				</tr>
+			</table>
+		</com:TPanel>
+		
+<!---   ---------------- Adding Panel ---------------- --->	
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" >
+			<table width="100%" border=0>
+				<tr>
+					<td style='vertical-align:top' width='250px'>
+						<com:TRadioButton
+						    ID="Radio1"
+						    GroupName="RadioGroup"
+						    Text="Part Type"
+						    AutoPostBack="false"
+						    Checked = "true"
+						    Attributes.onClick="prepart(1);"
+						 />&nbsp;&nbsp;&nbsp;&nbsp;
+						<com:TRadioButton
+						    ID="Radio2"
+						    GroupName="RadioGroup"
+						    Text="Part Type Group"
+						    AutoPostBack="false"
+						    Checked = "false"
+							Attributes.onClick="prepart(2);"
+						 />
+					</td>
+					<td style='vertical-align:top' >
+						<div id="partwrapper"  style="display: block;">	
+							<com:Application.controls.EntityAutoComplete.HYPartTypeComplete ID="newBOMPartType" type="PartType" ResultPanel.CssClass="hydraautocomplete" Width="300px"  />
+						</div>
+						<div id="partgroupwrapper"  style="display: none;">	 
+							<com:Application.controls.EntityAutoComplete.HYPartTypeGroupComplete ID="newBOMPartTypeGroup" type="PartTypeGroup" ResultPanel.CssClass="hydraautocomplete" Width="300px"  /> 
+						</div>
+					</td>
+				</tr>																		
+				<tr>
+					<td style='vertical-align:top' width='100px'>Quantity: </td>
+					<td style='vertical-align:top'><com:TTextBox ID="newBOMQty" AutoPostBack="false" ValidationGroup="Group1" width="80px" /></td>
+				</tr>
+				<tr>
+					<td style='vertical-align:top' width='100px'>Comments:</td>
+					<td style='vertical-align:top'><com:TTextBox ID="newComment" AutoPostBack="false" ValidationGroup="Group1" width="500px" /></td>
+				</tr>
+				<tr>
+					<td>&nbsp;</td>
+				</tr>
+				<tr>
+					<td>&nbsp;</td>
+					<td style='vertical-align:top'>
+						<com:TButton ID="EditButton" Text="Save" Onclick="save" ValidationGroup="Group1" />
+						<com:TButton ID="CancelEditButton" Text="Cancel" Onclick="cancel" />
+					</td>
+				</tr>
+			</table>	
+		</com:TPanel>
+<!---   ---------------- Editing Panel ---------------- --->					
+		<com:TPanel>
+			<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem" 
+					     OnEditCommand="edit"
+					     OnDeleteCommand="delete"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList" 
+					     ItemStyle.CssClass="DataListItem" 
+					     AlternatingItemStyle.CssClass="DataListAlterItem" 
+					     EditItemStyle.CssClass="DataListEditItem" 
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="true" PageSize="30" EnableViewState="true">
+				
+			    <prop:HeaderTemplate>
+					<table width='100%' height='25'>
+						<tr>
+							<th width="5%" style="text-align:left">Qty</th>
+							<th width="5%" style="text-align:left">Type</th>
+							<th width="50%" style="text-align:left" >&nbsp;&nbsp;<b>Materials</b></th>
+							<th width="35%" style="text-align:left" >Comments</th>
+							<th width="5%">&nbsp;</th>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" height="25" border=0>
+						<tr>
+							<td width="5%" style="text-align:left"><%# $this->DataItem->getQuantity() %></td>
+							<td width="5%" style="text-align:left"><%# $this->Page->showMark($this->DataItem) %></td>
+							<td width="50%"><%# $this->Page->showFullPartDetails($this->DataItem) %></td>
+							<td width="35%" style="text-align:left"><%# $this->DataItem->getComments() %></td>
+							<td width="5%" style="text-align:right">
+								<com:TImageButton ID="deleteBtn" ImageUrl="../../../themes/images/delete.png" Text="Delete" CommandName="delete" ToolTip="Delete Record" Attributes.OnClick="if(!confirm('WARNING!  Are you sure you want to delete this record?')) return false;"/>
+								<com:TImageButton ID="editBtn" ImageUrl="../../../themes/images/edit.png" Text="Edit" CommandName="edit"	ToolTip="Edit Record" />
+							</td>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+				
+				<prop:EditItemTemplate>	
+					<table width="100%" border=0>
+						<tr>
+							<td style='vertical-align:top' width='250px'>
+								<com:TActiveRadioButton
+								    ID="Radio1"
+								    GroupName="RadioGroup"
+								    Text="Part Type"
+								    AutoPostBack="false"
+								    Attributes.onClick="prepart(1);"
+								 />&nbsp;&nbsp;&nbsp;&nbsp;
+								<com:TActiveRadioButton
+								    ID="Radio2"
+								    GroupName="RadioGroup"
+								    Text="Part Type Group"
+								    AutoPostBack="false"
+									Attributes.onClick="prepart(2);"
+								 />
+							</td>
+							<td style='vertical-align:top' >
+								<div id="partwrapper" >	
+									<com:Application.controls.EntityAutoComplete.HYPartTypeComplete ID="newBOMPartType" type="PartType" ResultPanel.CssClass="hydraautocomplete" Width="300px" />
+								</div>
+								<div id="partgroupwrapper" >	 
+									<com:Application.controls.EntityAutoComplete.HYPartTypeGroupComplete ID="newBOMPartTypeGroup" type="PartTypeGroup" ResultPanel.CssClass="hydraautocomplete" Width="300px"  /> 
+								</div>
+							</td>
+						</tr>																		
+						<tr>
+							<td style='vertical-align:top' width='100px'>Quantity: </td>
+							<td style='vertical-align:top'><com:TTextBox ID="newBOMQty" AutoPostBack="false" ValidationGroup="Group1" width="80px" /></td>
+						</tr>
+						<tr>
+							<td style='vertical-align:top' width='100px'>Comments:</td>
+							<td style='vertical-align:top'><com:TTextBox ID="newComment" AutoPostBack="false" ValidationGroup="Group1" width="500px" /></td>
+						</tr>
+						<tr>
+							<td>&nbsp;</td>
+						</tr>
+						<tr>
+							<td>&nbsp;</td>
+							<td style='vertical-align:top'>
+								<com:TButton ID="EditButton" Text="Save" CommandName="update" ValidationGroup="Group1" />
+								<com:TButton ID="CancelEditButton" Text="Cancel" CommandName="cancel" />
+							</td>
+						</tr>
+					</table>									
+				</prop:EditItemTemplate>
+								
+			    <prop:FooterTemplate>
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="3">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Parent->VirtualItemCount %> Items
+								</div>
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>				
+			</com:TDataList>
+		</com:TPanel>		
+
+		<com:TPanel ID="PaginationPanel">		
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>			
+	</div>
+</com:TContent>

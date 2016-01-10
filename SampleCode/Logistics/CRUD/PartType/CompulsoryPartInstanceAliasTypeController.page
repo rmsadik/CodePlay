@@ -1,0 +1,202 @@
+<%@MasterClass="Application.layouts.PlainEditLayout"%>
+<com:TContent ID="MainContent">
+	<com:TActiveLabel ID="jsLbl" Style="display:none;"/>
+	<div>
+		<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel">
+			<table width="100%">
+				<tr>
+					<td width="80%">
+						<com:THiddenField ID="SearchString" />
+						<com:THiddenField ID="focusObject" />	
+						<com:THiddenField ID="focusObjectArgument" />
+					</td>
+				</tr>
+			</table>
+		</com:TPanel>
+		
+<!---   ---------------- Adding Panel ---------------- --->
+		<com:TPanel ID="AddPanel" CssClass="AddPanel">
+			<table width="80%" class="form">
+				<tr>
+					<td colspan='2' class='header'><com:TActiveLabel ID='titleLbl' Text="Add Part Aliases for Part Type: " /></td>
+				</tr>
+				<tr>
+					<td><b><%[PartInstanceAlias.type]%></b>:</td>
+					<td><com:TActiveDropDownList ID="newPartInstanceAliasType"
+							DataTextField="name" DataValueField="id" /></td>
+				</tr>
+				<tr>
+					<td><b>Is Mandatory?</b> &nbsp;&nbsp;<com:TActiveCheckBox ID="mandatoryChk" /></td>
+							
+					<td><b>Is Unique?</b> &nbsp;&nbsp;<com:TActiveCheckBox ID="uniqueChk" /></td>
+							
+				</tr>
+				<tr>
+					<td><b>Sample Format</b></td>
+					<td><com:TActiveTextBox ID="format" width='50%'/></td>
+				</tr>
+				<tr>
+					<com:TActivePanel ID='regexPanel' style='display:none'>
+					<com:Application.controls.HYRoleLock Role="System Admin">
+						<td><b>Regex Pattern</b></td>
+						<td><com:TTextBox ID="pattern" width="50%"
+								Text="" /></td>
+					</com:Application.controls.HYRoleLock>
+					</com:TActivePanel>
+				</tr>
+				<tr>
+					<td colspan='2' class='footer'>
+						<com:TButton ID="EditButton" Text="Save" Onclick="save" /> 
+						<com:TButton ID="CancelEditButton" Text="Cancel" Onclick="cancel" /></td>
+				</tr>
+			</table>
+		</com:TPanel>
+		<!---   ---------------- Editing Panel Ends Here---------------- --->					
+		<com:TPanel ID="PartTypeAliasPanel">
+			<table width="100%" class="DataListTitle">
+				<tr>
+					<th>
+						<td align="left">
+							<com:TLabel Text="<%[ PartInstanceAlias.list ]%>" /> 
+							<com:TLabel ID="PartTypeAliasLabel" />
+						</td>
+						<td width="20%" align="right">
+							<com:TButton ID="AddButton" Text="<%[PartInstanceAlias.addButton]%>" OnClick="add" width="80%"/>				
+						</td>
+					</th>
+				</tr>
+			</table>
+			
+			<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem" 
+					     OnEditCommand="edit"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList" 
+					     ItemStyle.CssClass="DataListItem" 
+					     AlternatingItemStyle.CssClass="DataListAlterItem" 
+					     EditItemStyle.CssClass="DataListEditItem" 
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="true" PageSize="30" EnableViewState="true">
+				
+			    <prop:HeaderTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<th width="20%"><%[ PartInstanceAlias.type ]%></th>
+							<th style='text-align:center;width:10%'>Is Unique?</th>
+							<th style='text-align:center;width:10%'>Is Mandatory?</th>
+							<th style='text-align:center;width:20%'>Sample Format</th>
+							<%% if (UserAccountService::isSystemAdmin()) echo "<th width='20%'>Regex Pattern</th>";%>
+							<th>&nbsp;</th>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<td width="20%"><com:TActiveLabel ID="partInstanceAlias"
+									Enabled='false' Text="<%# $this->DataItem['name'] %>" />
+								<div><com:TActiveLabel style='font-size:7pt;color:red' ID="hideEdit" Visible="<%# $this->DataItem['editable']==='no' ? 'true':'false'%>" Text="Edit is disabled for Client Asset No as it is split over multiple clients! Please make necessary changes." />
+							</div>
+							</td>
+							<td style='text-align:center;width:10%'><com:TCheckBox ID="isUnique" Enabled='false'
+									Checked="<%# $this->DataItem['unique'] %>" /></td>
+							<td style='text-align:center;width:10%'><com:TCheckBox ID='isMandatory'
+									Enabled='false' Checked="<%# $this->DataItem['mandatory'] %>" />
+							</td>
+							<td style='text-align:center;width:20%'><com:TTextBox ID="errorMessage"
+									Enabled='false' width='80%'
+									Text="<%# $this->DataItem['format'] %>" /></td>
+
+							<td width="20%">
+								<com:Application.controls.HYRoleLock
+									Role="System Admin">
+									<com:TTextBox ID="pattern" Visible="<%# $this->DataItem['admin']==='yes' ? 'true':'false'%>" Enabled='false' width="50%"
+										Text="<%# $this->DataItem['pattern'] %>" />
+								</com:Application.controls.HYRoleLock>
+								
+							</td>
+
+							<td>
+								<com:TImageButton ID="editButton"
+									ImageUrl="../../../themes/images/edit.png" Text="Edit"
+									CommandName="edit" ToolTip="Edit Record" Visible="<%# $this->DataItem['editable']==='yes' ? 'true':'false'%>"/> 
+								<com:TImageButton
+									ImageUrl="../../../themes/images/delete.png" Text="Delete"
+									OnCommand="Page.deletePartTypePartInstancePattern"
+									CommandParameter="<%# $this->DataItem['id'] %>"
+									ToolTip="Delete Record"
+									Attributes.OnClick="if(!confirm('WARNING!  Are you sure you want to delete this alias?')) return false;" />
+								<br/>
+								</td>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+
+				<prop:EditItemTemplate>
+					<table width="100%" class="form">
+						<tr>
+							<td colspan='2' class="header">Edit Part Alias for Part Type</td>
+						</tr>
+						<tr>
+							<td><b><%[PartInstanceAlias.type]%>:</b></td>
+							<td><com:TActiveDropDownList ID="newPartInstanceAliasType"
+									DataTextField="name" DataValueField="id" Enabled="false" AutoPostBack="false"/></td>
+						</tr>
+						<tr>
+							<td><b>Is Mandatory?</b> &nbsp;&nbsp;
+								<com:TActiveCheckBox ID="mandatoryChk" />
+							</td>
+							<td><b>Is Unique?</b> &nbsp;&nbsp;
+								<com:TActiveCheckBox ID="uniqueChk" />
+							</td>
+						</tr>
+						<tr>
+							<td><b>Sample Format:</b></td>
+							<td><com:TActiveTextBox ID="format" width='50%' /></td>
+						</tr>
+						<tr>
+							<com:TActivePanel ID='regexPanel' style='display:none'>
+							<com:Application.controls.HYRoleLock Role="System Admin">
+								<td><b>Regex Pattern:</b></td>
+								<td><com:TTextBox ID="pattern" width="50%" /></td>
+							</com:Application.controls.HYRoleLock>
+							</com:TActivePanel>
+						</tr>
+						<tr>
+							<td colspan='2' class='footer'>
+								<com:TButton ID="EditButton" Text="Save" CommandName="update" />
+								<com:TButton ID="CancelEditButton" Text="Cancel" CommandName="cancel" />
+							</td>
+						</tr>
+					</table>
+				</prop:EditItemTemplate>
+
+				<prop:FooterTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<th colspan="3">
+								<div style="font-weight: bold; text-align: center;">Total
+									<%# $this->Parent->VirtualItemCount %> Part Type Alias(es)</div>
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>
+			</com:TDataList>
+		</com:TPanel>		
+
+		<com:TPanel ID="PaginationPanel">		
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>			
+	</div>
+</com:TContent>

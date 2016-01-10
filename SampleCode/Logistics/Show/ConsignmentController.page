@@ -1,0 +1,416 @@
+<com:TContent ID="MainContent">
+<style>
+	.hide{
+		display:none;
+	}
+</style>
+<script type="text/javascript">
+	function validateSearch(counting)
+	{
+		var filter = $('<%= $this->Page->viewWhFilter->getClientId() %>').value;
+		var from = ($('<%= $this->Page->TransitNoteFromList->getClientId() %>').value).replace(/^\s*|\s*$/g,'');
+		var to = ($('<%= $this->Page->TransitNoteToList->getClientId() %>').value).replace(/^\s*|\s*$/g,'');;
+		
+		
+		var fromDate =$('<%= $this->fromDate->getClientId()%>').value;
+		var toDate =$('<%= $this->toDate->getClientId()%>').value;
+		var checkDate =/^((\d{4})-(([0][1-9])|([1][0-2]))-(([0][1-9])|([1-2][0-9])|([3][0-1]))( )(([0-1][0-9]:[0-5][0-9]:[0-5][0-9])|([2][0-3]:[0-5][0-9]:[0-5][0-9])))$/;
+		 
+		if(fromDate!=""){
+			if(!checkDate.test(fromDate))
+			{
+				alert("Invalid FromDate: " +fromDate+ ", it has to be(yyyy-MM-dd 00:00:00) format");
+			    return false;
+			}
+		} 
+		if(toDate!=""){
+			if(!checkDate.test(toDate))
+			{
+				alert("Invalid ToDate  " +toDate+ ", it has to be(yyyy-MM-dd 23:59:59) format");
+			    return false;
+			}
+		}
+		
+		if(counting){
+			document.getElementById('<%= $this->Page->predictResultBtn->getClientId() %>').style.display='none';
+			document.getElementById('<%= $this->Page->searching->getClientId() %>').style.display='';
+		}
+		
+		//hack for NAB external
+		if (filter == 48538)
+			return true;
+			
+		if (from == '' && to == '' && filter != 1)
+		{
+			//alert('Your View Warehouse filter does not allow for this search.\n\nYou must select either From: or To: in the search options.');
+			//return false;
+		}
+	}
+	
+	function execRun()
+	{
+		 document.getElementById('<%= $this->Page->backPredictResultBtn->getClientId() %>').style.display='none';
+		 document.getElementById('<%= $this->Page->toExcelBtn->getClientId() %>').style.display='none';
+		 document.getElementById('<%= $this->Page->searching->getClientId() %>').style.display='';
+		 
+	}
+	
+	
+	
+</script>
+
+	<com:TLabel ID="jsLbl"/>
+	<com:THiddenField ID="viewWhFilter" />
+	<com:THiddenField ID="nabFrom" />
+	<com:THiddenField ID="nabTo" />
+	<br />
+	<div>
+	<com:TPanel ID="formPanel" >
+		<com:TPanel DefaultButton="SearchButton">
+			<table width="100%" border="0">
+					<tr>
+						<td colspan="4">
+							<table width="30%">
+								<tr>
+									<td width="5%"><com:TRadioButton GroupName="RadioGroup" ID="tNoteRadio" AutoPostBack="false" Checked="false" /></td>
+									<td><com:TLabel Text="Transit Notes" ForControl="tNoteRadio" /></td>
+								</tr>
+								<tr>
+									<td><com:TRadioButton GroupName="RadioGroup" ID="dNoteRadio" AutoPostBack="false" Checked="false" /></td>
+									<td><com:TLabel Text="Dispatch Notes" ForControl="dNoteRadio" /></td>
+								</tr>
+								<com:Application.controls.HYLock Feature="pages_all,pages_logistics,feature_displayAssignmentNotes">
+									<tr>
+										<td><com:TRadioButton GroupName="RadioGroup" ID="aNoteRadio" AutoPostBack="false" Checked="false" /></td>
+										<td><com:TLabel Text="Assignment Notes" ForControl="aNoteRadio" /></td>
+									</tr>
+								</com:Application.controls.HYLock>
+								<tr>
+									<td><com:TRadioButton GroupName="RadioGroup" ID="bNoteRadio" AutoPostBack="false" Checked="true" /></td>
+									<td><com:TLabel Text="All" ForControl="bNoteRadio" /></td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+					<tr><td>&nbsp;</td></tr>
+					<tr>
+						<td width="20%">
+							Transit/Dispatch<com:Application.controls.HYLock Feature="pages_all,pages_logistics,feature_displayAssignmentNotes">/Assignment Note#</com:Application.controls.HYLock>: <br />
+							<com:TTextBox ID="TransitNoteNo" AutoPostBack="false" width="95%"/> 
+						</td>
+						<td width="25%">
+							From: <br />
+							<com:Application.controls.EntityAutoComplete.HYFacilityComplete	
+							ID="TransitNoteFromList" 
+							ResultPanel.CssClass="hydraautocomplete"
+							width="95%" TransitNoteFilterFrom="true" HackForNabFrom="true"/>						    
+						</td>
+						<td width="25%">
+							To: <br />
+							<com:Application.controls.EntityAutoComplete.HYFacilityComplete	
+							ID="TransitNoteToList" 
+							ResultPanel.CssClass="hydraautocomplete"
+							width="95%" TransitNoteFilterTo="true" HackForNabTo="true"/>			
+						</td>
+						<td width="10%">
+							Status: <br />
+							<com:TDropDownList ID="StatusList"
+									PromptValue=" "
+									PromptText="All"
+									AutoPostBack="false"
+								    DataTextField="name"
+								    DataValueField="id" 
+								    width="100%"/>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							Courier Ref#:<br />
+							<com:TTextBox ID="courierRef" AutoPostBack="false" width="95%"/> 
+						</td>
+						<td>
+							Dispatched Date(from):<br />
+							<com:TDatePicker ID="fromDate" DateFormat="yyyy-MM-dd 00:00:00" width="95%" /> 
+						</td>
+						<td>
+							Dispatched Date(to):<br />
+							<com:TDatePicker ID="toDate" DateFormat="yyyy-MM-dd 23:59:59" width="95%" /> 
+						</td>
+						<td>
+							Dispatched By
+							<com:Application.controls.EntityAutoComplete.HYUserAccountComplete Id="dispatchedPerson" ResultPanel.CssClass="hydraautocomplete" />
+						</td>
+					</tr>
+					
+					<tr>
+						<td>
+							<com:TButton ID="SearchButton" Text=" Search " OnClick="search" Attributes.onclick="return validateSearch(0);"/>
+							<com:THiddenField ID="sortBy" />
+							<com:THiddenField ID="sortOrd"/>
+						</td>
+						<td>
+						<com:Application.controls.HYLock Feature="pages_all,pages_logistics,feature_displayAssignmentNotes">
+						Tech: <com:Application.controls.EntityAutoComplete.HYWarehouseBreadcrumbComplete 
+													PartsAllowOnly="true" 
+													IncludeWarehouseCategoryIds="15" 
+													ID="searchTech" 
+													ResultPanel.CssClass="hydraautocomplete" SearchLimit="10" width="60%" />
+						</com:Application.controls.HYLock>
+						</td>
+						<td>
+							To Site:
+							<com:Application.controls.EntityAutoComplete.HYSiteComplete 
+							ID="siteListId" width="60%"
+							ResultPanel.CssClass="hydraautocomplete" 
+							 />
+							<com:THiddenField ID="hiddenSiteId" />
+						</td>
+					</tr>
+					
+					<tr>
+						<td colspan=4 align=right>
+							<com:Application.controls.HYLock Feature="pages_all, pages_logistics,feature_TNmovementReport">
+								<com:TButton Text="Create Parts Movement Report" ID="predictResultBtn" OnClick="predictResult" Attributes.onclick="return validateSearch(1);"/>
+								<com:TButton Text="&laquo; Back" ID="backPredictResultBtn" OnClick="backPredictResult" />
+								<com:TButton Text="Run" ID="toExcelBtn" OnClick="sendResultToExcel" Attributes.onclick="return execRun();"/>
+								<com:TButton ID="searching" Text="Searching ..." Enabled="false"/>
+								<com:TLabel ID="predictResultBox" />
+							</com:Application.controls.HYLock>		
+						</td>
+					</tr>
+					
+					
+			</table>
+		</com:TPanel>
+			<br /><hr />
+			<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel">
+				<table width="100%">
+					<tr>
+						<td width="40%">
+							<com:TTextBox ID="SearchText" AutoPostBack="false" Columns="45" Text="AlwaysTrigger" Visible="false"/>
+							<com:THiddenField ID="SearchString" Value="AlwaysTrigger" />
+							<com:THiddenField ID="focusObject" />	
+							<com:THiddenField ID="focusObjectArgument" />												
+						</td>
+						
+						
+					</tr>
+				</table>
+				
+			</com:TPanel>
+
+			<com:TPanel ID="masker" style="
+					background-color: #CCCCCC;
+					width: 60%; 
+					height: 38%; 
+					position: absolute; 
+					top: 0px; 
+					z-index: 50; 
+					text-align:center; 
+					color: #999999; 
+					* filter: alpha(opacity=40);
+					* -ms-filter:progid:DXImageTransform.Microsoft.Alpha(Opacity=40)
+					-khtml-opacity: 0.4;
+					-moz-opacity:0.4;
+					opacity: 0.4;">
+				<div style="position: absolute; top: 40%; width: 100%; left:0px;"> 
+					<div style="font-weight: bold; font-size: 50pt;"> 
+						NON-EDITABLE
+					</div>
+					<div>(click <b>&laquo; Back</b> button to edit)</div>
+				</div>
+			</com:TPanel>
+		</com:TPanel>
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" style="display:none;" />
+		
+		
+		
+<!---   ---------------- Editing Panel Ends Here---------------- --->					
+		<com:TPanel ID="TransitNotePanel">
+			<table width="100%" class="DataListTitle">
+				<tr>
+					<td align="left" width="25%">
+						<com:TLabel Text="<%[ transitDispatchNote.list ]%>" /> 
+					</td>
+					<td width="75%" align='center'><com:TLabel id="sortLabel" Text="" /><td>
+				</tr>
+			</table>
+			
+			<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem" 
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList" 
+					     ItemStyle.CssClass="DataListItem" 
+					     AlternatingItemStyle.CssClass="DataListAlterItem" 
+					     EditItemStyle.CssClass="DataListEditItem" 
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="true" PageSize="30" EnableViewState="true"
+						  style="font-size:8pt"
+						 >
+				
+			    <prop:HeaderTemplate>
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="3">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Parent->VirtualItemCount %> <%# $this->Page->returnNoteType() %> Notes
+								</div>
+							</th>
+						</tr>
+					</table>
+					<table width="100%" height="25" border="0">
+						<tr>
+							<th width="10%"><com:TLinkButton id="tnoteLabel" Text="<%# $this->Page->getButtonText($this->Page->returnNoteType().' Note#','transitNoteNo') %>" onCommand="Page.Sort" CommandParameter="transitNoteNo" /></th>
+							<th width="25%"><%[ transitNote.source ]%></th>
+							<th width="25%"><%[ transitNote.destination ]%></th>
+							<th width="10%"><com:TLinkButton id="issueDateLabel"Text="<%# $this->Page->getButtonText('Dispatched','issueDate') %>" onCommand="Page.Sort" CommandParameter="issueDate" /> (<%# $this->Page->getDefaultWarehouseTimeZone() %>)</th>
+							<th width="10%"><%[ transitNote.noOfPackages ]%></th>
+							<th width="10%"><com:TLinkButton id="courierLabel" Text="<%# $this->Page->getButtonText('Courier','courier') %>" onCommand="Page.Sort" CommandParameter="courier"  /></th>
+							<th width="5%">Status</th>
+							<th width="5%">&nbsp;</th>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" height="25" border="0">
+						<tr>
+							<td width="10%">
+							<com:THyperLink
+						 		Text="<%# $this->DataItem['transitNoteNo'] %>"
+						 		NavigateUrl = "<%# $this->Page->getTransitNoteUrl($this->DataItem['id'], $this->DataItem['transitNoteNo']) %>"
+						 		Attributes.OnMouseOver = "$('TransitNoteDetails_<%# $this->DataItem['id'] %>').show();"
+	                 			Attributes.OnMouseOut = "$('TransitNoteDetails_<%# $this->DataItem['id'] %>').hide();"
+	                 			Target="_blank"
+	                 			ID="BytTransitNote" 
+	                 			/>
+								<div ID="TransitNoteDetails_<%# $this->DataItem["id"] %>" style="display: none; padding:5px;" class="toolTipWindow">
+									<%# $this->Page->getTransitNotesDetails($this->DataItem["id"]) %>
+								</div>
+                 			</td>
+							<td width="25%">
+								<b><%# $this->DataItem["source"] %></b><br />
+								<i style='font-size:10px;'>
+									<%# $this->Page->getFacilityName($this->DataItem["facilityName_s"]) %>
+									<%# $this->Page->getAddress($this->DataItem["sourceAddrId"]) %>
+								</i>
+							</td>
+							<td width="25%">
+								<b><%# $this->Page->checkSiteName($this->DataItem["destination"], $this->DataItem["destinationId"], $this->DataItem["destinationSiteId"]); %></b><br />
+								<i style='font-size:10px;'>
+									<%# $this->Page->getFacilityName($this->DataItem["facilityName_d"]) %>
+									<%# $this->Page->checkSiteAddress($this->DataItem["destinationAddrId"], $this->DataItem["destinationId"], $this->DataItem["destinationSiteId"]); %>
+								</i>
+							</td>
+							<td width="10%">
+								<%# $this->Page->showIssueDate($this->DataItem["id"],TRUE) %>
+							</td>
+							<td width="10%">
+								<%# $this->Page->getPackageInfo($this->DataItem["id"]) %>
+							</td>
+							<td width="10%">
+								<span style='font-size:9px'>Courier:</span> <b><%# $this->DataItem["courier"] %></b>
+								<br />
+								<span style='font-size:9px'>Ref #:</span>  <b><%# $this->DataItem["CourierJobNo"] %></b>
+							</td>
+							<td width="5%"><%# $this->DataItem["transitNoteStatus"] %></td>
+							<td width="5%" style="text-align:right">
+								<com:THyperLink 
+									Text="Receive Parts" 
+									NavigateUrl = "<%# $this->Page->getReceivePartURL($this->DataItem['id']) %>" 
+									ToolTip="Receive Parts for this <%# $this->Page->returnNoteType() %> Note"
+									Visible="<%# $this->Page->showRecievePartButton($this->DataItem['transitNoteStatus']) %>"
+									Target="_blank"
+									/> 
+								<com:THyperLink 
+									Id="reconcileLink"
+									Text="Reconcile RA" 
+									NavigateUrl = "<%# $this->Page->getReconcileRaURL($this, $this->DataItem['id'], $this->DataItem['transitNoteNo']) %>" 
+									Visible="false" 
+									Target="_blank" /> 
+							</td>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+				
+				<prop:EditItemTemplate>
+					<table width="100%">
+						<tr valign="top">
+							<td>
+								
+								<table>
+									<tr>
+										<td><%[ transitNote.transitNoteNo ]%>: </td>
+										<td >
+											<com:TTextBox ID="NewTransitNoteNo" AutoPostBack="false" ValidationGroup="Group1" Enabled="false"/>									
+										</td>
+									</tr>
+									<tr>
+										<td><%[ transitNote.courierJobNo ]%>: </td>
+										<td >
+											<com:TTextBox ID="NewCourierJobNo" AutoPostBack="false" ValidationGroup="Group1" Enabled="false"/>
+										</td>
+									</tr>
+									<tr>
+										<td><%[ transitNote.noOfPackages ]%>: </td>
+										<td>
+											<com:TTextBox ID="NewNoOfPackages" AutoPostBack="false" ValidationGroup="Group1" />
+										</td>
+									</tr>							
+								</table>
+							</td>					
+							<td>
+								<table>
+									<tr>
+										<td><%[ transitNote.courier ]%>: </td>
+										<td >
+											<com:TTextBox ID="NewCourier" AutoPostBack="false" ValidationGroup="Group1" Rows="4" TextMode="MultiLine"/>
+										</td>
+									</tr>
+								</table>
+							</td>
+							<td>
+								<table>
+									<tr>						
+										<td >
+											<com:TButton ID="AddNewButton" Text="Save" commandName="update" ValidationGroup="Group1" />
+										</td>						
+										<td >
+						    				<com:TButton ID="CancelNewButton" Text="Cancel" commandName="cancel" />
+						    			</td>	
+									</tr>
+								</table>
+							</td>				
+						</tr>					
+					</table>				
+				</prop:EditItemTemplate>
+								
+			    <prop:FooterTemplate>
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="3">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Parent->VirtualItemCount %> <%# $this->Page->returnNoteType() %> Notes
+								</div>
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>				
+			</com:TDataList>
+		</com:TPanel>		
+
+		<com:TPanel ID="PaginationPanel">		
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>			
+	</div>
+</com:TContent>

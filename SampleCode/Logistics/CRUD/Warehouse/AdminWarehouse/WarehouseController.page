@@ -1,0 +1,1332 @@
+<%@ MasterClass="Application.layouts.NoExtJs.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+    <script type="text/javascript">
+
+        var currentNode=null;
+        var mouseX = 0;
+        var mouseY = 0;
+
+        var reloadTreeWithoutRedrawList = false;
+
+        function getCoords(e)
+        {
+            mouseX = Event.pointerX(e);
+            mouseY = Event.pointerY(e);
+        }
+
+        Event.observe(document, 'mousemove', getCoords);
+
+        function popup(warehouseId)
+        {
+            $('<%= $this->ExtraPanel->getClientID() %>').style.left = (mouseX+10) + 'px';
+            $('<%= $this->ExtraPanel->getClientID() %>').style.top = (mouseY+5) + 'px';
+            $('<%=$this->WarehouseIDField->getClientID()%>').value = warehouseId;
+            $('<%=$this->TriggerBtn->getClientID()%>').click();
+            $('<%= $this->ExtraPanel->getClientID() %>').appear({ duration: 0.0, from: 0.8, to: 0.8 });
+        }
+
+        function kill()
+        {
+            $('<%= $this->ExtraPanel->getClientID() %>').fade({ duration: 0.0, from: 0.8, to: 0 });
+        }
+
+        function toggleAddButton(disabled)
+        {
+            $("<%= $this->addSubLocationButton1->getClientId() %>").disabled = disabled;
+        }
+        function toggleShowButton(disabled)
+        {
+            $("<%= $this->showLocationBtn->getClientId() %>").disabled = disabled;
+        }
+        function toggleEditButton(disabled)
+        {
+            $("<%= $this->EditButton->getClientId() %>").disabled = disabled;
+        }
+
+        function reloadNode()
+        {
+            $("<%= $this->whTree->treeLoaded->getClientId() %>").value = 0;    //reset this so we load the tree again from the start
+
+            changeNode(currentNode);
+            treeJs.getTree().getStore().load();
+            mb.hide();
+        }
+
+        function changeNode(node)
+        {
+            $("<%= $this->Path->getClientId() %>").value = $("<%= $this->whTree->breadcrumbs->getClientId() %>").value.replace(/\//g, ' / ');
+
+            if (node == null)
+            {
+                return;
+            }
+
+            if (node.data.id != ($("<%= $this->currNodeId->getClientId() %>").value)) //if we're changing nodes then we want to redraw the list
+            {
+                reloadTreeWithoutRedrawList = false;
+            }
+
+
+            if (reloadTreeWithoutRedrawList == true)                               //redraw the tree without changing the list
+            {
+                return;
+            }
+
+            toggleAddButton(true);
+            //toggleShowButton(true);
+
+            currentNode = node;
+            $("<%= $this->firstLoad->getClientId() %>").value=0;
+            $('<%= $this->editPanel->getClientId() %>').hide();
+            $("<%= $this->storageLocationList->getClientId() %>").innerHTML='';
+            $("<%= $this->showLocationBtn->getClientId() %>").value = 'Show Warehouses Under';
+
+            if ($("<%= $this->searchWarehouseIds->getClientId() %>").value == '') //we are not searching so update path
+            {
+                var superString = '/' + $('<%= $this->hidden_warehouse_fullpath->getClientId() %>').value;
+                var subString = $('<%= $this->whTree->whIdPath->getClientId() %>').value;
+
+                if(!superString.indexOf(subString))
+                {
+                    $('<%= $this->whFullPath->getClientId() %>').value = '';
+                    $('<%= $this->hidden_warehouse_fullpath->getClientId() %>').value = '';
+                }
+
+                $("<%= $this->currNodeId->getClientId() %>").value = node.data.id;
+                $("<%= $this->displayInfo->getClientId() %>").value = 0;
+                $("<%= $this->storageLocationListBtn->getClientId() %>").click();
+            }
+            else
+            {
+                activateSearch();
+            }
+        }
+
+        function activateSearch()
+        {
+            $("<%= $this->storageLocationList->getClientId() %>").innerHTML = "<%= $this->getLoadingImage() %>";
+            $("<%= $this->displayInfo->getClientId() %>").value = 1;
+            $("<%= $this->storageLocationListBtn->getClientId() %>").click();
+        }
+
+        function deleteNode(warehouseId, warehouseName, countWarehouse)
+        {
+            var msg = "";
+            if (countWarehouse > 0)
+                msg = " and all of its child warehouses";
+            if(confirm("Are you sure you want to deactivate \'"+ warehouseName + "\'"+msg +"?"))
+            {
+                $('<%= $this->EditWarehouseId->getClientId() %>').value=warehouseId;
+                $("<%= $this->deleteWarehouseBtn->getClientId() %>").click();
+            }
+        }
+
+        function clearEditPanel()
+        {
+            //add address panel
+            $('<%= $this->editAddressPanel->getClientId() %>').hide();
+            $('<%= $this->EditWarehouse->getClientId() %>').checked='';
+
+            $('<%= $this->linkedCompany->getClientId() %>').value = '';
+            $('<%= $this->hiddenCompanyId->getClientId() %>').value = '';
+
+            //clear warehousename
+                $('<%= $this->EditWarehouseName->getClientId() %>').value='';
+                $('<%= $this->whCodeTxt->getClientId() %>').value='';
+            //clear site
+                $('<%= $this->editSite->getClientId() %>').value='';
+                $('<%= $this->hiddenSiteId->getClientId() %>').value='';
+                $("<%= $this->resultLabel->getClientId() %>").innerHTML = '';
+            //clear allow parts
+                $('<%= $this->EditAllowParts->getClientId() %>').checked='';
+            //clear category
+                $('<%= $this->EditWarehouseCategoryList->getClientId() %>').selectedIndex = 0;
+            //clear reporting warehouse
+                $('<%= $this->reportingWarehouse->getClientId() %>').selectedIndex = 0;
+                //$('<%= $this->RepWhSendEmailChk->getClientId() %>').checked = false;
+            //clear moveable
+                $('<%= $this->EditMoveable->getClientId() %>').checked='';
+            //clear ignore stock count
+                $('<%= $this->IgnoreStockCount->getClientId() %>').checked = false;
+                $('<%= $this->IgnoreStockCount_ApplyToChildren->getClientId() %>').checked = false;
+            //clear ignore stocktake
+                $('<%= $this->IgnoreStocktake->getClientId() %>').checked = false;
+                $('<%= $this->IgnoreStocktake_ApplyToChildren->getClientId() %>').checked = false;
+            //clear is main store
+                $('<%= $this->IsMainStore->getClientId() %>').checked = false;
+            //clear EditWarehouseStocktakeFrequency
+                $('<%= $this->EditWarehouseStocktakeFrequency->getClientId() %>').value='';
+            //clear EditWarehouseStocktakeNextDue
+                $('<%= $this->EditWarehouseStocktakeNextDue->getClientId() %>').value='';
+            //clear EditWarehouseLastStocktake
+                $('<%= $this->EditWarehouseLastStocktake->getClientId() %>').innerHTML='';
+
+            resetAllComponents_<%= $this->editAddress->getId() %>();
+        }
+
+        function toggleWhCode()
+        {
+        	$('whCodeRow').hide();
+            if ($('<%= $this->isSysAdmin->getClientId() %>').value == 1)
+            {
+	        	$('whCodeRow').show();
+            }
+        }
+
+        function addNode()
+        {
+            toggleEditButton(false);
+            toggleWhCode();
+
+            $('<%= $this->editPanel->getClientId() %>').hide();
+            $('<%= $this->EditWarehouseId->getClientId() %>').value="";
+
+            clearEditPanel();
+
+            $('editPanelTitle').innerHTML = "Add New Warehouse: ";
+
+            $('<%= $this->EditWarehousePrintBarcode->getClientId() %>').hide();
+            $('<%= $this->addressWrapper->getClientId() %>').hide();
+            $('<%= $this->IgnoreStockCount_ApplyToChildren_Panel->getClientId() %>').hide();
+            $('<%= $this->IgnoreStocktake_ApplyToChildren_Panel->getClientId() %>').hide();
+
+            //make allow parts always checked when add a new warehouse
+            $('<%= $this->EditAllowParts->getClientId() %>').checked = true;
+
+            //deselect the ignore in options
+            $('<%= $this->IgnoreStockCount_ApplyToChildren->getClientId() %>').checked = false;
+            $('<%= $this->IgnoreStocktake_ApplyToChildren->getClientId() %>').checked = false;
+
+            $('<%= $this->editPanel->getClientId() %>').show();
+
+            $('<%= $this->facilityName->getClientId() %>').value = '';
+            $('<%= $this->deliveryInst->getClientId() %>').value = '';
+            $('<%= $this->linkedCompany->getClientId() %>').value = '';
+            $('<%= $this->whPartsCount->getClientId() %>').value = '';
+
+            $('<%= $this->partsStatusList->getClientId() %>').selectedIndex = 0;
+
+            $('<%= $this->EditWarehouseName->getClientId() %>').focus();
+
+            toggleViewWrapper();
+        }
+
+        function editNode(warehouseId, viewOption)
+        {
+        	mb.showLoading('loading details');
+
+            toggleEditButton(false);
+            toggleWhCode();
+
+            if (viewOption === undefined)
+            {
+                viewOption = "edit";
+            }
+
+            $('<%= $this->facilityName->getClientId() %>').value = '';
+            $('<%= $this->deliveryInst->getClientId() %>').value = '';
+            $('<%= $this->addressWrapper->getClientId() %>').hide();
+
+            $('<%= $this->editPanel->getClientId() %>').hide();
+            clearEditPanel();
+
+            if(viewOption == 'edit')
+            {
+                toggleEditButton(false);
+                $('editPanelTitle').innerHTML = "Edit Warehouse: ";
+            }
+            else if(viewOption == 'view')
+            {
+                toggleEditButton(true);
+                $('editPanelTitle').innerHTML = "View Warehouse: ";
+            }
+
+            $('<%= $this->EditWarehouseId->getClientId() %>').value=warehouseId;
+            $('<%= $this->EditWarehousePrintBarcode->getClientId() %>').show();
+
+            toggleViewWrapper();
+
+            $("<%= $this->showEditWarehouseBtn->getClientId() %>").click();
+        }
+
+        function toggleViewWrapper()
+        {
+            toggleView($("<%= $this->EditWarehouse->getClientId() %>"), $("<%= $this->editAddressPanel->getClientId() %>").id);
+        }
+
+        function toggleView(checkBox,divId)
+        {
+            var companyAddressId = divId.replace('editAddressPanel','companyAddressPanel');
+            if(checkBox.checked)
+            {
+                $(divId).show();
+
+                $("<%= $this->addressWrapper->getClientId() %>").show();
+
+                //company has been selected
+                if ($("<%= $this->hiddenCompanyId->getClientId() %>").value != '')
+                {
+                    $(companyAddressId).show();
+                    $("<%= $this->useCompanyAddressPanel->getClientId() %>").show();
+                    $("<%= $this->useCompanyAddress->getClientId() %>").checked = true;
+
+                    $("<%= $this->addressBelowPanel->getClientId() %>").hide();
+                    $("<%= $this->editAddressPanel->getClientId() %>").hide();
+                    $("<%= $this->useAddressBelow->getClientId() %>").checked = false;
+                }
+                else
+                {
+                    $(companyAddressId).hide();
+                    $("<%= $this->useCompanyAddressPanel->getClientId() %>").hide();
+                    $("<%= $this->useCompanyAddress->getClientId() %>").checked = false;
+
+                    $("<%= $this->editAddressPanel->getClientId() %>").show();
+                    $("<%= $this->addressBelowPanel->getClientId() %>").hide();
+                    $("<%= $this->useAddressBelow->getClientId() %>").checked = true;
+
+                    $("<%= $this->linkedCompany->getClientId() %>").value = '';
+                }
+            }
+            else
+            {
+                $("<%= $this->addressWrapper->getClientId() %>").hide();
+
+                $(divId).hide();
+                $(companyAddressId).hide();
+                $("<%= $this->useCompanyAddressPanel->getClientId() %>").hide();
+                $("<%= $this->addressBelowPanel->getClientId() %>").hide();
+
+            }
+        }
+
+        function deactivateParts(locId)
+        {
+            var conf = confirm("Deactivate parts?");
+            if(conf)
+            {
+                $("<%= $this->deactivateparts->getClientId() %>").value = locId
+                $("<%= $this->btndeactivateparts->getClientId() %>").click();
+            }
+        }
+
+        function activateParts(locId, childrenCount)
+        {
+            $("<%= $this->activateparts->getClientId() %>").value = locId
+            if(childrenCount>0)
+            {
+              var conf = confirm("activate all children parts?");
+                if(conf==true)
+                {
+                    $("<%= $this->btnactivatepartsChildren->getClientId() %>").click();
+                }
+                else
+                 {
+                    $("<%= $this->btnactivatepartsParent->getClientId() %>").click();
+                 }
+            }
+            else
+            {
+                 $("<%= $this->btnactivatepartsParent->getClientId() %>").click();
+            }
+        }
+
+        function gotoPage(sender, id, name, parts, users, cntWarehouse,childrenCount)
+        {
+            var sel = sender.options[sender.selectedIndex].text;
+            switch (sel)
+            {
+                case 'Edit Record':
+                    editNode(id);
+                    break;
+                case 'View Record':
+                    editNode(id, 'view');
+                    break;
+                case 'Move Location':
+                    window.location.href = '/storagelocationmovement/' + id + '/';
+                    break;
+                case 'To Alias':
+                    window.open('/storagelocationalias/' + id + '/');
+                    break;
+                case 'To MSL':
+                    window.open('/storagelocationminimumlevel/' + id + '/');
+                    break;
+                case 'To Group MSL':
+                    window.open('/parttypegroupminimumlevel/' + id + '/');
+                    break;
+                case 'To Lost Stock WH':
+                    window.open('/loststockwarehouse/' + id + '/');
+                    break;
+                case 'To FR Push List':
+                    window.open('/reserveparts/pushlist/' + id + '/');
+                    break;
+                case 'Deactivate Record':
+                    var msg = "You cannot deactivate '" + name + "'\n";
+                    if (parts > 0) msg += '\nIt has active parts...';
+                    if (users > 0) msg += '\nIt has active default users...';
+
+                    if (users > 0 || parts > 0)
+                    {
+                        alert(msg);
+                        break;
+                    }
+                    else
+                    {
+                        deleteNode(id, name, cntWarehouse);
+                        break;
+                    }
+                case 'Deactivate Parts':
+                    deactivateParts(id);
+                    break;
+                case 'Activate':
+                    activateParts(id, childrenCount);
+                    break;
+                case 'Default Users':
+                    window.open('/defaultusersforwarehouse/' + id + '/');
+                    break;
+            }
+            sender.selectedIndex = 0;
+        }
+
+        function showHideClicked()
+        {
+            if ($("<%= $this->displayInfo->getClientId() %>").value == 1)
+            {
+                $("<%= $this->displayInfo->getClientId() %>").value = 0;
+                $("<%= $this->showLocationBtn->getClientId() %>").value = 'Show Warehouses Under';
+                $("<%= $this->storageLocationList->getClientId() %>").innerHTML='';
+                $('<%= $this->editPanel->getClientId() %>').hide();
+            }
+            else
+            {
+            	mb.showLoading('loading warehouses');
+
+                $("<%= $this->displayInfo->getClientId() %>").value = 1;
+                $("<%= $this->showLocationBtn->getClientId() %>").value = 'Hide Warehouses Under';
+                $("<%= $this->storageLocationList->getClientId() %>").innerHTML="<%= $this->getLoadingImage() %>";
+                $("<%= $this->storageLocationListBtn->getClientId() %>").click();
+            }
+        }
+
+        //Display part qty & options for selected warehouse
+        function showDetails(warehouseId,btnId)
+        {
+            var tmp = {};
+            tmp.detailsDivId = 'whDetails_' + warehouseId;
+
+            if ($(tmp.detailsDivId))
+            {
+                $(btnId).update("Show Details");
+                $(tmp.detailsDivId).remove();
+                return;
+            }
+
+            bsuiteJs.postAjax('<%= $this->btnshowdetails->getUniqueId() %>', {'warehouseId': warehouseId}, {
+                'onLoading': function(sender, param)
+                {
+                	mb.showLoading('loading details');
+                    $(btnId).update("Loading Details");
+                },
+                'onComplete': function(sender, param)
+                {
+                    if ($(tmp.detailsDivId) === undefined || $(tmp.detailsDivId) === null)
+                    {
+                        $(btnId).update("Hide Details");
+                        tmp.result = bsuiteJs.getResp(param);
+                        tmp.resultparts = tmp.result[0]; //be ware of this code!!!!!
+                        tmp.resultchange = tmp.result['onchange'];
+                        tmp.resultoptions = tmp.result['defaultOptions'];
+                    }
+
+                    //Get qty,warehousename, parts count
+                    tmp.newDetailsDiv = '<div id="' + tmp.detailsDivId + '"><br/>'+tmp.resultparts["qty"]+'<br />';
+                    tmp.newDetailsDiv += '<select '+tmp.resultchange+'>';
+                    tmp.newDetailsDiv += '<option value="1">Please Select...</option>';
+
+                    for(i=0;i<tmp.resultoptions.length;i++)
+                    {
+                        tmp.newDetailsDiv += '<option value="'+tmp.resultoptions[i][0]+'">'+tmp.resultoptions[i][1]+'</option>';
+                    }
+                    tmp.newDetailsDiv += '</select></div>';
+
+                    $(btnId).insert(
+                    {
+                       after: tmp.newDetailsDiv
+                    });
+                    mb.hide();
+               }});
+        }
+
+        function <%= $this->getId()%>_deleteSiteLink(warehouseId, siteId)
+        {
+            $('<%= $this->warehouseValues->getClientId()%>').value = warehouseId;
+            $('<%= $this->siteValues->getClientId()%>').value = siteId;
+            $('<%= $this->deleteSiteLink->getClientId()%>').click();
+        }
+
+        function toggleActive(warehouseId, activeCheckBoxId)
+        {
+            $('<%= $this->warehouseValues->getClientId()%>').value = warehouseId;
+            $('<%= $this->toggleActive->getClientId()%>').click();
+        }
+
+        function toggleWarehouseActive(chkId, confirmed)
+        {
+        	var chk = document.getElementById(chkId);
+
+            var tmp = {};
+            tmp.params = {};
+            tmp.params.whId = chk.value;
+            tmp.params.confirmed = confirmed;
+            tmp.params.checked = chk.checked;
+
+            if (confirmed == 'lastChance')
+            {
+            	tmp.msgs = ['<span style="font-weight:bold; font-size:14px;">Are you sure?</span>'];
+
+            	//deactivating
+            	if (chk.checked == false)
+            		tmp.msgs.push('<span style="font-weight:bold; color:red; font-size:14px;">There is no way of undoing the DEACTIVATION of child warehouses, MSLs or Reordering Levels!</span>');
+
+            	tmp.msgs.push('<input type="Button" Value="Submit" onClick="mb.hide();toggleWarehouseActive(\'' + chk.id + '\', true);"/>&nbsp;&nbsp;&nbsp;<input type="Button" Value="Cancel" onClick="mb.hide(); document.getElementById(\'' + chk.id + '\').checked = !document.getElementById(\'' + chk.id + '\').checked; return false;"/>');
+
+	            Modalbox.show(new Element('div', {'style': 'text-align:center;'}).update(tmp.msgs.join('<br /><br />')), {
+	                 beforeLoad: function(){Modalbox.deactivate();},
+	                 'width': 800,
+	                 'title': 'Please confirm before submitting...',
+	                 'overlayClose': false,
+	                 'transitions': false
+	            });
+	            return;
+            }
+
+            bsuiteJs.postAjax('<%= $this->btnToggleWarehouseActive->getUniqueId() %>', {'params': Object.toJSON(tmp.params)}, {
+                'onLoading': function(sender, param)
+                {
+                    if (confirmed === true)
+                    {
+                        if (chk.checked)
+                        {
+                           mb.showLoading('RE-ACTIVATING warehouse');
+                        }
+                        else
+                        {
+                           mb.showLoading('DEACTIVATING warehouse');
+                        }
+                    }
+                    else
+                    {
+                        mb.showLoading('validating');
+                    }
+                },
+                'onComplete': function(sender, param)
+                {
+                    try
+                    {
+                        var tmp = {};
+                        tmp.result = bsuiteJs.getResp(param, false, true);
+                        if (tmp.result !== null && tmp.result !== undefined)
+                        {
+                            if (confirmed !== true && !tmp.result.reloadOnly)   //we're only validating, the msg should now be a confirm one to execute
+                            {
+                                msgs = [tmp.result.msg];
+                            	msgs.push('<input type="Button" Value="Continue" onClick="mb.hide();toggleWarehouseActive(\'' + chk.id + '\', \'lastChance\');"/>&nbsp;&nbsp;&nbsp;<input type="Button" Value="Cancel" onClick="mb.hide(); document.getElementById(\'' + chk.id + '\').checked = !document.getElementById(\'' + chk.id + '\').checked; return false;"/>');
+
+                                Modalbox.show(new Element('div', {'style': 'text-align:center;'}).update(msgs.join('<br /><br />')), {
+                                     beforeLoad: function(){Modalbox.deactivate();},
+                                     'width': 800,
+                                     'title': 'Please confirm before continuing...',
+                                     'overlayClose': false,
+                                     'transitions': false
+                                });
+                            }
+                            else
+                            {
+                                reloadTreeWithoutRedrawList = true;
+                                reloadNode();
+                            }
+                        }
+                    }
+                    catch (e)
+                    {
+                        alert(e);
+                        chk.checked = !chk.checked;       //put the checkbox back to how it was before the click
+                        mb.hide();
+                    }
+                }
+            });
+        }
+
+        function moveParts(fromWarehouseId, toWarehouseId)
+        {
+            $('<%= $this->newWarehouseForMove->getClientId()%>').value = toWarehouseId;
+            $('<%= $this->fromWarehouseForMove->getClientId()%>').value = fromWarehouseId;
+            mb.showLoading('moving parts');
+            $('<%= $this->ajaxProcessor->startAjaxProcessor->getClientId(); %>').click();
+        }
+
+        function finishProcessingPart()
+        {
+            $('<%= $this->finishProcessingPart->getClientId(); %>').click();
+            reloadNode();
+        }
+
+        function beforeAddOrEditSubmit(el)
+        {
+            var whCatName = '';
+            var selectedIndex = $(el).options[$(el).selectedIndex].value;
+            var whName = $('<%= $this->EditWarehouseName->getClientId() %>').value;
+            var breadSep = $('<%= $this->defaultBreadcrumbSeparator->getClientId() %>').value;
+
+            if (whName == '')
+            {
+                alert('Warehouse Name Required');
+                $('<%= $this->EditWarehouseName->getClientId() %>').focus();
+                return false;
+            }
+            //block if they have the default separator for breadcrumbs in the warehouse name
+            if (whName.indexOf(breadSep) != -1)
+            {
+                alert("You cannot have the character '" + breadSep + "' in the warehouse name");
+                return false;
+            }
+
+            //block if they are trying to add a name that already exists as a sibling
+            var siblingNames = $('<%= $this->siblingWarehouseNames->getClientId() %>').value.split(breadSep);
+            for (var i = 0; i<siblingNames.length; i++)
+            {
+                if (whName == siblingNames[i])
+                {
+                    alert("Invalid Warehouse Name, sibling already exists with the name '" + siblingNames[i] + "'");
+                    return false;
+                }
+            }
+
+            whCatName = $(el).options[$(el).selectedIndex].text;
+            if ($(el).options[$(el).selectedIndex].text == 'Please Select...')
+            {
+                alert('Warehouse Category Required');
+                $(el).focus();
+                return false;
+            }
+            else if ((selectedIndex == $("<%= $this->siteWarehouseTnCategoryId->getClientId() %>").value))
+            {
+                if ($('<%= $this->EditWarehouse->getClientId() %>').checked == false)
+                {
+                    alert('You have selected ' + whCatName + ' category. You must enter an address.');
+                    return false;
+                }
+            }
+
+            //if its a siteWh or siteWh_Tn category and site auto-complete is not filled, or it doesn't have a sites in the list already
+            if ((selectedIndex == $("<%= $this->siteWarehouseTnCategoryId->getClientId() %>").value || selectedIndex == $("<%= $this->siteWarehouseCategoryId->getClientId() %>").value) &&
+                ($("<%= $this->resultLabel->getClientId() %>").innerHTML == '' && ($("<%= $this->hiddenSiteId->getClientId() %>").value == '' || $("<%= $this->editSite->getClientId() %>").value == '')))
+            {
+                alert('You have selected ' + whCatName + ' category. Select a site from the auto-complete to create a link.');
+                $("<%= $this->editSite->getClientId() %>").focus();
+                return false;
+            }
+
+            //user has selected to use linked company address
+            if ($("<%= $this->EditWarehouse->getClientId() %>").checked && $("<%= $this->hiddenCompanyId->getClientId() %>").value!='' && $("<%= $this->useCompanyAddress->getClientId() %>").checked)
+            {
+                if (!confirm("You have selected to use the linked company address, this will overwrite existing facility address information.\n\nContinue?"))
+                    return false;
+            }
+            else if ((selectedIndex == $("<%= $this->thirdPartyCategoryId->getClientId() %>").value)) //is 3rd party category, so must be linked to company
+            {
+                alert('You have selected ' + whCatName + ' category. You must link to a Company, and ensure it has a valid email address.');
+                return false;
+            }
+
+            if (($('<%= $this->EditWarehouse->getClientId() %>').checked == true) && ($('<%= $this->reportingWarehouse->getClientId() %>').options[$('<%= $this->reportingWarehouse->getClientId() %>').selectedIndex].value == -1)) //is an agent, so need reporting warehouse
+            {
+                //agent or client warehouse
+                if (selectedIndex == 4 || selectedIndex == 19)
+                {
+                    alert('You have selected ' + whCatName + ' category. You must select a reporting warehouse.');
+                    return false;
+                }
+            }
+            modalConfirm();
+        }
+
+        //displays a modal confirmation dialog for submission
+        function modalConfirm()
+        {
+            var msgs = [];
+            var setting = '';
+            var width = 800;
+            var parentWhName = $("<%= $this->Path->getClientId() %>").value.split(' / ').pop();
+
+            //parts allow has been changed
+            if ($('<%= $this->oldPartsAllow->getClientId() %>').value != $('<%= $this->EditAllowParts->getClientId() %>').checked)
+            {
+            	setting = 'FALSE';
+                if ($('<%= $this->EditAllowParts->getClientId() %>').checked)
+                    setting = 'TRUE';
+
+                var extraMsg = "";
+                if ($('<%= $this->positionLikeChildren->getClientId() %>').value > 0)
+                	extraMsg = "<br /><span style='color:red; font-weight:bold;'>There are child warehouses, is this correct?</span>";
+
+                msgs.push('<b>Parts Allow</b> is set to <b>' + setting + "</b> " + extraMsg);
+            }
+
+            //ignore in stock count
+            setting = 'FALSE';
+            if ($('<%= $this->IgnoreStockCount->getClientId() %>').checked)
+                setting = 'TRUE';
+
+            if ($('<%= $this->IgnoreStockCount_ApplyToChildren->getClientId() %>').checked)
+            {
+                msgs.push('<b>Ignore In Stock Count</b> is set to <b>' + setting + '</b> <span style="color:red;">and will apply to (and overwrite) all <b>' + $('<%= $this->positionLikeChildren->getClientId() %>').value + '</b> sub-warehouses.</span>');
+            }
+            else if (setting == 'TRUE')
+            {
+                msgs.push('<b>Ignore In Stock Count</b> is set to <b>' + setting + '</b>');
+            }
+
+            //check if ignore in stock count is different to parent
+            if ($('<%= $this->IgnoreStockCount->getClientId() %>').checked != $('<%= $this->parentIgnoreInStockCount->getClientId() %>').value && parentWhName != 'Bytecraft')
+            {
+                msgs.push('<b>Ignore In Stock Count</b> setting is different to parent warehouse: <b>' + parentWhName + '</b>');
+            }
+
+            //ignore in stocktake
+            setting = 'FALSE';
+            if ($('<%= $this->IgnoreStocktake->getClientId() %>').checked)
+                setting = 'TRUE';
+
+            if ($('<%= $this->IgnoreStocktake_ApplyToChildren->getClientId() %>').checked)
+            {
+                msgs.push('<b>Ignore In Stocktake</b> is set to <b>' + setting + '</b> <span style="color:red;">and will apply to (and overwrite) all <b>' + $('<%= $this->positionLikeChildren->getClientId() %>').value + '</b> sub-warehouses.</span>');
+            }
+            else if (setting == 'TRUE')
+            {
+                msgs.push('<b>Ignore In Stocktake</b> is set to <b>' + setting + '</b>');
+            }
+
+            //check if ignore in stocktake is different to parent
+            if ($('<%= $this->IgnoreStocktake->getClientId() %>').checked != $('<%= $this->parentIgnoreInStocktake->getClientId() %>').value && parentWhName != 'Bytecraft')
+            {
+                msgs.push('<b>Ignore In Stocktake</b> setting is different to parent warehouse: <b>' + parentWhName + '</b>');
+            }
+
+            $("<%= $this->performPartsUpdate->getClientId() %>").value = false;
+
+            var statusList = $("<%= $this->partsStatusList->getClientId() %>");
+            var newStatusId = statusList.options[statusList.selectedIndex].value;
+            var oldStatusId = $("<%= $this->partsStatusId->getClientId() %>").value;
+            if (newStatusId != oldStatusId) //we're changing the parts status
+            {
+                var subWhMsg = '';
+                if ($('<%= $this->positionLikeChildren->getClientId() %>').value > 0)
+                {
+                    width = 1000;
+                    subWhMsg = ' <span style="color:red;">and will apply to all <b>' + $('<%= $this->positionLikeChildren->getClientId() %>').value + '</b> sub-warehouses (unless sub-warehouse has its own setting).</span>';
+                }
+
+                var extraMsg = '';
+                var partsUpdateCount = $("<%= $this->partsUpdateCount->getClientId() %>").value;
+                var newStatusName = statusList.options[statusList.selectedIndex].text;
+                var msg = "<b>Parts Status</b> is set to <b>'" + newStatusName + "'</b>";
+                if (newStatusId == "666") //inherit
+                {
+                    extraMsg = 'There is no status to inherit from its ancestors...';
+                    var inheritedStatus = ($("<%= $this->inheritStatus->getClientId() %>").value).split('_');
+                    if (inheritedStatus.length > 1)
+                    {
+                        inheritedStatus = inheritedStatus[1];
+                        msg += " The Inherited Parts Status is '" + inheritedStatus + "'";
+                        extraMsg = "NO Part Instance Statuses Will Be Changed...";
+                        if (partsUpdateCount > 0)
+                        {
+                            $("<%= $this->performPartsUpdate->getClientId() %>").value = true;
+                            extraMsg = "<span style='color:red; font-weight:bold;'>WARNING!!! ALL (" + partsUpdateCount + ") Part Instance Statuses Will Be Changed To '" + inheritedStatus + "'</span>";
+                        }
+                    }
+                    newStatusName = inheritedStatus;
+                    msg += "<br />" + extraMsg;
+                }
+                else if (newStatusId == "0") //remain
+                {
+                    msg += subWhMsg;
+                }
+                else //valid status
+                {
+                    extraMsg = "No Part Instance Statuses Will Be Changed...";
+                    if (partsUpdateCount > 0)
+                    {
+                        $("<%= $this->performPartsUpdate->getClientId() %>").value = true;
+                        extraMsg = " <span style='color:red; font-weight:bold;'>WARNING!!! ALL (" + partsUpdateCount + ") Part Instances will have their status changed to '" + newStatusName + "'";
+                    }
+                    msg += subWhMsg + "<br />" + extraMsg;
+                }
+                msgs.push(msg);
+            }
+
+            if (msgs.length > 0)
+            {
+                msgs.push('<input type="Button" Value="Submit" onClick="mb.hide();addEditSubmit();"/>&nbsp;&nbsp;&nbsp;<input type="Button" Value="Cancel" onClick="mb.hide(); return false;"/>');
+
+                Modalbox.show(new Element('div', {'style': 'text-align:center;'}).update(msgs.join('<br /><br />')), {
+                    beforeLoad: function(){Modalbox.deactivate();},
+                    'width': width,
+                    'title': 'Please confirm the warehouse settings below...',
+                    'overlayClose': false,
+                    'transitions': false
+                });
+                return;
+            }
+            addEditSubmit();
+        }
+
+        function addEditSubmit()
+        {
+            if ($("<%= $this->performPartsUpdate->getClientId() %>").value == true)
+            {
+            	mb.showLoading('please be patient...<br />updating the status of (' + $("<%= $this->partsUpdateCount->getClientId() %>").value + ') part instances to ' + $("<%= $this->partsStatusList->getClientId() %>").options[$("<%= $this->partsStatusList->getClientId() %>").selectedIndex].text);
+            }
+            else
+            {
+            	mb.showLoading('saving warehouse');
+            }
+
+            toggleView($("<%= $this->EditWarehouse->getClientId() %>"), $("<%= $this->editAddressPanel->getClientId() %>").id);
+
+            $("<%= $this->SubmitButton->getClientId() %>").click();
+        }
+
+        function toggleAllowParts(chk)
+        {
+            if ($("<%= $this->whPartsCount->getClientId() %>").value > 0)
+            {
+            	if (!chk.checked)
+            	{
+            		var msg = 'is ' + $("<%= $this->whPartsCount->getClientId() %>").value + ' part within.';
+            		if ($("<%= $this->whPartsCount->getClientId() %>").value > 1)
+	            		msg = 'are ' + $("<%= $this->whPartsCount->getClientId() %>").value + ' parts within.';
+
+            		alert('You cannot set Parts Allow to FALSE, as there ' + msg);
+            		chk.checked = !chk.checked;
+            		return;
+            	}
+            }
+
+
+            if(chk.checked)//if allow parts
+            {
+            	//uncheck ignore stockcount and stocktake
+	            $("<%= $this->IgnoreStockCount->getClientId() %>").checked = false;
+	            $("<%= $this->IgnoreStocktake->getClientId() %>").checked = false;
+
+	            $("<%= $this->IgnoreStockCount->getClientId() %>").disabled = false;
+	            $("<%= $this->IgnoreStocktake->getClientId() %>").disabled = false;
+            }
+            else
+            {
+            	//Check ignore stockcount and stocktake AND
+	            $("<%= $this->IgnoreStockCount->getClientId() %>").checked = true;
+	            $("<%= $this->IgnoreStocktake->getClientId() %>").checked = true;
+
+	            //disable if not system admin
+	            $("<%= $this->IgnoreStockCount->getClientId() %>").disabled = <%= (!UserAccountService::isSystemAdmin() ? true : 'false') %>;
+	            $("<%= $this->IgnoreStocktake->getClientId() %>").disabled = <%= (!UserAccountService::isSystemAdmin() ? true : 'false') %>;
+            }
+
+        }
+    </script>
+
+    <com:TActiveButton ID="finishProcessingPart" OnClick="Page.finishProcessingPart" Style="display:none;" />
+    <com:Application.pages.Bulkload.CustomisedControls.AjaxProcessor.AjaxProcessor ID="ajaxProcessor" ProcessingFunc_page="processMoveParts" AfterLoadCompleteFunc_page="finishProcessingParts" MaxCycles="0"/>
+
+    <com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+
+    <com:TActiveLabel ID="jsLbl" style="display:none;"/>
+
+    <com:TActiveHiddenField ID="exceptionMessage" Value=""/>
+    <com:TActiveHiddenField ID="errorMessage" Value=""/>
+    <com:TActiveHiddenField ID="successMessage" Value=""/>
+
+    <com:TActiveHiddenField id="isSysAdmin" Value="0" />
+
+    <com:TActiveHiddenField id="fromWarehouseForMove" />
+    <com:TActiveHiddenField id="newWarehouseForMove" />
+
+    <com:TActiveHiddenField id="defaultBreadcrumbSeparator" />
+    <com:TActiveHiddenField id="siblingWarehouseNames" />
+    <com:TActiveHiddenField id="positionLikeChildren" />
+    <com:TActiveHiddenField id="parentIgnoreInStockCount" />
+    <com:TActiveHiddenField id="parentIgnoreInStocktake" />
+
+    <com:TActiveHiddenField id="partsStatusId" />
+    <com:TActiveHiddenField id="partsUpdateCount" />
+    <com:TActiveHiddenField id="performPartsUpdate" />
+    <com:TActiveHiddenField id="inheritStatus" />
+
+    <com:TActiveHiddenField id="currNodeId" />
+    <com:TActiveHiddenField id="agentCategoryId" />
+    <com:TActiveHiddenField id="thirdPartyCategoryId" />
+    <com:TActiveHiddenField id="siteWarehouseCategoryId" />
+    <com:TActiveHiddenField id="siteWarehouseTnCategoryId" />
+    <com:TActiveHiddenField id="deactivateparts" />
+    <com:TActiveHiddenField id="activateparts" />
+
+    <com:TActiveHiddenField id="whPartsCount" />
+    <com:TActiveHiddenField id="oldPartsAllow" />
+
+    <com:TActiveButton ID="btndeactivateparts" OnClick="Page.deactivateparts" style='display:none;' >
+            <prop:ClientSide OnComplete="reloadNode();" />
+    </com:TActiveButton>
+    <com:TActiveButton ID="btnactivatepartsChildren" OnClick="Page.activatepartsChildren" style='display:none;' >
+            <prop:ClientSide OnComplete="reloadNode();" />
+    </com:TActiveButton>
+    <com:TActiveButton ID="btnactivatepartsParent" OnClick="Page.activatepartsParent" style='display:none;' >
+            <prop:ClientSide OnComplete="reloadNode();" />
+    </com:TActiveButton>
+
+    <com:TActiveButton ID="deleteSiteLink" OnClick="Page.deleteSiteWarehouseRelationship" style='display:none;' />
+    <com:TActiveButton ID="toggleActive" OnClick="Page.toggleActive" style='display:none;' />
+    <!-- Button to call php function showDetails to display Part qty and default options-->
+    <com:TCallback ID="btnshowdetails" OnCallBack="Page.showDetails" />
+
+    <com:TCallback ID="btnToggleWarehouseActive" OnCallBack="Page.toggleWarehouseActive" />
+
+    <com:TActiveLabel ID="activeInfoLabel" ForeColor="green" style="font-weight:bold;"/>
+    <com:TActiveLabel ID="activeErrorLabel" ForeColor="red" style="font-weight:bold;"/>
+    <com:TActiveHiddenField ID="firstLoad"/>
+    <com:TActiveHiddenField ID="searchWarehouseIds"/>
+    <com:TActiveButton ID="deleteWarehouseBtn" OnClick="Page.deleteSubStorageLocation" style='display:none;'>
+        <prop:ClientSide OnComplete="reloadNode();" />
+    </com:TActiveButton>
+
+    <com:TActiveButton ID="showEditWarehouseBtn" OnClick="Page.loadEditNote" style='display:none;'>
+        <prop:ClientSide
+                OnComplete="
+                            toggleViewWrapper();
+                            $('<%= $this->Page->editPanel->getClientId() %>').show();
+                            $('<%= $this->Page->EditWarehouseName->getClientId() %>').focus();" />
+    </com:TActiveButton>
+
+    <com:TPanel ID="SearchAddPanel" CssClass="SearchPanel" DefaultButton="SearchButton">
+        <com:THiddenField ID="SearchString" />
+            <table width="100%" border="0">
+                <tr>
+                    <td width="40%">
+                        <table width="100%" border="0">
+                            <tr>
+                                <td width="35%" style="font-weight:bold;">Warehouse Name:</td>
+                                <td><com:TTextBox ID="SearchName" AutoPostBack="false" style="width:80%;"/></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:bold;">Alias:</td>
+                                <td><com:TTextBox ID="SearchAlias" AutoPostBack="false" style="width:80%;"/></td>
+                            </tr>
+                                <td style="font-weight:bold;">Warehouse Code:</td>
+                                <td><com:TTextBox ID="SearchWhCode" AutoPostBack="false" style="width:80%;"/></td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td>
+                        <table width="100%" border="0">
+                            <tr>
+                                <td width="60%" style="font-weight:bold;">Moveable:</td>
+                                <td>
+                                    <com:TDropDownList ID="SearchMoveable" AutoPostBack="false" style="width:60%;">
+                                        <com:TListItem Text="All" Value=" "/>
+                                        <com:TListItem Text="Yes" Value="1"/>
+                                        <com:TListItem Text="No" Value="0"/>
+                                    </com:TDropDownList>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:bold;">Parts Allowed:</td>
+                                <td>
+                                    <com:TDropDownList ID="SearchAllowParts" AutoPostBack="false" style="width:60%;">
+                                        <com:TListItem Text="All" Value=" "/>
+                                        <com:TListItem Text="Yes" Value="1"/>
+                                        <com:TListItem Text="No" Value="0"/>
+                                    </com:TDropDownList>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:bold;"><com:TLabel ID="activeLbl" Text="Active:" style="display:none;"/></td>
+                                <td>
+                                    <com:TDropDownList ID="SearchActive" AutoPostBack="false" style="width:50%;display:none">
+                                        <com:TListItem Text="All" Value=" "/>
+                                        <com:TListItem Text="Yes" Value="1" Selected="true"/>
+                                        <com:TListItem Text="No" Value="0"/>
+                                    </com:TDropDownList>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td width="25%" rowspan="3">
+                        <span style="font-weight:bold;">Category:</span><br />
+                        <com:TListBox ID="SearchCategory" AutoPostBack="false" style="width:90%;"
+                                SelectionMode="Multiple"
+                                Rows="6"
+                                DataTextField="Name"
+                                DataValueField="id"/>
+                    </td>
+                    <td rowspan="3" align="center" width="15%">
+                        <com:TActiveButton ID="SearchButton" Text=" Search " OnClick="Page.search" Attributes.onclick="mb.showLoading('searching');" />
+                        <%= $this->getResetSearchButton() %>
+                    </td>
+                </tr>
+            </table>
+        <br /><hr /><br />
+    </com:TPanel>
+    <table width = "100%" cellpadding = "0" cellspacing = "0">
+        <tr>
+            <td width="24%">
+                <b>Navigate to Warehouse Location:</b>
+            </td>
+            <td>
+                <com:Application.controls.EntityAutoComplete.HYWarehouseBreadcrumbComplete ID="whFullPath" ResultPanel.CssClass="hydraautocomplete" SearchLimit="20" width="95%" PageMethod="setWarehouseFullPath" PageOnExtraSuggestMethod="resetWarehouseFullPath" />
+                <com:TActiveHiddenField ID="hidden_warehouse_fullpath" />
+            </td>
+        </tr>
+        <tr><td>&nbsp</td></tr>
+        <tr>
+            <td width="24%">
+                <b>Select a Warehouse Location:</b><br />
+            </td>
+            <td>
+                <table width="100%" border="0" style="font-size:10px;">
+                    <tr>
+                        <td style="text-align:center;">
+			               <img alt="Allow Parts" title="This location can store parts" src="../../../themes/images/small_yes.gif"/> Allow Parts
+                        </td>
+                        <td style="text-align:center;">
+			                <img alt="Ignore In Stock Count" title="This location is set to Ignore in Stock Count" src="../../../themes/images/icons/info-badge.png"/> Ignore In Stock Count
+                        </td>
+                        <td style="text-align:center;">
+			                <img alt="Ignore In Stocktake" title="This location is set to Ignore in Stocktake" src="../../../themes/images/icons/excl-badge.png"/> Ignore In Stocktake
+                        </td>
+                        <td style="text-align:center;">
+			                <img alt="Ignore In Stock Count & Ignore In Stocktake" title="This location is set to Ignore in Stock Count & Ignore in Stocktake" src="../../../themes/images/icons/dash-badge.png"/> Ignore In Stock Count & Ignore In Stocktake
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <table id="warehouseTable" width="100%" style="border:4px solid #c3daf9;" cellspacing="0" cellpadding="0">
+        <tr valign="top">
+            <td width="220px" style="border:4px solid #c3daf9;" rowspan="3">
+                <table width="100%">
+                    <tr>
+                        <td valign="top">
+                            <com:TActiveLabel ID="TreeLabel" />
+                            <com:TActivePanel ID="TreePanel">
+                                <com:Application.controls.HYWHTree.HYWHTree ID="whTree"
+                                    BeforeExpandExtraJavascript="changeNode(node)"
+                                    BeforeCollapseExtraJavascript="changeNode(node)"
+                                    ClickExtraJavascript="changeNode(node)"
+                                    Style="width:220px" />
+                            </com:TActivePanel>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+            <td align="left" style="background:#c3daf9;color:#000000;height:28px;">
+                <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                    <tr height="5%">
+                        <td>
+                            <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr height="30px">
+                                    <td width="100px">
+                                        <com:TActiveButton ID="showLocationBtn" Text="Show Warehouses Under" Attributes.onclick="return showHideClicked();" Enabled="true"/>
+                                        <com:THiddenField ID="displayInfo" Value="0" />
+                                    </td>
+                                    <td>
+                                        <com:TActiveTextBox ID="Path" style="width:98%;padding:3px; border:1px solid #cccccc;font-size:10px;" ReadOnly="true"/>
+                                    </td>
+                                    <td width="100px" align="right">
+                                        <com:TActiveButton ID="addSubLocationButton1" Text="Add Location Here" Attributes.OnClick="addNode();" onclick="Page.calculateSiblings" Enabled="true" style="display:block;"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr valign="top">
+                        <td>
+                            <com:TActivePanel ID="editPanel" style="background:#999999;padding: 5px;margin: 3px;display:none;">
+                                <div style="font-weight:bold;" id='editPanelTitle'>Add New Warehouse: </div>
+                                <table width="100%" style="padding:0px; margin:0px;" border="1" class="form">
+                                    <tr height="20px">
+                                        <td width="27%"><b><%[Warehouse.name]%>:</b></td>
+                                        <td>
+                                            <com:TActiveHiddenField ID="EditWarehouseId" />
+                                            <com:TActiveTextBox ID="EditWarehouseName" width="95%"AutoPostBack="false" ValidationGroup="Group2" />
+                                            <com:TRequiredFieldValidator ControlToValidate="EditWarehouseName"
+                                                    ErrorMessage="Location Name Required"
+                                                    ValidationGroup="Group2"
+                                                    EnableClientScript="true"
+                                                    Display="Dynamic" />
+                                        </td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Category:</b></td>
+                                        <td>
+                                            <com:TActiveDropDownList ID="EditWarehouseCategoryList"
+                                                    AutoPostBack="false"
+                                                    DataTextField="Name"
+                                                    DataValueField="id"
+                                                    ValidationGroup="Group2"
+                                                    EnableClientScript="true"
+                                                    PromptText="Please Select..."
+                                                    PromptValue=" "
+                                                    />
+                                            <com:TRequiredFieldValidator ControlToValidate="EditWarehouseCategoryList"
+                                                    ErrorMessage="Category Required"
+                                                    ValidationGroup="Group2"
+                                                    EnableClientScript="true"
+                                                    Display="Dynamic" />
+                                        </td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Linked to Site:</b></td>
+                                        <td>
+                                              <com:Application.controls.EntityAutoComplete.HYSiteComplete ID="editSite"
+                                                     AppendContractInfo="1"
+                                                     ExcludeContractIds="1"
+                                                     ResultPanel.CssClass="hydraautocomplete"
+                                                     Columns="70"/>
+                                              <com:TActiveHiddenField ID="hiddenSiteId" />
+                                              <com:TPanel ID="siteLinkedPanel1" >
+                                                     <com:TActiveHiddenField ID="warehouseValues" />
+                                                     <com:TActiveHiddenField ID="siteValues" />
+                                                     <com:TActiveLabel ID="resultLabel"/>
+                                              </com:TPanel>
+                                        </td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Reporting Warehouse:</b></td>
+                                        <td>
+                                            <table width="100%" border="0">
+                                                <tr>
+                                                    <td width="200px">
+			                                             <com:TActiveDropDownList ID="reportingWarehouse"
+			                                                    AutoPostBack="false"
+			                                                    DataTextField="1"
+			                                                    DataValueField="0"
+			                                                    PromptText="Please Select..."
+			                                                    PromptValue="-1" />
+			                                        </td>
+			                                        <td style="display:none;">&nbsp;Send Email?&nbsp;<com:TActiveCheckBox ID="RepWhSendEmailChk" /></td> <!-- This has been left here in case we want to bring it back... -->
+			                                    </tr>
+			                                </table>
+                                        </td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Warehouse Options:</b></td>
+                                        <td colspan="2">
+                                            <table width="100%" border="0">
+                                                <tr>
+                                                    <td style="text-align:center;">Allow Parts: <com:TActiveCheckBox ID="EditAllowParts" Attributes.onclick="toggleAllowParts(this);"/></td>
+                                                    <td style="text-align:center;">Moveable: <com:TActiveCheckBox ID="EditMoveable" /></td>
+                                                    <td style="text-align:center;">Is Main Store: <com:TActiveCheckBox ID="IsMainStore" /></td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr height="20px" id="whCodeRow">
+                                        <td><com:TActiveLabel ID="whCodeLbl" Text="Warehouse Code:" Style="font-weight:bold;" /></td>
+                                        <td><com:TActiveTextBox ID="whCodeTxt" width="33%" /></td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Stock Count / Stocktake:</b></td>
+                                        <td colspan="2">
+                                            <table width="100%" border="0">
+                                                <tr>
+                                                    <td width="35%">Ignore in Stock Count:<com:TActiveCheckBox ID="IgnoreStockCount" Style="margin-left:14px;" /></td>
+                                                    <td style="text-align:center; font-size:10px;color:red;">
+                                                        <com:TActivePanel ID="IgnoreStockCount_ApplyToChildren_Panel">
+                                                            <com:TActiveCheckBox ID="IgnoreStockCount_ApplyToChildren" />&nbsp;&nbsp;<com:TActiveLabel ID="IgnoreStockCount_ApplyToChildren_Lbl" Text="apply to all child warehouses?" />
+                                                        </com:TActivePanel>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Ignore in Stocktake:<com:TActiveCheckBox ID="IgnoreStocktake" Style="margin-left:27px;" /></td>
+                                                    <td style="text-align:center; font-size:10px;color:red;">
+                                                        <com:TActivePanel ID="IgnoreStocktake_ApplyToChildren_Panel">
+                                                            <com:TActiveCheckBox ID="IgnoreStocktake_ApplyToChildren" />&nbsp;&nbsp;<com:TActiveLabel ID="IgnoreStocktake_ApplyToChildren_Lbl" Text="apply to all child warehouses?" />
+                                                        </com:TActivePanel>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Stocktake Frequency:</b></td>
+                                        <td colspan="2">
+                                            <com:TActiveTextBox ID="EditWarehouseStocktakeFrequency" style="width:30px;"/> weeks
+                                        </td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Next StockTake Due:</b></td>
+                                        <td colspan="2">
+                                            <com:TActiveDatePicker ID="EditWarehouseStocktakeNextDue" DateFormat="yyyy-MM-dd"/>(YYYY-MM-DD)
+                                            <com:TRegularExpressionValidator
+                                                ValidationGroup="Group2"
+                                                ControlToValidate="EditWarehouseStocktakeNextDue"
+                                                RegularExpression="20\d{2}(-|\/)((0[1-9])|(1[0-2]))(-|\/)((0[1-9])|([1-2][0-9])|(3[0-1]))"
+                                                Text="Invalid Date Format!"
+                                                Display="Dynamic" />
+                                            &nbsp;Last StockTake:<com:TActiveLabel ID="EditWarehouseLastStocktake" />
+                                        </td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Print Location Barcode(s):</b></td>
+                                        <td colspan="2">
+                                            <com:TActivePanel id="EditWarehousePrintBarcode">
+                                                <com:TActiveDropDownList ID="PrintLabelList"
+                                                    OnSelectedIndexChanged="Page.LabelListCount"
+                                                    AutoPostBack="False"
+                                                    DataTextField="name"
+                                                    DataValueField="id" />
+                                                <com:TLabel ID="LabelQty" />Label Qty:
+                                                <com:TActiveTextBox ID="WarehouseLabelQty" style="width:30px;"/>
+                                                <com:TActiveButton ID="PrintLabels" Onclick="Page.PrintWarehouseLabels" Text="Print" ToolTip="Print Labels, will only show 2 levels deep, if the character count is greater than 25."/>
+                                            </com:TActivePanel>
+                                        </td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Linked To Company:</b></td>
+                                        <td colspan="2">
+                                              <table border="0" class="form">
+                                                <tr>
+                                                    <td width="300px">
+                                                        <com:Application.controls.HYAutoComplete Suggestions.DataKeyField="id" ID="linkedCompany" Width="260px" type="Company" ResultPanel.CssClass="hydraautocomplete" PageOnSuggestMethod="companySuggest" PageMethod="companySelected"/>
+                                                        <com:TActiveHiddenField ID="hiddenCompanyId" />
+                                                    </td>
+                                                    <td align="right">
+                                                    <com:TActiveImageButton ID="removeCompanyLinkButton" Style="display:none;" ImageUrl="../../../themes/images/delete.png" Text="Remove Company Link" OnClick="removeCompanyLink" /></td>
+                                                    <td align="center" width="140px">
+                                                        <com:Application.controls.HYLock Feature="pages_all,page_addressBook_company">
+                                                            <com:TActiveHyperLink id="companyLink" NavigateUrl="/company/" Target="_blank" Text="View/Edit Company" Style="display:none;"/>
+                                                        </com:Application.controls.HYLock>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Parts Status:</b></td>
+                                        <td colspan="2">
+                                            <com:TActiveDropDownList ID="partsStatusList"
+                                                    AutoPostBack="false"
+                                                    DataTextField="Name"
+                                                    DataValueField="id"
+                                                    ValidationGroup="Group2"
+                                                    EnableClientScript="true"
+                                                    OnSelectedIndexChanged="Page.partsStatusChange" />
+                                            <com:TActiveLabel id="partsSatusLbl" Style="font-size:10px; color:red;" Text=" * applies to all child warehouses, unless explicitly set." />
+                                        </td>
+                                    </tr>
+                                    <tr height="20px">
+                                        <td><b>Transit/Dispatch Notes?</b>&nbsp;
+                                            <com:TActiveCheckBox ID="EditWarehouse" AutoPostBack="false" Attributes.onclick="toggleViewWrapper();" /><br />
+                                        </td>
+                                        <td colspan="2">
+                                            <com:TActivePanel ID="addressWrapper" Style="display:none;">
+                                                <table border="0" width="100%" class="form">
+                                                    <tr>
+                                                        <td width="36%">Facility Name :</td>
+                                                        <td><com:TActiveTextBox ID="facilityName" AutoPostBack="false" Width="300px"/></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Special Delivery Instructions :</td>
+                                                        <td><com:TActiveTextBox ID="deliveryInst" AutoPostBack="false" Width="300px"/></td>
+                                                    </tr>
+                                                </table>
+                                                <table border="0" width="100%" class="form">
+                                                    <tr>
+                                                        <td width="260px" valign="top">
+                                                            <com:TActivePanel ID="belowAddressBorder">
+                                                                <com:TActivePanel ID="addressBelowPanel" Style="display:none;">
+                                                                    <com:TActiveRadioButton GroupName="radioGroup"
+                                                                        ID="useAddressBelow" AutoPostBack="false"
+                                                                        Checked="true" />
+                                                                    <b>Use Address Below?</b>
+                                                                </com:TActivePanel>
+                                                                <com:TActivePanel ID="editAddressPanel">
+                                                                    <com:Application.controls.HYAddressAllActiveComs
+                                                                        ID="editAddress" ValidationGroup="Group2"
+                                                                        OverRideConditionalValidator="sender.enabled = ($('<%= $this->Page->EditWarehouse->getClientId() %>').checked && !$('<%= $this->Page->useCompanyAddress->getClientId() %>').checked);" />
+                                                                </com:TActivePanel>
+                                                            </com:TActivePanel>
+                                                        </td>
+                                                        <td valign="top">
+                                                            <com:TActivePanel ID="companyAddressBorder">
+                                                                <com:TActivePanel ID="useCompanyAddressPanel" Style="display:none;">
+                                                                    <com:TActiveRadioButton GroupName="radioGroup" ID="useCompanyAddress" AutoPostBack="false"
+                                                                        Checked="false" />
+                                                                    <b>Use Company Address?</b>
+                                                                </com:TActivePanel>
+                                                                <com:TActivePanel ID="companyAddressPanel" Style="display:none;" Enabled="false">
+                                                                    <com:Application.controls.HYAddressAllActiveComs ID="companyAddress" ValidationGroup="Group2"
+                                                                        CheckBoxClientId="<%= $this->Page->useCompanyAddress->getClientId() %>" />
+                                                                </com:TActivePanel>
+                                                            </com:TActivePanel>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </com:TActivePanel>
+                                        </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                  <com:TActiveButton ID="EditButton"
+                                                          Text="Save"
+                                                          Enabled="false"
+                                                          Attributes.onclick="beforeAddOrEditSubmit('<%= $this->Page->EditWarehouseCategoryList->getClientId() %>'); return false;">
+                                                  </com:TActiveButton>
+                                                  <com:TActiveButton ID="SubmitButton" Onclick="Page.addOrEditSubStorageLocation" style="display:none;" ></com:TActiveButton>
+                                                  <com:TButton Text="Cancel" Attributes.OnClick="$('<%= $this->Page->editPanel->getClientId() %>').hide(); return false;"/>
+
+                                            </td>
+                                            <td style="text-align:center; font-weight:bold; font-size:10px;"><com:TActiveLabel ID="createdUpdatedLbl" /></td>
+                                        </tr>
+                                    </table>
+                            </com:TActivePanel>
+                        </td>
+                    </tr>
+                    <tr valign="top" height="500px">
+                        <td style="background: #ffffff; color:#000000;" colspan="2">
+                            <com:TActiveLabel ID="storageLocationList" />
+                            <com:TActiveButton  ID="storageLocationListBtn" OnClick="Page.getListOfStorageLocations" style="display:none;"/>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <com:TPanel ID="ExtraPanel" style="position: absolute; padding:15px; display:none; width: 400px; background-color: black; color:white;">
+        <com:TActiveHiddenField ID="WarehouseIDField" />
+        <com:TActiveHiddenField ID="WarehouseIDFieldPhp" />
+        <com:TActiveHiddenField ID="PathFieldPhp" />
+        <com:TActiveLabel ID="PathField" />
+        <com:TActiveButton ID="TriggerBtn" Text="Trigger" OnClick="Page.getWarehousePath" style="display:none" >
+            <prop:ClientSide OnLoading="$('<%= $this->Page->PathField->getClientId() %>').innerHTML='retrieving info ... <img src=\'/themes/images/ajax-loader.gif\' />';"
+                             OnComplete="
+                                if ($('<%= $this->Page->WarehouseIDField->getClientId() %>').value ==
+                                    $('<%= $this->Page->WarehouseIDFieldPhp->getClientId() %>').value)
+                                {
+                                    // this is the latest request, display it
+                                    $('<%= $this->Page->PathField->getClientId() %>').innerHTML = $('<%= $this->Page->PathFieldPhp->getClientId() %>').value;
+                                }
+                                else
+                                {
+                                    // this request is outdated, dont do anything
+                                }
+                             "
+                             />
+        </com:TActiveButton>
+        <br />
+        <input type="button" value="close" OnClick="kill();" />
+    </com:TPanel>
+</com:TContent>

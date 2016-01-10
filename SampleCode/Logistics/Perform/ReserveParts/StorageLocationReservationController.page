@@ -1,0 +1,731 @@
+<com:TContent ID="MainContent">
+	<com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+
+	<script>
+		function ValidateActionList()
+		{
+			var recipientWarehouse = $('<%= $this->sendTo->getClientId() %>').value;
+			var recipientTechnician = $('<%= $this->recipientTech->getClientId() %>').value;
+			var actionList = document.getElementById('titleActionList').value;
+			if(actionList == 'moveToTech')
+			{
+				if((recipientWarehouse == '' || empty(recipientWarehouse)) && (recipientTechnician == '' || empty(recipientTechnician)))
+				{
+					alert('Please provide either Recipient Warehouse or Recipient Technician');
+				    document.getElementById('titleActionList').value='picklist';
+					return false;
+				}
+				else if(recipientWarehouse != '' && recipientTechnician != '')
+				{
+					alert('You cannot provide both Recipient Warehouse and Recipient Technician. Please select one criteria.');
+				    document.getElementById('titleActionList').selected='picklist';
+					return false;
+				}
+			}
+		}
+
+		function validateSearch()
+		{
+			var fieldTaskNo = $('<%= $this->taskNumber->getClientId() %>').value;
+			var clientTaskNo = $('<%= $this->clientRefNumber->getClientId() %>').value;
+			var attendedStatus = $('<%= $this->ftStatus->getClientId() %>').value;
+			var partType = $('<%= $this->partType->getClientId() %>').value;
+			var serialNumber = $('<%= $this->serialNumber->getClientId() %>').value;
+
+			if(fieldTaskNo == ' ' || clientTaskNo == ' ' || serialNumber == ' ')
+            {
+                alert("Invalid Search Criteria!");
+                return false;
+            }
+
+			if(attendedStatus == 'ALL' && fieldTaskNo == '' && clientTaskNo == '' && partType == '' && serialNumber == '')
+	    	{
+	    		alert("You must provide a Task Number, Client Ref Number, Part Type or Serial Number when searching FT Status 'ALL'!");
+	    		return false;
+	    	}
+	   		return true;
+		}
+
+		function toggleSearchPanel()
+		{
+			var panel = $('searchDiv');
+			var name = $('ahreftoggle');
+			if(panel.style.display == '')
+			{
+				panel.style.display = 'none';
+				name.innerHTML = "Show Search Panel";
+			}
+			else
+			{
+				panel.style.display = '';
+				name.innerHTML = "Hide Search Panel";
+			}
+		}
+
+		function expandSearchPanel()
+		{
+			var name = $('ahrefexpand');
+
+			if($('<%= $this->workType->getClientId() %>').size > 5)
+			{
+				$('<%= $this->workType->getClientId() %>').size = 5;
+				name.innerHTML = "Expand Search Panel";
+			}
+			else
+			{
+				$('<%= $this->workType->getClientId() %>').size = $('<%= $this->countWorkTypes->getClientId() %>').value;
+				name.innerHTML = "Shrink Search Panel";
+			}
+
+			if($('<%= $this->zoneSet->getClientId() %>').size > 5)
+			{
+				$('<%= $this->zoneSet->getClientId() %>').size = 5;
+			}
+			else
+			{
+				$('<%= $this->zoneSet->getClientId() %>').size = $('<%= $this->countZonesets->getClientId() %>').value;
+			}
+		}
+
+		function openTransitNoteWindow(transitNoteId)
+		{
+			var win = window.open('/transitnote/' + transitNoteId);
+		}
+
+
+		function hideResults(e)
+		{
+			$('resultPanelWrapper').style.display = 'none';
+			$("<%= $this->selctedHatId->getClientId() %>").value = e.value;
+
+			//update the warehousedetails
+			pageJs.getWarehouseDetails();
+
+			//update the warehousedetails
+			pageJs.getWarehouseDetails();
+			
+			// stop refreshTimer
+            pageJs.stopTimer();
+		}
+
+		function setWarehouseId(val)
+		{
+			$("<%= $this->warehouseid->getClientId() %>").value = val;
+		}
+
+		function generateTransitNote(submit)
+		{
+			var tn = '';
+			var result = document.getElementsByName('tn');
+			for(var i = 0;i < result.length;i++)
+			{
+				if (result[i].checked == true)
+				{
+					tn = result[i].value;
+				}
+			}
+			pageJs.createTnDn($("<%= $this->tnDnNoteType->getClientId() %>").value, '<%= $this->createTnDnBtn->getUniqueID() %>',false,'<%= $this->warehouseToId->getClientId() %>',tn);
+			return false;
+		}
+
+        function toggleLegends(checked){
+        	if(checked)
+        	{
+        		 $("<%= $this->priorityLegend->getClientId() %>").show();
+        		 $("<%= $this->bgLegend->getClientId() %>").show();
+        	}
+        	else
+        	{
+        		 $("<%= $this->priorityLegend->getClientId() %>").hide();
+        		 $("<%= $this->bgLegend->getClientId() %>").hide();
+        	}
+        }
+
+	</script>
+		<div style='float:right'><a href='javascript:void(0)' id="ahreftoggle" onclick="toggleSearchPanel()">Hide Search Panel</a></div><br>
+		<div style='float:right'><a href='javascript:void(0)' id="ahrefexpand" onclick="expandSearchPanel()">Expand Search Panel</a></div><br>
+
+
+		<com:TActiveHiddenField ID="checkPartType"/>
+		<com:TActiveHiddenField ID="selctedHatId" />
+		<com:TActiveHiddenField ID="checkPartErrors"/>
+		<com:TActiveHiddenField ID="partInstanceId"/>
+		<com:TActiveHiddenField ID="errorBL"/>
+
+		<com:TActiveLabel ID="jsLbl" Style="display:none;"/>
+
+		<com:TActiveHiddenField ID="countWorkTypes"/>
+		<com:TActiveHiddenField ID="countZonesets"/>
+		<com:THiddenField ID="warehouseid" VALUE="" />
+
+
+		<com:TActivePanel ID="ConfirmTransitNoteWindow" Display="None" ScrollBars="Auto" CssClass="ResultFrontPanel" Style="">
+
+			<com:TActiveLabel id="transitNoteConfirmLabel"/>
+			<com:TActiveHiddenField ID="warehouseToId"/>
+			<com:TActiveHiddenField ID="tnDnNoteType"/>
+
+			<table width="100%">
+				<tr>
+		            <td colspan=2>
+	                	<com:TActiveButton ID="GenerateTransitNoteBtn" Text="Generate Transit Note" Attributes.onClick="generateTransitNote();return false;"/>
+	               		<com:TActiveButton ID="closeTransitNotePanel" Text="Close" onCommand="hideTransitPanel"/>
+	            	</td>
+	          	</tr>
+	        </table>
+
+		</com:TActivePanel>
+
+		<com:TActivePanel ID="ConfirmMoveToTechWindow" Display="None" ScrollBars="Auto" CssClass="ResultFrontPanel" Style="">
+
+			<com:TActiveLabel id="moveToTechConfirmLabel"/>
+			<com:TActiveHiddenField ID="moveToTechWarehouseToId"/>
+
+			<table width="100%">
+				<tr>
+		            <td colspan=2>
+	                	<com:TButton ID="MoveToTech" Text="Move To Tech" Attributes.onClick="pageJs.createMoveToTech('<%= $this->createMoveToTechBtn->getUniqueID() %>',false,'<%= $this->moveToTechWarehouseToId->getClientId() %>');return false;"/>
+	               		<com:TActiveButton ID="closeMoveToTechPanel" Text="Close" onCommand="hideMoveToTechPanel"/>
+	            	</td>
+	          	</tr>
+	        </table>
+
+		</com:TActivePanel>
+
+		<com:TActivePanel ID="ConfirmWindow" Display="None" ScrollBars="Auto" CssClass="ResultFrontPanel" Style="">
+			<com:TActiveLabel id="confirmWarningLabel"/>
+		</com:TActivePanel>
+
+		<com:TActivePanel ID="SendEmailWindow" Display="None" ScrollBars="Auto" CssClass="ResultFrontPanel" Style="">
+			<com:TActiveHiddenField ID="selectedIds"/>
+			<com:TActiveLabel ID="Message" Style="color:red;" Text="">
+			</com:TActiveLabel>
+
+			<table width="100%">
+	            <tr>
+		            <td width="25%">
+		           <b>Email Search:</b>
+		            </td>
+		            <td>
+		           		<com:Application.controls.HYAutoComplete ID="emailAuto"
+								ResultPanel.CssClass="hydraautocomplete"
+								PageOnSuggestMethod="suggestEmailSearch"
+								PageMethod="handleSelectedEmail"
+								Suggestions.DataKeyField="id" width="70%">
+								<prop:Suggestions.ItemTemplate>
+									<li><%# $this->Data['email'] %></li>
+								</prop:Suggestions.ItemTemplate>
+							</com:Application.controls.HYAutoComplete>
+		            </td>
+	            </tr>
+	            <tr>
+		            <td width="25%">
+		            <b>Find Warehouse Email:</b>
+		            </td>
+		            <td>
+		           		<com:Application.controls.HYAutoComplete ID="emailWarehouse"
+								ResultPanel.CssClass="hydraautocomplete"
+								PageOnSuggestMethod="suggestWarehouseEmailSearch"
+								PageMethod="handleSelectedWarehouseEmail"
+								Suggestions.DataKeyField="id" width="70%">
+								<prop:Suggestions.ItemTemplate>
+									<li><%# $this->Data['email'] %></li>
+								</prop:Suggestions.ItemTemplate>
+							</com:Application.controls.HYAutoComplete>
+		            </td>
+	            </tr>
+	            <tr>
+		            <td width="25%">
+		              <b>Find Company Email:</b>
+		            </td>
+		            <td>
+		           		<com:Application.controls.HYAutoComplete ID="emailCompany"
+								ResultPanel.CssClass="hydraautocomplete"
+								PageOnSuggestMethod="suggestCompanyEmailSearch"
+								PageMethod="handleSelectedCompanyEmail"
+								Suggestions.DataKeyField="id" width="70%">
+								<prop:Suggestions.ItemTemplate>
+									<li><%# $this->Data['email'] %></li>
+								</prop:Suggestions.ItemTemplate>
+							</com:Application.controls.HYAutoComplete>
+		            </td>
+	            </tr>
+	            <tr><td colspan='2'></td></tr>
+	            <tr>
+		            <td width="25%">
+		                Send To: <br>Seperate multiple email addresses with a semicolon (;)
+		            </td>
+		            <td>
+		            	<com:TActiveTextBox ID="emailSendTo" Width="70%" Rows="3" TextMode="MultiLine"  AutoPostBack="false"/>
+
+		            </td>
+	            </tr>
+
+	            <tr>
+		            <td>Subject: </td>
+		            <td><com:TActiveTextBox ID="emailSubject" Width="60%" AutoPostBack="false"/>
+		            </td>
+	            </tr>
+
+	            <tr>
+		            <td colspan=2>
+		                <com:TActiveTextBox
+		                ID="emailBody"
+						Rows="15" Width="100%"
+						TextMode="MultiLine"
+					    AutoPostBack="false"
+					    />
+	          		</td>
+	          	</tr>
+
+	            <tr>
+		            <td colspan=2>
+	                	<com:TActiveButton ID="SendEmail" Text="Send" onClick="sendEmail" Attributes.onClick="Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, title: 'Sending Email'});"/>
+	               		<com:TActiveButton ID="Cancel" Text="Close" onCommand="hideEmailPanel"/>
+	            	</td>
+	          	</tr>
+	        </table>
+		</com:TActivePanel>
+
+	<com:TActiveHiddenField ID="timeOfSearch" />
+	<com:TActiveHiddenField ID="showingReloadMessage" />
+
+	<com:TActiveLabel id="responseLabel" style='display: none;'/>
+	<com:TCallback ID="searchBtn" OnCallback="Page.search"/>
+	<com:TCallback ID="showAvailListBtn" OnCallback="Page.getAvailParts"/>
+	<com:TCallback ID="showRsrvdListBtn" OnCallback="Page.getRsrvdParts" />
+	<com:TCallback ID="rsvPartBtn" OnCallback="Page.rsvPart"/>
+	<com:TCallback ID="unRsvPartBtn" OnCallback="Page.unRsvPart"/>
+	<com:TCallback ID="printPickListBtn" OnCallback="Page.printPickList"/>
+	<com:TCallback ID="getCommentsBtn" OnCallback="Page.getComments"/>
+	<com:TCallback ID="addNewCommentsBtn" OnCallback="Page.addNewComments" />
+	<com:TCallback ID="sendEmailBtn" OnCallback="Page.sendEmail" />
+	<com:TCallback ID="changeStatusBtn" OnCallback="Page.changeStatus" />
+	<com:TCallback ID="changeFTStatusBtn" OnCallback="Page.pushFTStatus" />
+	<com:TCallback ID="addOrDelPreferenceBtn" OnCallback="Page.addOrDelPreference" />
+	<com:TCallback ID="viewPreferenceListBtn" OnCallback="Page.viewPreferenceList" />
+	<com:TCallback ID="changePreferenceViewBtn" OnCallback="Page.changePreferenceView" />
+	<com:TCallback ID="refreshResultBtn" OnCallback="Page.refreshResult" />
+	<com:TCallback ID="takeFRBtn" OnCallback="Page.takeFR" />
+	<com:TCallback ID="showPushFRBtn" OnCallback="Page.showPushFR" />
+	<com:TCallback ID="pushFRBtn" OnCallback="Page.pushFR" />
+	<com:TCallback ID="showExtraAvailListBtn" OnCallback="Page.getExtraAvailParts" />
+	<com:TCallback ID="showEmailPanelBtn" OnCallback="Page.showEmailPanel" />
+	<com:TCallback ID="checkPartBtn" OnCallback="Page.checkPart" />
+	<com:TCallback ID="reservationLabelBtn" OnCallback="Page.getReservationLabelInfo" />
+	<com:TCallback ID="createTnDnBtn" OnCallback="Page.createTnDn" />
+	<com:TCallback ID="showTransitNotePanelBtn" OnCallback="Page.showTransitNotePanel" />
+	<com:TCallback ID="createMoveToTechBtn" OnCallback="Page.createMoveToTech" />
+	<com:TCallback ID="showMoveToTechPanelBtn" OnCallback="Page.showMoveToTechPanel" />
+	<com:TCallback ID="createWarningBtn" OnCallback="Page.createWarning" />
+	<com:TCallback ID="updateFRHatBtn" OnCallback="Page.getFRHatDetails" />
+
+	<div id='searchDiv'>
+		<fieldset>
+
+			<legend>
+				Search FRs: <i id='defaultFacilityName' style="font-weight: bold;">
+
+				<com:TActiveDropDownList ID="ownerWarehouseList"
+					DataTextField="1"
+					DataValueField="0"
+					AutoPostBack="false"
+					OnSelectedIndexChanged='Page.changeOwnerWarehouse'
+					Attributes.OnChange='hideResults(this)' />
+				</i>
+
+
+				<com:TDropDownList ID="preferencesList"
+					PromptText="View By Preference"
+					PromptValue=" "
+					DataTextField="1"
+					DataValueField="0"
+					AutoPostBack="false"
+					Attributes.onchange="pageJs.changePreferences(this, '<%= $this->viewPreferenceListBtn->getUniqueID() %>', '<%= $this->changePreferenceViewBtn->getUniqueID() %>', '<%= $this->searchBtn->getUniqueId() %>'); return false;"/>
+					&nbsp;&nbsp;
+					<a href="javascript: void(0);" onclick="return pageJs.confirmAddView('<%= $this->addOrDelPreferenceBtn->getUniqueID() %>', '<%= $this->viewPreferenceListBtn->getUniqueID() %>', '<%= $this->preferencesList->getClientId() %>');" title="saving the current search criteria as a view preference">save search</a>
+			</legend>
+
+			<com:TPanel ID="SearchPanel" CssClass="SearchPanel" DefaultButton="SearchButton">
+				<table width="100%" cellpadding="10">
+				    <tr><td colspan="3">&nbsp;</td></tr>
+					<tr>
+						<td width="30%">
+							<fieldset>
+							<legend>FieldTask Search</legend>
+							<table width="100%" cellpadding="10" >
+								<td>
+									<tr>
+										<td colspan="2">
+											Bytecraft Job Number:
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2">
+											<com:TActiveTextBox ID="taskNumber" width="95%"  Attributes.title="Searching By Field Task Number. It will search any request for this field task!"/></td>
+										</td>
+									</tr>
+
+									<tr>
+										<td colspan="2">
+											Client Ref Number:
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2">
+											<com:TActiveTextBox ID="clientRefNumber" width="95%"  Attributes.title="Searching By Client Ref Number"/>
+										</td>
+									</tr>
+
+									<tr>
+										<td colspan="2">
+											SerialNumber:
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2">
+											<com:TActiveTextBox ID="serialNumber" width="95%"  Attributes.title="Searching By Serial Number"/>
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2">
+											PartType:
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2">
+											<com:Application.controls.EntityAutoComplete.HYPartTypeComplete
+												ID="partType"
+												AutoPostBack="false"
+												ResultPanel.CssClass="hydraautocomplete"
+												width="95%"
+												/>
+										</td>
+									</tr>
+
+									<tr>
+										<td colspan="2">
+											FT Status:
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2">
+											<com:TActiveDropDownList ID="ftStatus"
+											AutoPostBack="false"
+										    DataTextField="0"
+										    DataValueField="0"
+										     width="50%"
+										    />
+										</td>
+									</tr>
+									<tr><td colspan="2">&nbsp;</td></tr>
+									<tr><td colspan="2">
+										<com:TCheckBox ID="targetfor" Checked="true"  Attributes.onClick="return toggleLegends(this.checked)"  Text="  Show Legends"/>
+									</td></tr>
+
+								</td>
+							</table>
+							</fieldset>
+						</td>
+
+						<td width="30%">
+							<fieldset>
+							<legend>Facility Request Search</legend>
+							<table width="93%" cellpadding="10">
+								<td>
+									<tr>
+										<td colspan="2">
+											Recipient Warehouse:
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2">
+											<com:Application.controls.HYAutoComplete
+													ID="sendTo"
+													AutoPostBack="false"
+													ResultPanel.CssClass="hydraautocomplete"
+													PageOnSuggestMethod="suggestSendTo"
+													Suggestions.DataKeyField="0"
+													width="100%"
+													Attributes.PlaceHolder="The Facility where the part should be send to">
+														<prop:Suggestions.ItemTemplate>
+												            <li><%# $this->Data[1] %></li>
+														</prop:Suggestions.ItemTemplate>
+												</com:Application.controls.HYAutoComplete>
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2">
+											Recipient Technician:
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2">
+
+											<com:Application.controls.HYAutoComplete ID="recipientTech"
+													AutoPostBack="false"
+													PageOnSuggestMethod="suggestRecipientTechnician"
+													Suggestions.DataKeyField="0"
+													ResultPanel.ScrollBars="Auto"
+													ResultPanel.CssClass="hydraautocomplete"
+													width="100%"
+>
+													<prop:Suggestions.ItemTemplate>
+											            <li><%# $this->Data["1"] %></li>
+													</prop:Suggestions.ItemTemplate>
+											</com:Application.controls.HYAutoComplete>
+
+										</td>
+									</tr>
+
+									<tr>
+										<td>
+											REQ Status:
+										</td>
+										<td>
+											Has Resv:
+										</td>
+									</tr>
+									<tr>
+										<td valign="top">
+											<com:TActiveListBox ID="frStatus"
+											AutoPostBack="false"
+										    DataTextField="0"
+									    	DataValueField="0"
+									    	rows = "5"
+									    	width="90%"
+									    	SelectionMode="Multiple"
+										    />
+
+										</td>
+										<td valign="top">
+												<com:TActiveDropDownList ID="hasReserve"	AutoPostBack="false" width="90%">
+													<com:TListItem value="ALL" Text="ALL" />
+													<com:TListItem value="YES" Text="YES" />
+													<com:TListItem value="NO" Text="NO" />
+												</com:TActiveDropDownList>
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2">
+											Attended By:
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2">
+										   <com:Application.controls.EntityAutoComplete.HYUserAccountComplete
+										           ID="attendedBy"
+									               Type="UserAccount"
+									               Suggestions.DataKeyField ="id"
+									               ResultPanel.CssClass="hydraautocomplete"
+									               ResultPanel.ScrollBars="Auto"
+												   width="100%"
+												   Attributes.PlaceHolder="Last Attended By"
+									       />
+										</td>
+
+									</tr>
+									<tr><td colspan="2">&nbsp;</td></tr>
+
+								</td>
+								</table>
+							</fieldset>
+
+						</td>
+
+						<td width="30%">
+							<fieldset>
+							<legend>Other Search</legend>
+							<table width="100%" cellpadding="10">
+								<td>
+									<tr>
+										<td colspan="2">
+											Work Types:&nbsp;
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2">
+											<com:TActiveListBox ID="workType"
+											AutoPostBack="false"
+										    DataTextField="name"
+									    	DataValueField="id"
+									    	rows = "5"
+									    	width="90%"
+									    	SelectionMode="Multiple"
+										    />
+										</td>
+									</tr>
+									<tr><td colspan="2">&nbsp;</td></tr>
+									<tr>
+										<td colspan="2">
+											Zone Sets:
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2">
+												<com:TActiveListBox ID="zoneSet"
+													AutoPostBack="false"
+												    DataTextField="Name"
+											    	DataValueField="id"
+											    	SelectionMode="Multiple"
+											    	 width="90%"
+											    	 rows = "5"
+												    />
+										</td>
+									</tr>
+									<tr><td colspan="2">&nbsp;</td></tr>
+								</td>
+							</table>
+							</fieldset>
+						</td>
+
+					</tr>
+					<tr><td colspan="3">&nbsp;</td></tr>
+					<tr>
+						<td colspan='2'>
+						 <com:TPanel Id="bgLegend">
+							<table width="100%" >
+								<tr>
+									<td width="2%" bgcolor="#FFCCCC" height="5px"></td>
+									<td width="40%">- (COMPLETED / CLOSED / CANCELLED)</td>
+									<td width="2%" bgcolor="#d0f4b7"></td>
+									<td width="10%">- (NEW)</td>
+									<td width="2%" bgcolor="#b7d0f4"></td>
+									<td width="40%">- RECENTLY (ADDED / UPDATED)</td>
+								</tr>
+							</table>
+							</com:TPanel>
+						</td>
+						<td>
+							<div align="right">
+								<com:TButton ID="SearchButton" Text="Search" Height="30px" width="100px" Attributes.Onclick="pageJs.resetPreferenceList('<%= $this->preferencesList->getClientID() %>'); if(validateSearch()){return pageJs.search('<%= $this->searchBtn->getUniqueID() %>', true);}else{return false;} " />
+							</div>
+						</td>
+					</tr>
+					<tr>
+					   <td colspan="3">
+					       <com:TPanel Id="priorityLegend" />
+					   </td>
+					  </tr>
+					<tr><td colspan="3">&nbsp;</td></tr>
+				</table>
+
+
+			</com:TPanel>
+		</fieldset>
+	</div>
+
+
+
+	<div style="margin: 20px 0 0 0; display: none;" id="resultPanelWrapper">
+		<div class="form-item" id="form-item">
+			<table width="100%">
+				<tr>
+					<td width="25%">
+						<b id='resultTitlePanel'><com:TActiveLabel id="totalRows" /> facility request(s) found:</b>
+					</td>
+					<td width="30%" align="right">
+						<com:TButton ID="outputToExcel" Text="To Excel" OnClick="Page.outputToExcel" />
+						&nbsp;
+						<com:Application.controls.HYLock Feature="pages_all,feature_autoTakeFacilityRequestOnBulkChange">
+							<com:TActiveCheckBox ID="AutoTake" AutoPostBack="false" />&nbsp;<com:TLabel Text="Auto Take" ForControl="AutoTake" />&nbsp;
+						</com:Application.controls.HYLock>
+						&nbsp;
+					</td>
+					<td width="50%" align="right">
+						<span id='btnPane' >
+							<select id='titleActionList' Attributes.onClick="ValidateActionList();return false;">
+								<option value='picklist'>Generate Pick List</option>
+								<option value='email'>Email</option>
+								<option value='take'>Take</option>
+								<option value='push'>Push</option>
+								<option value='label'>Print Label</option>
+								<option value='<%= FacilityRequest::STATUS_CANCEL %>'>Cancel</option>
+								<option value='<%= FacilityRequest::STATUS_ATTENDED %>'>Reopen</option>
+								<optgroup label="Send Parts ---------">
+								<option value='createTransitNote'>Create Transit Note (TN)</option>
+								<option value='createDispatchNote'>Create Dispatch Note (DN)</option>
+								<option value='moveToTech'>Move Parts To Tech</option>
+								<optgroup label="Field Task ---------">
+								<option value='pushToAvail' class="fieldtaskoptons">Push Field Task Avail</option>
+								</optgroup>
+							</select>
+							<input type="button" id='titleActionListBtn' value="Go"
+								Onclick="return pageJs.changeTitleAction($('titleActionList').value, this, '<%= $this->showEmailPanelBtn->getUniqueID() %>', '<%= $this->printPickListBtn->getUniqueID() %>', '<%= $this->changeFTStatusBtn->getUniqueID()%>', '<%= StringUtils::addOrRemoveSlashes(Core::getUser()->getPerson())%>', '<%= $this->takeFRBtn->getUniqueID()%>', '<%= $this->showPushFRBtn->getUniqueID()%>','<%= $this->reservationLabelBtn->getUniqueID() %>','<%= $this->AutoTake->getClientId() %>','<%= $this->createTnDnBtn->getUniqueID() %>','<%= $this->createMoveToTechBtn->getUniqueID() %>'); return false;"/>
+						</span>
+
+					</td>
+				</tr>
+			</table>
+		</div>
+
+
+		<div ID="detailsBox" style="position:absolute; background-color: black; color:white; z-index: 100; display:none; padding: 5px;"></div>
+		<table class="DataList" id="resultList">
+			<thead>
+				<tr style="height: 23px;">
+					<th width='2%' resulttableheader='id'><input class="chkbox" type='checkbox' Onclick='return pageJs.checkAll(this);' title="Select all requests showing on the screen"/></th>
+					<th width='15%' resulttableheader='partCode' onclick='return pageJs.reOrder(this);'>Part Required (Qty)</th>
+					<th width='*'  resultTableHeader='fieldTaskId' onclick='return pageJs.reOrder(this);'>Field Task</th>
+					<th width='10%' resulttableheader='slaEnd'  onclick='return pageJs.reOrder(this);'>SLA End</th>
+					<th width='8%' resulttableheader='frpriority'  onclick='return pageJs.reOrder(this);'>FR Priority</th>
+					<th width='5%' resulttableheader='availQty' >Avail</th>
+					<th width='4%' resulttableheader='reserved' onclick='return pageJs.reOrder(this);'>Rsvd</th>
+					<th width='8%' resulttableheader='status' onclick='return pageJs.reOrder(this);'>Status</th>
+					<th width='10%' resulttableheader='updated' onclick='return pageJs.reOrder(this);'>Updated Elapsed Time</th>
+					<th width='17%' resulttableheader='owner' onclick='return pageJs.reOrder(this);'>Owner</th>
+					<th width='5%' resulttableheader='btns' onclick="$(this).up('body').scrollTo(); return false;"></th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+		<input id='getMoreResultBtn' type='button' value='Get More Results' onclick="return pageJs.nextPage();" class='getMoreBtn'>
+
+	</div>
+
+	<com:TClientScript>
+
+		var pageJs = new ResvPageJs('<%= $this->responseLabel->getClientId()%>',
+						'<%= $this->Page->getRefreshTime() %>',
+						'resultList',
+						'<%= $this->totalRows->getClientId()%>',
+						'getMoreResultBtn',
+						'<%= $this->ownerWarehouseList->getClientId()%>',
+						'<%= $this->showAvailListBtn->getUniqueID() %>',
+						'<%= $this->showRsrvdListBtn->getUniqueID() %>',
+						'<%= $this->getCommentsBtn->getUniqueID() %>',
+						'<%= $this->sendEmailBtn->getUniqueID() %>',
+						'<%= $this->changeStatusBtn->getUniqueID() %>',
+						'<%= FacilityRequest::STATUS_CANCEL %>',
+						'<%= FacilityRequest::STATUS_ATTENDED %>',
+						'<%= $this->Page->getFieldTaskAvailStatus() %>',
+						'<%= $this->Page->getFieldTaskTransitStatus() %>',
+						'<%= $this->refreshResultBtn->getUniqueID() %>',
+						'<%= $this->takeFRBtn->getUniqueID() %>',
+						'<%= $this->showPushFRBtn->getUniqueID() %>',
+						'<%= $this->showExtraAvailListBtn->getUniqueID() %>',
+						'<%= $this->showEmailPanelBtn->getUniqueID() %>',
+						'<%= $this->checkPartBtn->getUniqueID() %>',
+						'<%= $this->getMaxExecutionTime() %>',
+						'<%= $this->reservationLabelBtn->getUniqueID() %>',
+						'<%= $this->AutoTake->getClientId() %>',
+						'<%= $this->createTnDnBtn->getUniqueID() %>',
+						'<%= $this->showTransitNotePanelBtn->getUniqueID() %>',
+						'<%= $this->getFieldTaskEditBaseURL() %>',
+						'<%= $this->createMoveToTechBtn->getUniqueID() %>',
+						'<%= $this->showMoveToTechPanelBtn->getUniqueID() %>',
+						'<%= $this->createWarningBtn->getUniqueID() %>',
+						'<%= $this->updateFRHatBtn->getUniqueID() %>'
+
+					);
+		pageJs.setOwnerInfo('<%= $this->getOwnerWarehouse()->getId() %>', '<%= $this->getOwnerWarehouse()->getName() %>', '<%= $this->getOwnerWarehouse()->getPosition() %>');
+		pageJs.getWarehouseDetails();
+		Event.observe($(window), "scroll", pageJs.loadFormItemWhenScroll);
+		Event.observe($(window), "scroll", pageJs.loadWhenScroll);
+
+
+	</com:TClientScript>
+
+
+</com:TContent>

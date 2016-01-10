@@ -1,0 +1,251 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<com:THiddenField ID="SearchString" />
+	<com:TTextBox ID="SearchText" Visible="false" />
+	<com:THiddenField ID="focusObject" />
+	<com:THiddenField ID="focusObjectArgument" />
+	<br />
+	<br />
+	<script>	
+		function doEnterBehavior(event,buttonName)
+		{
+			if(!((event.which && event.which == 13) || (event.keyCode && event.keyCode == 13)))
+			{
+				return true;
+			} else {
+				var button = document.getElementById(buttonName);
+				button.click();
+				return false;
+			}
+		}		
+		
+		function changeRow(parentValue,row,matchText)
+		{
+			var quanityHolder=document.getElementById('Quantiy_'+row);
+			var row=document.getElementById('Row_' + row);
+			if(parentValue != matchText) 
+			{
+				row.style.backgroundColor = 'red'; 
+				quanityHolder.value=parentValue;
+			} else { 
+				row.style.backgroundColor = '';
+				quanityHolder.value=matchText;
+			}
+			return true;
+		}
+		
+		function getSelected(object)
+		{
+			var length = object.length;
+			for(i=0;i<length;i++)
+			{
+				if(object[i].selected)
+					return object[i].value;
+			}
+			return '-1';
+		}
+		
+		function changeQuantity(quantityHolderId)
+		{
+			var quanityHolder=document.getElementById(quantityHolderId);
+			if(quanityHolder.value==0)
+			{
+				if(!confirm('Warning! \n\nYou are about to deactive this part instance,\nas you\'ve change the quantity to 0!\n\nDo you want to continue?'))
+					return false;
+			}
+			return true;
+		}
+		
+		/**
+		Display contract group & contract details
+		*/
+		function showContractDetails(partInstanceId,btnId)
+		{
+			var tmp = {};
+			tmp.detailsDivId = 'ptDetails_' + partInstanceId;
+			//call showDetails
+			bsuiteJs.postAjax('<%= $this->btnshowdetails->getUniqueId() %>', {'partInstanceId': partInstanceId}, {
+				'onLoading': function(sender, param){
+					if ($(tmp.detailsDivId) === undefined || $(tmp.detailsDivId) === null)
+					{
+						$(btnId).update("Loading Contract Details ...");
+					}
+					else
+					{
+						$(btnId).update("...");
+					}
+				}, 
+				'onComplete': function(sender, param){
+					if ($(tmp.detailsDivId) === undefined || $(tmp.detailsDivId) === null)
+					{
+						$(btnId).update("Hide Contract Details");
+						tmp.result = bsuiteJs.getResp(param);
+						tmp.resultcontract = tmp.result['contract']; 
+					}
+					else
+					{
+						$(btnId).update("Show Contract Details");
+						$(tmp.detailsDivId).remove();
+						return;
+					}
+					
+				//contract group & contract details
+				tmp.newDetailsDiv = '<br /><br /><div id="' + tmp.detailsDivId + '">';
+				var contractGroup = tmp.resultcontract[0][1];
+				var j=0;
+				for (i=0; i<tmp.resultcontract.length;i++)
+				{
+					//check if same contract group
+					if (contractGroup === tmp.resultcontract[i][1])
+					{
+						//first record
+						if (j===0)
+						{
+							tmp.newDetailsDiv += '<b>Contract Group:'+ contractGroup+'</b><br />';
+						}
+						//display contracts under one contract group
+						tmp.newDetailsDiv += tmp.resultcontract[i][0]+"<br />";
+						j++;
+					}
+					else
+					{
+						//display new contract group
+						contractGroup = tmp.resultcontract[i][1];
+						j++;
+						tmp.newDetailsDiv += '<br /><br /><b>Contract Group:'+ contractGroup+'</b><br />';
+						tmp.newDetailsDiv += tmp.resultcontract[i][0]+"<br />";
+					}
+				}
+				tmp.newDetailsDiv += '</div>';
+				
+				$(btnId).insert(
+					{
+						after: tmp.newDetailsDiv
+				});				
+			}});
+		}
+	</script>
+	<!-- Button to display contract details -->
+	<com:TCallback ID="btnshowdetails" OnCallBack="Page.showContractDetails" /> 
+	<div>
+		<b><com:TLabel ID="UserLabel" Style="color:#ffffff"/></b>
+		<com:TPanel DefaultButton="SearchButton">
+		<table width="100%" border="0">
+			<tr>
+				<td width="10%">
+					Part Type:<span style="color: red;">*</span>
+				</td>
+				<td colspan="2" width="60%">
+					<com:TDropDownList Id="aliasType" DataTextField="name" DataValueField="id" />
+					<com:TActiveTextBox id="BTBarcode" width="50%" />
+				</td>
+				<td width="15%" align="right">
+					<com:TButton ID="SearchButton" Text=" Search " OnClick="search" />
+				</td>
+			</tr>		
+		</table>
+		</com:TPanel>
+	
+				
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" />		
+
+<!---   ---------------- Listing Panel Starts---------------- --->					
+		<com:TPanel>		
+			<br />
+			
+			<com:TDataList ID="DataList" DataKeyField="0" OnSelectedIndexChanged="selectItem"
+						 RepeatLayout="Raw"
+						 OnEditCommand="edit"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     OnItemCreated="itemCreated"
+					     CssClass="DataList" 
+					     ItemStyle.CssClass="DataListItem" 
+					     AlternatingItemStyle.CssClass="DataListAlterItem" 
+					     EditItemStyle.CssClass="DataListEditItem" 
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="true" PageSize="10" EnableViewState="true">
+				
+			    <prop:HeaderTemplate>
+					<table width="100%" class="DataListTitle">
+						<tr>
+							<th>
+								<com:TLabel ID="listLabel" Text="<%[ PartType.list ]%>" />
+								<com:TLabel ID="partTypeLabel" Text="" />  
+							</th>
+						</tr>
+					</table>			    
+					<table width="100%" height="25" class="DataList">
+					<thead>
+						<tr>
+							<th width="5%"><%[ PartInstance.Quantity ]%></th>
+							<th width="17%">Owner Client</th>
+						    <th width="30%"><%[ PartInstance.user ]%></th> 
+							<th width="17%"><%[ PartInstance.shared ]%></th>
+							<th><%[ PartInstance.warehouse ]%>
+							<th width="12%"></th>
+						</tr>
+					</thead>
+					<tbody>			    
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<tr Id="Row_<%# $this->DataItem[0] %>" class="<%# $this->Page->getStyle($this->getItemIndex()) %>">
+						<td>
+							<com:TTextBox Id="quantity" text="<%# $this->DataItem[1] %>" AutoPostBack="false" style="width:60px;">
+								<prop:Attributes.onkeyup>
+									changeRow(this.value,'<%# $this->DataItem[0] %>','<%# $this->DataItem[1] %>')
+								</prop:Attributes.onkeyup>
+							</com:TTextBox>
+							<input type="hidden" Id="Quantiy_<%# $this->DataItem[0] %>" value="<%# $this->DataItem[1] %>"/>
+						</td>
+						<td><%# $this->DataItem[2] %></td>
+						<td><a style='color:blue;' id='showContractDetailsBtn_<%# $this->DataItem[0] %>' onclick='showContractDetails(<%# $this->DataItem[0] %>,"showContractDetailsBtn_<%# $this->DataItem[0] %>");'>Show Contract Details</a></td>
+						<td><%# $this->DataItem[3] %></td>
+						<td><%# $this->Page->showLocation($this->DataItem[4]) %></td>
+						<td>
+							<com:THyperLink 
+									Text="History"
+									NavigateUrl = "/parthistory/searchparttext/<%# $this->DataItem[0] %>/"
+									Target="_blank"
+							 />
+							<com:TButton Text="Change" 
+								OnCommand="Page.ChangeQuantity"
+								CommandParameter="<%# $this->DataItem[0] %>" 
+								Attributes.OnClick="return changeQuantity('Quantiy_<%# $this->DataItem[0] %>');" 
+								/>
+						</td>
+					</tr>									
+				</prop:ItemTemplate>
+				<prop:EditItemTemplate />	
+			    <prop:FooterTemplate>
+			    		</tbody>
+			    		<tfoot>
+						<tr>
+							<th colspan="6">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Parent->VirtualItemCount %> Parts
+								</div>
+							</th>
+						</tr>
+						</tfoot>
+					</table>			    
+				</prop:FooterTemplate>				
+			</com:TDataList>
+		</com:TPanel>		
+
+		<com:TPanel ID="PaginationPanel">	
+			<table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>	
+		</com:TPanel>			
+	</div>
+</com:TContent>

@@ -1,0 +1,36 @@
+<com:TContent ID="MainContent">
+	<com:TPanel ID="checkingBarcodePane" DefaultButton="CheckBtn" Style="padding: 25px;">
+		<table width="100%">
+			<tr>
+				<td>
+					<h3>This is a tool to check whether a barcode is valid.</h3>
+				</td>
+			</tr>
+			<tr>
+				<td >Barcode BS/BT/BP:
+					<com:TActiveTextBox ID="barcode"
+								    width="50%"
+								    ValidationGroup="Group1" /> 
+					<com:TRequiredFieldValidator 
+					    ControlToValidate="barcode"
+					    ErrorMessage="barcode required."
+					    ValidationGroup="Group1"
+					    EnableClientScript="true" />
+				</td>
+			</tr>		
+			<tr>
+				<td>
+					<com:TActiveButton ID="CheckBtn" Text="Check" ValidationGroup="Group1" OnClick="Page.checkBarcode" style="width:50%;">
+						<prop:ClientSide Onloading="$('<%= $this->CheckBtn->getClientId()%>').value='checking...';$('<%= $this->CheckBtn->getClientId()%>').disabled='true';"
+									OnComplete="$('<%= $this->CheckBtn->getClientId()%>').disabled='';$('<%= $this->CheckBtn->getClientId()%>').value='Check';" />
+					</com:TActiveButton>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<com:TActiveLabel ID="resultPanel" />
+				</td>
+			</tr>
+		</table>	
+	</com:TPanel>		
+</com:TContent>

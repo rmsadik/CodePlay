@@ -1,0 +1,32 @@
+<%@MasterClass="Application.layouts.NoExtJs.PlainEditLayout"" %>
+<com:TContent ID="MainContent">
+
+    <com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+    
+    <com:TCallback ID="initPushListCallback" OnCallback="Page.initPushList" />
+    <com:TCallback ID="savePushListCallback" OnCallback="Page.savePushList" />
+        
+    <com:TActivePanel ID="pagePanel">
+        <div id="pagewrapper">
+            <com:TActiveLabel ID="headerLbl" Text="Facility Request Push List" style="padding-left:20px; padding-bottom:20px; font-size:14px; font-weight:bold;"/>
+            <br /><br />            
+            <span style="padding-left:20px; padding-bottom:20px; font-size:12px; color:orange;">Instructions</span>
+            <ul style="list-style-type:square;padding-left:40px; padding-bottom:20px; font-size:12px; color:orange;">
+                <li>Drag & drop the available options on the left, to the current push list on the right (or vice-versa).</li>
+                <li>You can select multiple by holding Ctrl or Shift while clicking.</li>
+                <li>Select the 'Email?' checkbox to set the Send Email option to true.</li>
+                <li>Available Options are ANY warehouse with an alias of type 'Bytecraft Warehouse Type' and value 'FR_PushList'</li>
+            </ul>
+            <input type="button" id="saveBtn" value="Save Push List" onclick="pageJs.savePushList();" style="margin-left:20px; display:none;"/>
+            <br />            
+            <span class="inlineBlock mainPanel vtop"><div id="pushListDiv"></div></span>
+        </div>
+    </com:TActivePanel>
+    <com:TClientScript>
+        var pageJs = new js('<%= $this->initPushListCallback->getUniqueID()%>', '<%= $this->savePushListCallback->getUniqueID()%>');
+        
+        Ext.onReady(function() {
+            pageJs.initPushList();
+        });
+    </com:TClientScript>
+</com:TContent>

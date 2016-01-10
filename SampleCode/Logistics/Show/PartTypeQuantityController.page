@@ -1,0 +1,163 @@
+<com:TContent ID="MainContent">
+
+    <script type="text/javascript">
+        function refocus()
+        {
+            var value = $('<%= $this->partType->getClientId() %>').value.replace(/^\s+|\s+$/g,'');
+            if(value=='')
+                $('<%= $this->partType->getClientId() %>').focus();
+        }
+
+        function changeSortingOrder(linkObj,wantedSortingField,originalHtml)
+        {
+            var sortingField = $('<%= $this->Page->sortingField->getClientId() %>');
+            var sortingOrder =  $('<%= $this->Page->sortingOrder->getClientId() %>');
+            var linkObjId =  $('<%= $this->Page->headerFieldId->getClientId() %>');
+            var sortingFlag =  $('<%= $this->Page->submitFromSorting->getClientId() %>');
+
+            if(sortingField.value==wantedSortingField)
+            {
+                if(sortingOrder.value=='ASC')
+                    sortingOrder.value='DESC';
+                else
+                    sortingOrder.value='ASC';
+            }
+            else
+            {
+                sortingOrder.value='ASC';
+                linkObjId.value=linkObj.id;
+                sortingField.value=wantedSortingField;
+            }
+            sortingFlag.value="true";
+            $('<%=$this->SearchButton->getClientId()%>').click();
+        }
+
+        function showOrder()
+        {
+            var sortingOrder =  $('<%= $this->Page->sortingOrder->getClientId() %>');
+            var linkObjId =  $('<%= $this->Page->headerFieldId->getClientId() %>');
+            var linkObj = $(linkObjId.value);
+
+            if(sortingOrder.value=='ASC')
+                simple= '^';
+            else
+                simple= 'V';
+
+            if(navigator.appName == 'Microsoft Internet Explorer')
+                linkObj.innerText +='      '+simple;
+            else
+            {
+                if(simple== '^')
+                    simple='&nbsp; &Delta;';
+                else
+                    simple='&nbsp; &nabla;';
+                linkObj.innerHTML +=' '+simple;
+            }
+        }
+
+    </script>
+
+    <com:THiddenField ID="excelString" value=''/>
+
+    <com:THiddenField ID="sortingOrder" value='DESC'/>
+    <com:THiddenField ID="sortingField" value='ware.position'/>
+    <com:THiddenField ID="headerFieldId" value='location'/>
+    <com:THiddenField ID="submitFromSorting" value="false" />
+    <table width="100%">
+        <tr>
+            <td align="right">
+                <com:TButton id="resetBtn" Text="  Reset  " style="width:120px" Attributes.onclick=" location.href = '/partquantityatlocation'; return false;"/>
+            </td>
+        </tr>
+        <tr>
+            <td align="right">
+
+            </td>
+        </tr>
+        <tr>
+            <td valign="top">
+                <b><com:TLabel ID="UserLabel" Style="color:#ffffff"/></b>
+                <com:TPanel ID="SearchAddPanel" CssClass="SearchPanel" DefaultButton="SearchButton">
+                    <table width="100%" class="form">
+                        <tr>
+                            <td colspan="3" class="header">Show Part Quantity at Location</th>
+                        </tr>
+                        <tr>
+                            <td><b><%[PartType.searchContract]%>:</b></td>
+                            <td colspan="2">
+                                <com:Application.controls.HYAutoComplete Width="300" ID="searchContract" type="Contract" ResultPanel.CssClass="hydraautocomplete" />
+                                <com:THiddenField ID="searchContractHiddenField"" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="25%"><b>Part Type:<span style="color: red;">*</span></b></td>
+                            <td colspan="2">
+                                <com:Application.controls.EntityAutoComplete.HYPartTypeComplete
+                                    ID="partType"
+                                    ResultPanel.CssClass="hydraautocomplete"
+                                    Width="300"
+                                    ContractIdHolder="searchContract"
+                                    DisplayHotMessage="true"
+                                    />
+                                <com:TActiveLabel ID="jsLblHotMessage" Style="display:none;"/>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><b><%[PartType.searchOwner]%> Client:</b></td>
+                            <td colspan="2"><com:Application.controls.HYAutoComplete Width="300" ID="searchOwner" type="Client" ResultPanel.CssClass="hydraautocomplete" /></td>
+                          </tr>
+                          <tr>
+                            <td><b>Display Option:</b></td>
+                            <td colspan="2">
+                                <com:TDropDownList ID="displayOption" DataValueField="0" DataTextField="1" />
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><b><com:TActiveLabel ForControl="searchKit" Text="Include Parts in Kits" style="font-weight:bold" />:</b></td>
+                            <td colspan="2">
+                                <com:TActiveCheckBox ID="searchKit" Checked="true"/>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><b><%[PartType.searchStatus]%>:</b></td>
+                            <td colspan="2"><com:TListBox Rows="6" ID="searchStatus" SelectionMode="Multiple" DataTextField="name" DataValueField="id" Width="200px" /></td>
+                          </tr>
+                          <tr>
+                            <td><b>Country:</b></td>
+                            <td colspan="2">
+                               <com:TListBox Rows="5" ID="searchCountry" SelectionMode="Multiple" DataTextField="name" DataValueField="id" Width="200px"/>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>&nbsp;</td>
+                            <td colspan="2" class="">
+                                <com:TButton ID="SearchButton" Text=" Search " OnClick="search" style="width:120px" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                <com:TButton ID="BackButton" Text=" Back " style="width:120px" Attributes.onclick=" history.go(-1); return false;"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                <com:TButton ID="ToExcel" Text="Output to Excel" style="width:120px" onClick="outputToExcel"  />
+                            </td>
+                          </tr>
+
+                    </table>
+                    <br />
+                    <hr />
+                </com:TPanel>
+
+                <com:TPanel ID="locationListPanel" style='margin-top:15px;'/>
+                <com:TPanel ID="partsListPanel" style='margin-top:15px;'/>
+                <com:TPanel ID="facilityListPanel" style='margin-top:15px;'/>
+                <com:TPanel ID="TNListPanel" style='margin-top:15px;'/>
+
+            </td>
+            <td width="300" valign="top">
+                <div><%[PartType.searchLocation]%>:<span style="color: red;">*</span></div>
+                <com:Application.controls.HYWHTree ID="warehouse" hidden="warehouseid" BeforeExpandExtraJavascript="refocus()"/>
+                <com:THiddenField ID="warehouseid" VALUE="" />
+            </td>
+        </tr>
+    </table>
+<com:TClientScript>
+    var contentHeight =  $('content').getHeight()-140>500?$('content').getHeight()-140:500;
+    $('warehouse').style.height =  contentHeight +'px';
+</com:TClientScript>
+</com:TContent>
+

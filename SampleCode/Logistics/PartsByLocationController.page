@@ -1,0 +1,177 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<br />
+	<div>
+		<table width="100%">
+			<tr>
+				<td width="82%">	
+					<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel">
+						<com:THiddenField ID="SearchString" />
+						<com:THiddenField ID="focusObject" />
+						<com:THiddenField ID="focusObjectArgument" />
+					</com:TPanel>
+				</td>
+			</tr>
+		</table>
+		
+<!---   ---------------- Adding Panel ---------------- --->	
+		<com:TPanel ID="AddPanel" CssClass="AddPanel"></com:TPanel>
+<!---   ---------------- Editing Panel Ends Here---------------- --->					
+		<com:TPanel>
+			<table width="100%">
+				<tr>
+					<td  width="80%"  valign="top">
+							<table width="100%">	
+								<tr>
+									<td width="17%">Select PartType</td>
+									<td width="78%">
+										<com:Application.controls.HYAutoComplete ID="partTypes" 
+												AutoPostBack="true"
+												Type="PartTypeAlias"
+												Suggestions.DataKeyField="id"
+												ResultPanel.ScrollBars="Auto"
+												ResultPanel.CssClass="hydraautocomplete"
+												width="75%"
+												TabIndex="6" >
+												<prop:Suggestions.ItemTemplate>
+													<li><%# $this->DataItem->getAliasOfTypeOneAndType() %></li>
+											    </prop:Suggestions.ItemTemplate>			
+										</com:Application.controls.HYAutoComplete>
+										<com:TButton ID="SearchButton" Text=" Search " OnClick="search" />
+									</td>
+									<td width="5%" valign="top" align="left">
+										<com:TTextBox ID="SearchText" AutoPostBack="false" Columns="45" Text="g" visible="false"/>
+									</td>
+								</tr>	
+								<tr>
+									<td width="15%" valign="top"></td>
+									<td width="80%" valign="top">
+										<font color="red"><com:TLabel ID="partTypesValidator" Text="Valid PartCode / PartType required" visible="false"/></font>
+									</td>
+									<td width="5%" valign="top"></td>
+								</tr>
+							</table>
+						</td>
+					<td  width="20%" valign="top">
+						<table width="100%">
+							<tr>
+								Select Location:							
+							</tr>
+						</table>
+					</td>	
+				</tr>
+				<tr>
+					<td  width="80%"  valign="top">
+						<com:TPanel ID="DataListPanel">
+							<table width="100%" class="DataListTitle">
+								<tr>
+										<th>
+											<td width="40%" align="left">
+													<com:TLabel Text="<%[ PartInstance.list ]%>" /> 
+													<com:TLabel ID="PartTypeLabel" />
+											</td>
+											
+											<td width="60%" align="right">
+												<b>Part Code: <com:TLabel ID="PartCode" /></b>
+											</td>
+											
+										</th>
+								</tr>
+							</table>
+							
+							<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem" 
+									     OnEditCommand="edit"
+									     OnDeleteCommand="deletePartType"
+									     OnUpdateCommand="save" OnCancelCommand="cancel"
+									     CssClass="DataList" 
+									     ItemStyle.CssClass="DataListItem" 
+									     AlternatingItemStyle.CssClass="DataListAlterItem" 
+									     EditItemStyle.CssClass="DataListEditItem" 
+										 width="100%"
+										 AllowPaging="true" AllowCustomPaging="true" PageSize="30" EnableViewState="true">
+								
+							    <prop:HeaderTemplate>
+									<table width="100%" height="25">
+										<tr>
+											<th width="40%"><%[ PartInstance.warehouse ]%></th>
+											<th width="10%"><%[ PartInstance.status ]%></th>
+											<th width="10%"><%[ PartInstance.quantity ]%></th>
+											<th width="20%"><%[ PartInstance.serialNo ]%></th>
+										</tr>
+									</table>
+								</prop:HeaderTemplate>
+				
+								<prop:ItemTemplate>
+									<table width="100%" height="25">
+										<tr>
+											<td width="40%"><%# $this->DataItem->getWarehouse() %></th>
+											<td width="10%"><%# $this->DataItem->getPartInstanceStatus() %></td>
+											<td width="10%"><%# $this->DataItem->getQuantity() %></th>
+											<td width="20%">
+												<%% if(is_object($this->DataItem))
+													{
+														$flg = false;
+														foreach($this->DataItem->getPartInstanceAlias() as $partInstanceAlias) 
+														{
+															if(strtoupper($partInstanceAlias->getPartInstanceAliasType())=='SERIAL NO') 
+															{
+															 	$flg=true;
+															 	echo (string)$partInstanceAlias->getAlias();
+															 	break;
+															}
+														}
+														if($flg == false)
+														{
+															echo (string) $this->Page->getBarcode($this->DataItem->getId());
+														}
+													}
+												%>
+											</td>					
+										</tr>
+									</table>
+								</prop:ItemTemplate>
+								
+								<prop:EditItemTemplate></prop:EditItemTemplate>
+												
+							    <prop:FooterTemplate>
+								    <table width="100%" height="25">
+										<tr>
+											<th colspan="3">
+												<div style="font-weight: bold; text-align: center;">
+													Total <%% echo $this->Parent->Page->getRowCount(); %> Part Types
+												</div>
+											</th>
+										</tr>
+									</table>
+								</prop:FooterTemplate>				
+							</com:TDataList>
+				
+							<com:TPanel ID="PaginationPanel">		
+							    <table width="100%" height="25">
+									<tr>
+										<th colspan="3" align="left">
+											Select Page :
+											<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+										</th>
+										<th colspan="3" align="right">
+											Go To Page :
+											<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+										</th>
+									</tr>
+								</table>
+							</com:TPanel>			
+						</com:TPanel>			
+					</td>
+					<td  width="20%" valign="top">
+						<table width="100%">
+							<tr>
+								<com:Application.controls.HYWHTree ID="warehouse" hidden="warehouseid" />
+								<com:THiddenField ID="warehouseid" VALUE="" />
+							</tr>
+						</table>
+					</td>	
+				</tr>
+			</table>		
+		</com:TPanel>
+	</div>
+</com:TContent>

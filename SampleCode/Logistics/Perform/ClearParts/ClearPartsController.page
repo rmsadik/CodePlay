@@ -1,0 +1,336 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<com:TActiveLabel ID="activeInfoLabel" ForeColor="green" style="font-weight:bold;"/>
+	<com:TActiveLabel ID="activeErrorLabel" ForeColor="red" style="font-weight:bold;"/>
+	<script type="text/javascript">
+		var diff;
+		var partInstanceIds;
+
+		function startMovingParts()
+		{
+			$('<%= $this->clearPartsLogId->getClientId()%>').value = $('<%= $this->clearPartsLogId->getClientId()%>').value*1+1;
+			$('<%= $this->currentProcessingPartInstanceId->getClientId()%>').value=0;
+			$('<%= $this->activeInfoLabel->getClientId()%>').innerHTML='';
+			$('<%= $this->activeErrorLabel->getClientId()%>').innerHTML='';
+			$('<%= $this->procesingErrors->getClientId()%>').innerHTML='';
+			$('<%= $this->noOfpartsMoved->getClientId()%>').value=0;
+			$('<%= $this->MoveParts->getClientId()%>').disabled=true;
+			$('<%= $this->quantityProcessed->getClientId()%>').innerHTML = "";
+			$('<%= $this->totalQuantity->getClientId()%>').innerHTML = "";
+			$('processingBar').style.width = '0%';
+			$('confirmNoButton').disabled=true;
+
+
+
+			$('loading').show();
+
+			partInstanceIds = $('<%= $this->partInstanceIdsToBeMoved->getClientId()%>').value.split(",");
+			var len =partInstanceIds.length;
+            $('processingTotal').innerHTML=len;
+            $('<%= $this->totalQuantity->getClientId()%>').innerHTML= $('<%= $this->partsCount->getClientId()%>').innerHTML;
+			diff = (100 / $('<%= $this->totalQuantity->getClientId()%>').innerHTML);
+			$('processingId').innerHTML = 0;
+			$('<%= $this->quantityProcessed->getClientId()%>').innerHTML = 1;
+			clickBtn(partInstanceIds[$('processingId').innerHTML]);
+		}
+
+
+
+		function clickBtn(index)
+		{
+			$('processingId').innerHTML++;
+			var curr = $('processingBar').style.width;
+			curr = 1 * (curr.substring(0, (curr.length-1)));
+			curr = Math.ceil($('<%= $this->quantityProcessed->getClientId()%>').innerHTML * diff);
+			if(curr>=100)
+				curr=100;
+			$('processingBar').style.width = curr + '%';
+
+			$('<%= $this->currentProcessingPartInstanceId->getClientId()%>').value= index;
+			$('<%= $this->ActualMovePartsBtn->getClientId()%>').click();
+		}
+
+		function finishMovingParts()
+		{
+			$('confirmNoButton').disabled='';
+			$('<%= $this->MoveParts->getClientId()%>').disabled='';
+			$('<%= $this->confirmButton->getClientId()%>').disabled='';
+			$('<%= $this->partInstanceIdsToBeMoved->getClientId()%>').value='';
+			$('confirmBoxTable').hide();
+			$('confirmBoxResultDiv').show();
+			if($('<%= $this->procesingErrors->getClientId()%>').innerHTML=='')
+				$('confirmBoxResultDiv_error').hide();
+			else
+				$('confirmBoxResultDiv_error').show();
+		}
+
+		function closeConfirmDiv()
+		{
+			$('processingCover').fade({ duration: 0.1, from: 0.9, to: 0 });
+			$('<%= $this->Page->confirmButton->getClientId() %>').disabled=false;
+		}
+
+
+	    function clearParts(callback) {
+	        var data = {};
+	        bsuiteJs.postAjax(callback, data, {
+	            'onLoading': function (sender, param) {
+	            	$('loadingConfirm').show();
+                    $('<%= $this->Page->confirmButton->getClientId() %>').disabled=true;
+                    $('confirmBoxResultDiv').hide();
+                    $('confirmBoxTable').show();
+                    $('processingBar').style.width = '1%';
+                    $('<%= $this->quantityProcessed->getClientId()%>').innerHTML = "";
+                    $('<%= $this->totalQuantity->getClientId()%>').innerHTML = "";
+	            },
+	            'onComplete': function (sender, param) {
+	            	if($('<%= $this->Page->loadedConfirmPanel->getClientId() %>').value=='true')
+                    {
+                        $('processingCover').appear({ duration: 0.1, from: 0.7, to: 0.9 });
+                    }
+                    else {
+                    	$('<%= $this->Page->confirmButton->getClientId() %>').disabled=false;
+                    }
+	            	$('loadingConfirm').hide();
+	            }
+	        });
+	    }
+
+
+
+	</script>
+	<br />
+
+
+
+	<com:TCallback ID="clearParts" OnCallback="Page.loadConfirmPanel" />
+	<div id="processingCover" style="background: #888888;width:985px;position:absolute;display:none;text-align:center;">
+		<div style="margin: 200px; padding:20px;border:3px #ffffff solid; color:#000000; text-align:left;font-size:12pt;">
+			<style>
+			.confirmTextBox
+			{
+				color:#ffffff;
+				width:95%;
+				border-bottom:1px #ffffff solid;
+				background:transparent;
+			}
+			</style>
+
+			<div id="confirmBoxResultDiv">
+				<div style="color:green;width:100%;font-weight:bold;background:white;">
+					<com:TActiveLabel ID="noOfpartsMoved" /> part(s) moved successfully!
+				</div>
+				<div id="confirmBoxResultDiv_error">
+					<h3 style='color:red;'>Error:</h3>
+					<div style="color:red;width:100%;padding:20px;border:3px #ffffff solid; color:#000000; text-align:left;">
+						<com:TActiveLabel ID="procesingErrors" />
+					</div>
+				</div>
+				<input Type="Button" Value="       confirm       " OnClick="closeConfirmDiv();" />
+			</div>
+			<table width="100%" border="0" id="confirmBoxTable">
+				<tr>
+					<td colspan="2">
+						Are you sure you want to move all parts
+					</td>
+				</tr>
+				<tr>
+					<td width="30%">
+						From:
+					</td>
+					<td >
+						<com:TActiveTextBox ID="fromWarehouseName"  CssClass="confirmTextBox" ReadOnly="true"/>
+					</td>
+				</tr>
+				<tr>
+					<td >
+						To:
+					</td>
+					<td >
+						<com:TActiveTextBox ID="toWarehouseName"    CssClass="confirmTextBox" ReadOnly="true"/>
+					</td>
+				</tr>
+				<tr>
+					<td >
+						Part Type:
+					</td>
+					<td >
+						<com:TActiveTextBox ID="movingPartType"    CssClass="confirmTextBox" ReadOnly="true"/>
+					</td>
+				</tr>
+				<tr>
+					<td >
+						Serialised? :
+					</td>
+					<td >
+						<com:TActiveTextBox ID="movingPartSerialised"    CssClass="confirmTextBox" ReadOnly="true"/>
+					</td>
+				</tr>
+				<tr>
+					<td >
+						Owner Client:
+					</td>
+					<td >
+						<com:TActiveTextBox ID="movingPartOwnerClient"     CssClass="confirmTextBox" ReadOnly="true"/>
+					</td>
+				</tr>
+				<tr>
+					<td >
+						Contract:
+					</td>
+					<td >
+						<com:TActiveTextBox ID="movingPartContract"    CssClass="confirmTextBox" ReadOnly="true"/>
+					</td>
+				</tr>
+				<tr>
+					<td >
+						Status:
+					</td>
+					<td >
+						<com:TActiveTextBox ID="movingPartStatus"  style="color:#ffffff;width:35%; border-bottom:1px #ffffff solid; background:transparent;" ReadOnly="true"/>
+						<com:TDropDownList ID="movingPartNewStatus"
+							AutoPostBack="false" style="width:35%;"
+							DataTextField="Name"
+						    DataValueField="id"
+						    PromptText="Keep Orginal Status"/>
+					</td>
+				</tr>
+				<tr>
+					<td >
+						Alias Format:
+					</td>
+					<td >
+						<com:TActiveTextBox ID="movingAliasFormat"    CssClass="confirmTextBox" ReadOnly="true"/>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						(Number of Part Instances That Will Be Moved:<com:TActiveLabel ID="partsCount" style="font-weight:bold;"/>)
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<com:TActiveButton ID="MoveParts" Attributes.OnClick="startMovingParts();return false;" Text="      Yes      " />
+						<input id="confirmNoButton" Type="Button" Value="       NO       " OnClick="closeConfirmDiv();" />
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<div id="loading" style="display:none;" >
+							<com:TImage ImageUrl="/themes/images/ajax-loader.gif" />
+							<div id="processingContainer" style="width:100%;border:1px white solid;">
+								<div id="processingBar" style='background:blue;height:35px;width:1%;'>&nbsp;</div>
+							</div>
+							<div style='width:100%;font-size:12px;'>
+								<span id='processingId' style='display:none'></span><com:TActiveLabel ID="quantityProcessed" Text=""/> / <com:TActiveLabel ID="totalQuantity" Text=""/><span id='processingTotal' style='display:none'></span>
+							</div>
+							<com:TActiveHiddenField ID="currentProcessingPartInstanceId" />
+							<com:TActiveHiddenField ID="clearPartsLogId" value='0'/>
+							<com:TActiveButton ID="ActualMovePartsBtn" OnClick="Page.moveParts" Text="ActualMovePartsBtn" style="display:none;">
+								<prop:ClientSide
+									OnLoading=""
+									OnComplete="
+												var currentIndex = $('processingId').innerHTML * 1;
+												var totalIndex = $('processingTotal').innerHTML * 1;
+												if(currentIndex < totalIndex)
+												{
+													clickBtn(partInstanceIds[currentIndex]);
+												}
+												else
+												{
+													finishMovingParts();
+												}
+									"
+									/>
+							</com:TActiveButton>
+						</div>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	<com:TActiveHiddenField ID="loadedConfirmPanel" />
+	<com:TActiveHiddenField ID="partInstanceIdsToBeMoved" />
+	<b>Clearing Parts:</b>
+	<table border="0" width="100%">
+		<tr>
+			<td style="background:#c3daf9;font-weight:bold;padding:5px;">
+				From Warehouse:
+			</td>
+			<td>
+				&nbsp;
+			</td>
+			<td style="background:#c3daf9;font-weight:bold;padding:5px;">
+				To Warehouse:
+			</td>
+		</tr>
+		<tr>
+			<td style="border:4px solid #c3daf9;vertical-align:top;width: 380px;">
+				<com:Application.controls.HYWHTree
+					ID="fromWarehouseTree" hidden="fromwarehouseid"
+					CssStyle=" overflow:auto;background:#ffffff; margin:0;padding:0px;"
+					/>
+				<com:TActiveHiddenField ID="fromwarehouseid" />
+			</td>
+			<td style="vertical-align:top;text-align:center;" >
+				<div style="text-align:left;width:100%; margin-left:10px;">
+					Part Type:<br />
+					<com:Application.controls.EntityAutoComplete.HYPartTypeComplete
+										ID="SearchPartType"
+										ResultPanel.CssClass="hydraautocomplete"
+										PageMethod="handleSelectedPartType"
+										Suggestions.DataKeyField="id" Width="80%" />
+					<br />
+					Serialised?:
+					<com:TActiveDropDownList ID="SearchSerialisedFlag">
+							<com:TListItem Value="All" Text="All"/>
+							<com:TListItem Value="Yes" Text="Yes"/>
+							<com:TListItem Value="No" Text="No"/>
+					</com:TActiveDropDownList><br />
+
+					Owner Client:<br />
+					<com:Application.controls.HYAutoComplete ID="SearchOwnerClient"
+								Suggestions.DataKeyField="id"
+								ResultPanel.ScrollBars="Auto"
+								ResultPanel.CssClass="hydraautocomplete"
+								Type="Client"
+								/><br />
+
+					Contract:<br />
+					<com:Application.controls.HYAutoComplete ID="SearchContract"
+								Suggestions.DataKeyField="id"
+								ResultPanel.ScrollBars="Auto"
+								ResultPanel.CssClass="hydraautocomplete"
+								Type="Contract"
+								/><br />
+					Status:<br />
+					<com:TDropDownList ID="SearchStatus"
+							AutoPostBack="false" style="width:90%;"
+							DataTextField="Name"
+						    DataValueField="id"
+						    PromptText="All"/><br /><br />
+					Alias Format:<br /><i style='font-size:10px;'>(i.e.: BCS% or BS% or BT%):</i><br />
+					<com:TActiveTextBox ID="aliasFormat" /><br /><br />
+
+					<com:TPanel ID="clearDownwardsPanel">
+						Move all parts within node downwards:<br />
+						<com:TActiveCheckBox ID="clearDownWards" /><br /><br />
+					</com:TPanel>
+				</div>
+				<com:TActiveButton ID="confirmButton" Text="=>             Clear   Parts           =>"  Attributes.onclick="clearParts('<%= $this->clearParts->getUniqueID() %>')" style="padding:0px;margin:0px;" />
+
+
+
+
+				<span id="loadingConfirm" style="display: none;"><br /><com:TImage ImageUrl="/themes/images/ajax-loader.gif" /></span>
+			</td>
+			<td style="border:4px solid #c3daf9;vertical-align:top;width: 380px;">
+				<com:Application.controls.HYWHTree
+					ID="toWarehouseTree" hidden="towarehouseid"
+					CssStyle=" overflow:auto;background:#ffffff; margin:0;padding:0px;"
+					/>
+				<com:TActiveHiddenField ID="towarehouseid" />
+			</td>
+		</tr>
+	</table>
+</com:TContent>

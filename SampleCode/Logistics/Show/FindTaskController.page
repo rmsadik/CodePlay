@@ -1,0 +1,27 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<table width="100%">
+		<tr>
+			<td width="50%"></td>
+			<td width="30%" align="right">Search Task:</td>
+			<td width="20%" align="left">
+				<com:TTextBox ID="TaskNumber"
+							    TabIndex="1"
+							    width="70%"
+							    ValidationGroup="Group1" /> 
+				<com:TActiveButton ID="FindTaskButton" Text="Go" TabIndex="2" ValidationGroup="Group1" OnClick="findTask" />
+			</td>
+		</tr>		
+		<tr>
+			<td width="50%"></td>
+			<td width="30%" align="right"></td>
+			<td width="20%" align="left">
+				<com:TRequiredFieldValidator ID="TaskNumberValidator"
+				    ControlToValidate="TaskNumber"
+				    ErrorMessage="Client Task# required."
+				    ValidationGroup="Group1"
+				    EnableClientScript="true" />
+			</td>
+		</tr>
+	</table>			
+</com:TContent>

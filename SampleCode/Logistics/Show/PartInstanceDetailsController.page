@@ -1,0 +1,377 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+
+<style>
+tr.hotMessage td
+{
+    border-style:solid;
+    border-color:red;
+    border-width: 4px;
+    background:#ffffff;
+    border-right:none;
+    border-left:none;
+    font-size:14px;
+}
+</style>
+
+<!-- Javascript function to Hide the Hot Message -->
+<script type="text/javascript">
+
+        function hideHotMessageRow()
+        {
+
+            window.onload = function () {
+                document.getElementById('hotMessageTr').style.display = 'none';
+            }
+        }
+
+</script>
+<!-- -------------------------------------------- -->
+    <com:TActiveLabel ID="jsLbl" Style="display:none;"/>
+
+      <br />
+      <br />
+      <div>
+            <b><com:TLabel ID="UserLabel" Style="color:#ffffff"/></b>
+            <com:TPanel ID="SearchAddPanel" CssClass="SearchPanel" DefaultButton="SearchButton">
+                  <table width="100%">
+                        <tr>
+                              <td width="80%">
+                                    <%[PartInstance.searchLabel]%>:
+                                    <com:TDropDownList ID="aliasType" DataTextField="name" DataValueField="id" AutoPostBack="false" PromptText="ALL" PromptValue=" "/>
+                                    <com:TTextBox ID="SearchText" AutoPostBack="false" Columns="45" TabIndex="0" />
+                                    &nbsp;
+                                    &nbsp;
+                                    Active:
+
+                                    <com:TDropDownList ID="searchActiveFlag"
+                                          AutoPostBack="false"
+                                        EnableClientScript="false">
+                                          <com:TListItem Text="Yes" Value="Yes" />
+                                          <com:TListItem Text="No" Value="No" />
+                                          <com:TListItem Text="ALL" Value="All" />
+                                    </com:TDropDownList>
+
+                                    <com:TButton ID="SearchButton" Text=" Search " OnClick="search" />
+                                    <com:THiddenField ID="SearchString" />
+                                    <com:THiddenField ID="focusObject" />
+                                    <com:THiddenField ID="focusObjectArgument" />
+                                    <com:THiddenField ID="searchData" />
+                              </td>
+                              <td width="20%">
+		                             <com:TButton ID="outputToExcel" Text=" ToExcel " OnClick="outputToExcel" />
+                              </td>
+                        </tr>
+                  </table>
+                  <br /><hr /><br />
+            </com:TPanel>
+
+            <com:TPanel ID="AddPanel" CssClass="AddPanel" >
+
+            </com:TPanel>
+
+<!---   ---------------- Listing Panel Starts---------------- --->
+            <com:TPanel ID="ListingPanel">
+                  <br />
+
+
+
+
+                  <com:TDataList ID="DataList" DataKeyField="0" OnSelectedIndexChanged="selectItem"
+                                     RepeatLayout="Raw"
+                                     OnEditCommand="edit"
+                                   OnUpdateCommand="save"
+                                   OnCancelCommand="cancel"
+                                   CssClass="DataList"
+                                   ItemStyle.CssClass="DataListItem"
+                                   AlternatingItemStyle.CssClass="DataListAlterItem"
+                                   EditItemStyle.CssClass="DataListEditItem"
+                                     width="100%"
+                                     AllowPaging="true"
+                                     AllowCustomPaging="true" PageSize="10"
+                                     EnableViewState="true">
+
+                      <prop:HeaderTemplate>
+                        <table width="100%" class="DataListTitle">
+                                    <tr>
+                                          <th>
+                                                <com:TLabel ID="listLabel" Text="<%[ PartInstance.list ]%>" />
+                                          </th>
+                                    </tr>
+                              </table>
+                              <table width="100%" height="25" class="DataList">
+                              <thead>
+                                    <tr>
+                                          <th width="3%"><%[ PartType.active ]%></th>
+                                          <th width="20%"><%[ PartType.name ]%></th>
+                                          <th width="10%" style='text-align:center;'><%[ PartType.alias ]%></th>
+                                          <th width="30%">Aliases</th>
+                                          <th width="15%" style='text-align:center;'><%[ PartInstance.alias ]%></th>
+                                          <th width="20%"><%[ PartInstance.warehouse ]%></th>
+                                          <th width="*"></th>
+
+                                    </tr>
+                              </thead>
+                              <tbody>
+                        </prop:HeaderTemplate>
+
+                        <prop:ItemTemplate>
+                                    <tr class="<%# $this->Page->getStyle($this->getItemIndex()) %>" >
+                                          <td>
+                                                <com:TImage ID="activeFlag"  ImageUrl="<%# $this->Page->getActiveFlag($this->DataItem[6]) %>" />
+                                          </td>
+                                          <td><%# $this->DataItem[1] %></td>
+                                          <td style='text-align:center;'><%# $this->DataItem[2] %></td>
+                                          <td><%# $this->DataItem[3] %></td>
+                                          <td style='text-align:center;'><%# $this->DataItem[5] %></td>
+                                          <td><%# $this->Page->getLocationById($this->DataItem[0]) %></td>
+                                          <td style="text-align:right;">
+                                                <com:TImageButton ImageUrl="/themes/images/grey_plus.gif" Text="Edit" CommandName="edit" ToolTip="Show Record" />
+                                          </td>
+                                    </tr>
+                        </prop:ItemTemplate>
+
+                        <prop:EditItemTemplate>
+                                    <table width="100%" height="25" class="DataList">
+                                    <tbody>
+                                    <tr>
+                                          <td colspan="7" class="DataListEditItem" style="padding:5px 0px 5px 0px">
+                                                <table width="100%" cellspacing="0" cellpadding="0">
+                                                      <tr>
+                                                            <td style='padding:0'>
+                                                                  <table width="100%" border="0" class="DataList">
+                                                                        <thead>
+                                                                              <tr>
+                                                                                    <th colspan="2">
+                                                                                          Part Instance Information
+                                                                                    </th>
+                                                                              </tr>
+                                                                              <tr>
+                                                                                    <th width="30%">Name</th>
+                                                                                    <th width="60%">Value</th>
+                                                                              </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                              <tr class="<%# $this->Page->getStyle(0) %>">
+                                                                                    <td>Active</td>
+                                                                                    <td><com:TLabel ID="partInstanceActive" /> </td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(1) %>">
+                                                                                    <td><%[ PartInstance.warehouse ]%></td>
+                                                                                    <td><com:TLabel ID="partInstanceWarehouse" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(2) %>">
+                                                                                    <td><%[ PartInstance.status ]%></td>
+                                                                                    <td><com:TLabel ID="partInstanceStatus" /></td>
+                                                                              </tr>
+
+
+                                                                              <!-- An additional row to show the hot message at the top -->
+                                                                              <tr class="hotMessage" ID="hotMessageTr" >
+                                                                                    <td><b>Hot Message</b></td>
+                                                                                    <td><com:TActiveLabel ID="hotMessage" /></td>
+                                                                              </tr>
+                                                                             <!-- ----------------------------------------------------- -->
+
+
+                                                                              <tr class="<%# $this->Page->getStyle(3) %>">
+                                                                                    <td><%[ PartInstance.quantity ]%></td>
+                                                                                    <td><com:TLabel ID="partInstanceQuantity" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(4) %>">
+																					<td>Part Instance Aliases</td>
+                                                                                    <td><com:TLabel ID="partInstanceAliases" /></td>
+																			  </tr>
+																			  <tr class="<%# $this->Page->getStyle(5) %>">
+																					<td><com:TLabel ID="partInstancePoLbl" Style="display:none;" Text="Purchase Order Information"/></td>
+																					<td><com:TLabel ID="partInstancePoInfo" /></td>
+                                                                              </tr>
+                                                                              <tr>
+                                                                                    <td></td>
+                                                                                    <td align="right">
+	                                                                                    <com:THyperLink
+	                                                                                                Text="View History"
+	                                                                                                NavigateUrl = "/parthistory/searchparttext/<%# $this->DataItem[0] %>/"
+	                                                                                                Target="_blank"
+	                                                                                    />
+	                                                                                    <com:Application.controls.HYLock Feature="pages_all,feature_showpartdetails_showrepairhistory" >
+	                                                                                    &nbsp;&nbsp;
+														                               <com:THyperLink
+														                                            Text="View Repair History"
+														                                            ToolTip="View Repair History"
+														                                            NavigateUrl = "/workshopRepairHistory/<%# $this->DataItem[0] %>/"
+														                                            Target="_blank"
+														                                            />
+	                                                                                    &nbsp;&nbsp;
+														                               <com:THyperLink
+														                                            Text="View New Repair History"
+														                                            ToolTip="View New Repair History"
+														                                            NavigateUrl = "/newworkshopRepairHistory/<%# $this->DataItem[0] %>/"
+														                                            Target="_blank"
+														                                            />
+	                                                                                    </com:Application.controls.HYLock>
+	                                                                                    &nbsp;&nbsp;
+	                                                                                    <com:TActiveHyperLink ID="partsWithin"
+	                                                                                                Text="View Parts within" Visible="false"
+	                                                                                                NavigateUrl = "/viewpartswithin/searchparttext/<%# $this->DataItem[0] %>/"
+	                                                                                                Target="_blank"
+	                                                                                    />
+	                                                                                    <com:TButton
+	                                                                                                ID="lostPartBtn"
+	                                                                                                Text="Lost This Part"
+	                                                                                                OnCommand="Page.lostThisPart"
+	                                                                                                CommandParameter="<%# $this->DataItem[0] %>"
+	                                                                                                Visible="false"
+	                                                                                                style="float:right;"/>
+                                                                                    </td>
+                                                                              </tr>
+                                                                        </tbody>
+                                                                  </table>
+                                                                  <br/>
+                                                                  <%# $this->Page->getParentDetails($this->DataItem[0]) %>
+                                                                  <br />
+                                                                  <com:Application.controls.HYLock Feature="pages_all,pages_logistics,page_logistics_partType">
+                                                                   <table width="100%" border="0"><tr>
+                                                                   <td width="34%">&nbsp;</td>
+                                                                   <td style="text-align:left">
+                                                                                           <com:TActiveHyperLink ID="editPartTypeLink"
+	                                                                                                Text="Admin Part Type"
+	                                                                                                NavigateUrl = "/parttypes/search"
+	                                                                                                Target="_blank"
+	                                                                                	    />
+                                                                 	 </td></tr> </table>
+                                                                  </com:Application.controls.HYLock>
+                                                                  <table width="100%" border="0" class="DataList">
+
+                                                                        <thead>
+                                                                              <tr>
+                                                                                    <th colspan="2">
+                                                                                          Part Type Information
+                                                                                    </th>
+                                                                              </tr>
+                                                                              <tr>
+                                                                                    <th width="30%">Name</th>
+                                                                                    <th width="60%">Value</th>
+                                                                              </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                              <tr class="<%# $this->Page->getStyle(0) %>">
+                                                                                    <td><%[ PartType.name ]%></td>
+                                                                                    <td><com:TLabel ID="partTypeName" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(1) %>">
+                                                                                    <td><%[ PartType.description ]%></td>
+                                                                                    <td><com:TLabel ID="partTypeDescription" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(2) %>">
+                                                                                    <td>Owner Client</td>
+                                                                                    <td><com:TLabel ID="partTypeOwner" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(3) %>">
+                                                                                    <td>Kit Type</td>
+                                                                                    <td><com:TLabel ID="partTypeKitType" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(4) %>">
+                                                                                    <td><%[ PartType.make ]%></td>
+                                                                                    <td><com:TLabel ID="partTypeMake" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(5) %>">
+                                                                                    <td><%[ PartType.model ]%></td>
+                                                                                    <td><com:TLabel ID="partTypeModel" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(6) %>">
+                                                                                    <td><%[ PartType.version ]%></td>
+                                                                                    <td><com:TLabel ID="partTypeVersion" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(7) %>">
+                                                                                    <td><%[ PartType.repairable ]%>
+                                                                                    </td>
+                                                                                    <td><com:TImage ID="partTypeRepairable" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(8) %>">
+                                                                                    <td><%[ PartType.partTypeGroup ]%></td>
+                                                                                    <td><com:TLabel ID="partTypeGroups" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(9) %>">
+                                                                                    <td><%[ PartType.partTypeAlias ]%></td>
+                                                                                    <td><com:TLabel ID="partTypeAlias" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(10) %>">
+                                                                                    <td><%[ PartType.contracts ]%></td>
+                                                                                    <td><com:TLabel ID="partTypeContracts" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(11) %>">
+                                                                                    <td><%[ PartType.manufacturer ]%></td>
+                                                                                    <td><com:TLabel ID="partTypeManufacturer" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(12) %>">
+                                                                                    <td><%[ PartType.suppliers ]%></td>
+                                                                                    <td><com:TLabel ID="partTypeSuppliers" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(13) %>">
+                                                                                    <td>Serialised</td>
+                                                                                    <td><com:TImage ID="partTypeSerialised" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(14) %>">
+                                                                                    <td>Active</td>
+                                                                                    <td><com:TImage ID="partTypeActive" /></td>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(15) %>">
+                                                                                    <td>Part Instance Aliases</td>
+                                                                                    <td><com:TLabel ID="mandatoryFields" /></td>
+                                                                              </tr>
+                                                                              </tr>
+                                                                              <tr class="<%# $this->Page->getStyle(16) %>">
+                                                                                    <td>Depreciable</td>
+                                                                                    <td><com:TImage ID="depreciable" /></td>
+                                                                              </tr>
+                                                                        </tbody>
+                                                                  </table>
+                                                            </td>
+                                                            <td valign="top" style="text-align:right">
+                                                                  <com:TImageButton ID="CancelEditButton" ImageUrl="/themes/images/grey_minus.gif" Text="Back" CommandName="cancel" ToolTip="Collapse Record" />
+                                                            </td>
+                                                      </tr>
+                                                </table>
+                                          </td>
+                                    </tr>
+                        </prop:EditItemTemplate>
+
+                      <prop:FooterTemplate>
+                              </tbody>
+                              <tfoot>
+                                    <tr>
+                                          <th colspan="7">
+                                                <div style="font-weight: bold; text-align: center;">
+                                                      Total <%# $this->Parent->VirtualItemCount %> Parts
+                                                </div>
+                                          </th>
+                                    </tr>
+                                    </tfoot>
+                              </table>
+                        </prop:FooterTemplate>
+                  </com:TDataList>
+
+					<com:TPanel ID="PaginationPanel">
+					    <table width="100%" height="25">
+							<tr>
+								<th colspan="3" align="left">
+									Select Page :
+									<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+								</th>
+								<th colspan="3" align="right">
+									Go To Page :
+									<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+									<com:Application.controls.ResultsPerPageList.ResultsPerPageList ID="resultsPerPageList" onPageResultsChanged="resultsPerPageChanged"   defaultPerPage="10" AutoPostBack="true" />
+								</th>
+							</tr>
+						</table>
+					</com:TPanel>
+
+        </com:TPanel>
+
+
+
+      </div>
+</com:TContent>
+

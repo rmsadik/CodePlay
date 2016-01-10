@@ -1,0 +1,173 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<com:THiddenField ID="SearchString" />
+	<com:TTextBox ID="SearchText" Visible="false" />
+	<com:THiddenField ID="focusObject" />
+	<com:THiddenField ID="focusObjectArgument" />
+	<br />
+	<br />
+	<script>
+	
+		function doEnterBehavior(event,buttonName)
+		{
+			if(!((event.which && event.which == 13) || (event.keyCode && event.keyCode == 13)))
+			{
+				return true;
+			} else {
+				var button = document.getElementById(buttonName);
+				button.click();
+				return false;
+			}
+		}			
+	
+		function changeRow(parentValue,row,matchText)
+		{
+			var row=document.getElementById('Row_' + row);
+			if(parentValue != matchText) 
+			{
+				row.style.backgroundColor = 'red'; 
+			} else { 
+				row.style.backgroundColor = '';
+			}
+			
+			return true;
+		}
+		
+		function getSelected(object)
+		{
+			var length = object.length;
+			for(i=0;i<length;i++)
+			{
+				if(object[i].selected)
+					return object[i].value;
+			}
+			return '-1';
+		}
+		
+	</script>
+	<div>
+		<b><com:TLabel ID="UserLabel" Style="color:#ffffff"/></b>
+		<table width="100%" border="0">
+			<tr>
+				<td width="25%"><%[PartInstance.trackingNumber]%>:<span style="color: red;">*</span></td>
+				<td width="40%"><com:TActiveTextBox id="BTBarcode" Text="" width="100%" /></td>
+				<td width="20%" align="center">
+					<com:TCheckBox id="isInActive" Text="Show Inactive"></com:TCheckBox>
+				</td>
+				<td width="15%" align="right">
+					<com:TButton ID="SearchButton" Text=" Search " OnClick="search" />
+				</td>
+			</tr>		
+		</table>
+	
+				
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" >		
+		</com:TPanel>
+
+<!---   ---------------- Listing Panel Starts---------------- --->					
+		<com:TPanel>		
+			<br />
+			
+			<com:TDataList 
+						ID="DataList" 
+						DataKeyField="0" 
+						OnSelectedIndexChanged="selectItem" 
+						RepeatLayout="Raw" 
+						OnEditCommand="edit" 
+					    OnUpdateCommand="save"  
+					    OnCancelCommand="cancel" 
+					    OnItemCreated="itemCreated" 
+					    CssClass="DataList" 
+					    ItemStyle.CssClass="DataListItem" 
+					    AlternatingItemStyle.CssClass="DataListAlterItem" 
+					    EditItemStyle.CssClass="DataListEditItem" 
+						width="100%" 
+						AllowPaging="true" 
+						AllowCustomPaging="true" 
+						PageSize="10" 
+						EnableViewState="true">
+				
+			    <prop:HeaderTemplate>
+					<table width="100%" class="DataListTitle">
+						<tr>
+							<th>
+								<com:TLabel ID="listLabel" Text="<%[ PartInstanceAlias.list ]%>" /> 
+							</th>
+						</tr>
+					</table>			    
+					<table width="90%" height="25" class="DataList">
+					<thead>
+						<tr>
+							<th width="20%"><%[ PartInstanceAlias.Type ]%></th>
+							<th width="60%"><%[ PartInstance.alias ]%></th>
+							<th width="10%"></th>
+							<th width="10%"></th>
+						</tr>
+					</thead>
+					<tbody>			    
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+						<com:TMultiView ID="MultiView" ActiveViewIndex="<%# $this->Page->getView($this->DataItem) %>">
+							<com:TView>
+								<tr Id="Row_<%# $this->DataItem[0] %>" class="<%# $this->Page->getStyle($this->getItemIndex()) %>">
+									<td><com:TDropDownList Id="pitype" DataValueField="id" DataTextField="String" SelectedValue="<%# $this->DataItem[2] %>">
+										<prop:Attributes.onchange>
+											changeRow(getSelected(this),'<%# $this->DataItem[0] %>','<%# $this->DataItem[2] %>');
+										</prop:Attributes.onchange>							
+									</com:TDropDownList></td>
+									<td><com:TTextBox Id="alias"  text="<%# $this->DataItem[1] %>" AutoPostBack="false">
+										<prop:Attributes.onkeyup>
+											changeRow(this.value,'<%# $this->DataItem[0] %>','<%# $this->DataItem[1] %>');
+										</prop:Attributes.onkeyup>
+									</com:TTextBox></td>									
+									<td><com:TButton Text="Change" OnCommand="Page.ChangeAlias" CommandParameter="<%# $this->DataItem[0] %>" /></td>
+									<td>
+									<com:Application.controls.HYLock Feature="menu_all">
+										<com:TButton Text="Delete" OnCommand="Page.DeleteAlias" CommandParameter="<%# $this->DataItem[0] %>" />
+									</com:Application.controls.HYLock>
+									</td>
+								</tr>									
+							</com:TView>							
+							<com:TView>
+								<tr class="<%# $this->Page->getStyle($this->getItemIndex()) %>">
+									<td><%# $this->Page->getType($this->DataItem[2]) %></td>
+									<td><%# $this->DataItem[1] %></td>
+									<td></td>
+									<td></td>
+								</tr>									
+							</com:TView>
+							<com:TView Id="addView">
+								<tr Id="Row_<%# $this->DataItem[0] %>" class="<%# $this->Page->getStyle($this->getItemIndex()) %>">
+									<td><com:TDropDownList Id="addpitype" DataValueField="id" DataTextField="String" /></td>
+									<td><com:TTextBox Id="addalias"  text="" AutoPostBack="false"></com:TTextBox></td>
+									<td><com:TButton Text="Add" OnCommand="Page.addAlias" CommandParameter="<%# $this->DataItem[3] %>" /></td>
+									<td></td>
+								</tr>									
+							</com:TView>
+						</com:TMultiView>
+				</prop:ItemTemplate>
+			
+				<prop:EditItemTemplate>	
+				</prop:EditItemTemplate>
+							
+			    <prop:FooterTemplate>
+			    		</tbody>
+			    		<tfoot>
+						<tr>
+							<th colspan="5">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Parent->VirtualItemCount %> Parts
+								</div>
+							</th>
+						</tr>
+						</tfoot>
+					</table>			    
+				</prop:FooterTemplate>				
+			</com:TDataList>
+		</com:TPanel>		
+
+		<com:TPanel ID="PaginationPanel">		
+		</com:TPanel>			
+	</div>
+</com:TContent>

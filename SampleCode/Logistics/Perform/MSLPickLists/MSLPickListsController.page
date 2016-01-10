@@ -1,0 +1,80 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<script type="text/javascript">
+		function validateEmail()
+		{
+			var reg = /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/;
+		   	if(reg.test($F('<%= $this->emailTo->getClientId() %>')) == false) 
+		   	{
+		   		alert('Invalid Email Address');
+		      	return false;
+		   	}
+		}
+		
+		function beforeGenerate()
+		{
+			$('<%= $this->runBtn->getClientId()%>').disabled = true;
+			$('loadingImg').show();
+			showModalBox();
+		}
+		
+		function afterGenerate()
+		{
+			$('<%= $this->runBtn->getClientId()%>').disabled = false;
+			$('loadingImg').hide();
+			Modalbox.hide();
+		}
+		
+		function showModalBox()
+		{		
+			Modalbox.show('loading', {beforeLoad: function() {Modalbox.deactivate();}, title: 'PLEASE BE PATIENT... Generating MSL Pick Lists', width: 320});	  			
+		}
+	</script>
+	
+	<com:TActiveLabel ID="jsLbl" Style="display:none;" />
+	<com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox"  />
+	
+	<div>
+		<br /><br />
+		<div><b>This page will do the following:</b></div>
+		<ul>
+			<li>- Generate all MSL Pick Lists for a particular Supplying Warehouse. <span style="font-weight:bold;">(May take a few of minutes depending on the Supplying Warehouse)</span></li>
+			<li>- Email the generated pick lists to the email address supplied.</li>
+		</ul>
+		
+		<table border="0" cellspacing="5">
+			<tr>
+				<td colspan="4" style="vertical-align:top;">
+					<com:TLabel ID="reportInfoLabel" />
+					<br/>
+				</td>
+			</tr>
+			<tr><td style="vertical-align:top;font-weight:bold;">For Supplying Warehouse</td>
+			<tr>
+				<td style="vertical-align:top;">
+					<com:Application.controls.HYWHTree ID="warehouse" hidden="warehouseid" height="500" ExpandOnDraw="true" GetTreeFunction="getSupplyingWarehouseTree"/>
+					<com:THiddenField ID="warehouseid" VALUE="" />		
+				</td>
+			</tr>
+			<tr>
+				<td style="font-weight: bold;height:60px;">
+					Email Address: <com:TTextBox ID="emailTo" Width="192px"/>
+				</td>
+			</tr>
+			<tr>
+				<td style="text-align:center;">
+					<com:TActiveButton ID="runBtn" Attributes.onclick="return validateEmail();" OnCommand="Page.runPickingReport" Text=" Generate Pick Lists " ValidationGroup="Group1" ActiveControl.CallbackOptions="ajaxOptions">
+						<prop:ClientSide 
+							OnLoading="beforeGenerate();" 
+							OnComplete="afterGenerate();" /> 
+					</com:TActiveButton>
+					<com:TCallbackOptions ID="ajaxOptions">
+						<prop:ClientSide.RequestTimeOut>600000</prop:ClientSide.RequestTimeOut>
+					</com:TCallbackOptions>
+					<img id="loadingImg" src="/themes/images/spinner.gif" style='display:none;'/>
+				</td>
+			</tr>
+		</table>
+		<br/>
+	</div>
+</com:TContent>

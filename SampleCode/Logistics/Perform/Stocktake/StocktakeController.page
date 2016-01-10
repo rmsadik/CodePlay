@@ -1,0 +1,270 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+    <script type="text/javascript">
+
+        var isTimeOut = false;
+        function setTimeOut(timeOut){
+            isTimeOut = timeOut;
+        }
+
+        function selectAll(checkbox,length,itemPrefix)
+        {
+            var chks = $$('.' + itemPrefix + '_chk');
+            for (var i=0; i<chks.length; i++)
+                chks[i].checked = checkbox.checked;
+        }
+
+        function submitParts(button,length,itemPrefix,buttonId)
+        {
+            var foundIds = {};
+            var count=0;
+
+            var chks = $$('.' + itemPrefix + '_chk');
+            var qtys = $$('.' + itemPrefix + '_qty');
+            for (var i=0; i<chks.length; i++)
+            {
+                if (chks[i].checked)
+                {
+                    foundIds[chks[i].value] = qtys[i].value;
+                    count++;
+                }
+            }
+
+            if(count==0)
+            {
+                alert('Nothing is selected!');
+                return false;
+            }
+
+            if (rowNo > 0)
+            {
+                if (!confirm("WARNING!\n\nYou have scanned parts that have not been saved, these will be lost unless you first click 'Saved Scanned Parts'\n\nContinue without saving?"))
+                    return;
+            }
+
+            mb.showLoading('loading');
+
+            button.disabled='true';
+            button.value='Processing...';
+            $('<%= $this->selectedPIIds->getClientId() %>').value=Object.toJSON(foundIds);
+            $('<%= $this->searchPart->serialNo->getClientId() %>').focus();
+            $(buttonId).click();
+        }
+
+        function processing()
+        {
+            if($('<%= $this->Page->getMaster()->InfoMessage->getClientId()%>'))
+                $('<%= $this->Page->getMaster()->InfoMessage->getClientId()%>').innerHTML='';
+            if($('<%= $this->Page->getMaster()->ErrorMessage->getClientId()%>'))
+                $('<%= $this->Page->getMaster()->ErrorMessage->getClientId()%>').innerHTML='';
+
+            $('<%= $this->StocktakeInfo->getClientId()%>').innerHTML="<h3><img src='/themes/images/ajax-loader.gif' /> Processing data ...</h3><br />Please do NOT refresh or close the page! The page will be auto refreshed when it's done!";
+
+            var t=setTimeout("alertMsg()",29000);
+
+            $('<%= $this->stockTakePanel->getClientId()%>').hide();
+            return true;
+        }
+
+        function preSubmitCheck()
+        {
+            if (rowNo > 0)
+            {
+                if (!confirm("WARNING!\n\nYou have scanned parts that have not been saved, these will be lost unless you first click 'Saved Scanned Parts'\n\nContinue without saving?"))
+                    return;
+            }
+
+            return preSubmitConfirm($('<%= $this->totalLossQty->getClientId() %>').value);
+
+            //this is commented out as we are not doing a fetch to the server to calculate loss any more
+            /*
+            mb.showLoading('fetching information');
+
+            var tmp = {};
+            tmp.request = new Prado.CallbackRequest('<%= $this->getLostPartsInfoBeforeSubmitBtn->getUniqueID() %>', {
+                'onComplete' : function(sender, parameter) {
+                    try
+                    {
+                        tmp.response = $('<%= $this->responseLabel->getClientId() %>').innerHTML.evalJSON();
+                    }
+                    catch (e)
+                    {
+                        alert('Invalid JSON message, unable to continue.');
+                        mb.hide();
+                        return;
+                    }
+                    if (tmp.response.errors !== undefined && tmp.response.errors.size() > 0)
+                    {
+                        alert(tmp.response.errors[0] +  ', unable to continue.');
+                        mb.hide();
+                        return;
+                    }
+                    return preSubmitConfirm(tmp.response.resultData);
+                }
+            });
+            tmp.request.setCallbackParameter({'whId' : $('<%= $this->whId->getClientId() %>').value});
+            tmp.request.dispatch();
+            */
+        }
+
+        function preSubmitConfirm(losingQty)
+        {
+            var msgs = [];
+
+            if (losingQty > 0)
+            {
+                var plural = '';
+                if (losingQty > 1)
+                    plural = 's';
+
+                msgs.push('<br /><span style="color:red; font-size:16px; font-weight:bold;">WARNING!! You are about to LOSE ' + losingQty + ' part' + plural + '!</span>');
+
+                if ($('lostStockWarehouse'))
+                {
+                    msgs.push('<b>All lost stock will be moved to:</b> ' + $('lostStockWarehouse').innerHTML);
+                }
+            }
+
+            var userList = $('<%= $this->userList->getClientId()%>').innerHTML.replace(/^\s+|\s+$/g,"");
+            var orginalList = $('<%= $this->orginalList->getClientId()%>').innerHTML.replace(/^\s+|\s+$/g,"");
+
+            if (userList == '' && orginalList != '')
+            {
+                msgs.push('You have not scanned <b>ANY</b> parts, everything will be marked as <b>LOST</b>!');
+            }
+            else if (userList == '' && orginalList == '')
+            {
+                msgs.push('There are no parts to stock take, continuing will <b>ONLY</b> update the Last Stocktake Date.');
+            }
+
+            msgs.push('<input type="Button" Value="Finish Stocktake" onClick="mb.hide();commitSubmit()"/>&nbsp;&nbsp;&nbsp;<input type="Button" Value="Cancel" onClick="mb.hide(); return false;"/>');
+
+            Modalbox.show(new Element('div', {'style': 'text-align:center;'}).update(msgs.join('<br /><br />') + '<br />'), {
+                beforeLoad: function(){Modalbox.deactivate();},
+                'width': 800,
+                'title': 'Please confirm before finishing the stocktake...',
+                'overlayClose': false,
+                'transitions': false
+            });
+        }
+
+        function alertMsg()
+        {
+            if(isTimeOut){
+                var info = <%= $this->stockTakeGetUserInfo() %>;
+                if(info.Email == 'bsuitehelp@bytecraft.com.au'){
+                    Element.insert($('<%= $this->StocktakeInfo->getClientId()%>'), {'bottom':"<br /><br /><div style=\"color:red\">This is taking to long, but maybe working in the background <br />An Email will be sent to the BSuite Development team to confirm completion of the Stocktake contact <strong>"+info.Phone+"</strong><br />Please Do not move away from this screen until you have confirmed completion</div>"});
+                }else{
+                    Element.insert($('<%= $this->StocktakeInfo->getClientId()%>'), {'bottom':"<br /><br /><div style=\"color:red\">This is taking to long, but maybe working in the background <br />Please check your email to confirm completeing of the Stocktake <strong>"+info.Email+"</strong><br />Please Do not move away from this screen until you have confirmed completion</div>"});
+                }
+            }
+        }
+
+        function commitSubmit()
+        {
+            $('<%= $this->commitButton->getClientId()%>').click();
+        }
+    </script>
+
+    <com:TActiveHiddenField ID="shelfPartInstanceIds" Value=""/>
+
+    <com:TActiveHiddenField ID="shelfOpenTasksErrorCount" Value="0"/>
+    <com:TActiveHiddenField ID="shelfPartInstanceStatusId" Value=""/>
+
+    <com:TActiveHiddenField ID="totalLossQty" Value="0"/>
+    <com:TActiveHiddenField ID="whId" />
+    <com:TActiveLabel id="responseLabel" style="display:none;" />
+    <com:TCallback ID="getLostPartsInfoBeforeSubmitBtn" OnCallback="Page.getLostPartsInfoBeforeSubmit"/>
+
+    <com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+    <com:TActiveLabel ID="jsLbl" style="display:none;"/>
+    <com:TActiveHiddenField ID="selectedPIIds" />
+
+    <com:TButton ID="recordFoundPartsBtn" onClick="Page.recordFoundParts" style="display:none;"/>
+    <com:TButton ID="removeFromFoundPartsBtn" onClick="Page.removeFromFoundParts" style="display:none;"/>
+
+    <div style="background:#cccccc;border:1px green solid;padding: 7px;margin:7px;">
+        <com:TActiveLabel ID="StocktakeInfo" />
+    </div>
+
+    <com:TPanel ID="stockTakePanel">
+
+        <com:TActivePanel ID="confirmPanel" Style="padding: 7px;margin:7px;border:2px dotted red;width:96%">
+           <table width="100%" border="0">
+                <tr><td><com:TActivePanel ID="messagePanel" Width="100%"></com:TActivePanel></td></tr>
+                <tr>
+                    <td style="padding-top:15px;">
+                        <com:TActivePanel ID="confirmBtnPanel" Width="100%">
+                            <com:TButton OnClick="Page.continueStockTake" Text="Continue Stocktake" Attributes.onclick="mb.showLoading('loading'); "/>
+                            <com:TActiveButton OnClick="Page.cancelStockTake" Attributes.OnClick="if(!confirm('You are going to CANCEL all stocktake changes!\n\nDo you want to continue?')){return false;} return processing();" Text="Cancel Stocktake" />
+                        </com:TActivePanel>
+                    </td>
+                </tr>
+           </table>
+        </com:TActivePanel>
+
+        <com:TActivePanel ID="movedPartsPanelWrapper" Visible="false" Style="padding: 7px;margin:7px;border:2px dotted #FF8C00;width:96%">
+            <com:TLabel ID="movedPartsLabel" Text=""/>
+            <br />
+            <com:TActiveLinkButton ID="movedParts" Text="Click here to view." OnClick="viewMovedParts" /><br/>
+            <com:TActiveLabel ID="movedPartsPanel" Text="" />
+        </com:TActivePanel>
+
+        <br />
+
+        <com:TActivePanel ID="scanPanel">
+            <com:Application.pages.Logistics.Perform.Stocktake.ScaningPart.ScaningPartPanel ID="searchPart"
+                        GroupingText="Scan Found Parts <span style='font-weight:bold;'>(Click the 'Save Scanned Parts' button after scanning 10 items to ensure data is not accidentally lost.)</span>"
+                        SearchBtnText="Save Scanned Parts"
+                        ExternalPartFunc="foundPartsFromScanning" />
+        </com:TActivePanel>
+
+        <br />
+
+        <com:TActivePanel ID="listPanel">
+            <com:TActiveHiddenField ID="targetWarehouseId" />
+            <com:TActiveHiddenField ID="logStocktakeId" />
+
+            <table width="100%" border="0">
+                <tr>
+                    <td colspan="2">
+                        <table width="100%" border="0">
+                            <tr>
+                                <td style="text-align:right; padding:10px;"><com:TActiveLabel ID="shelfListWarningMsg" Text="" /></td>
+                                <td align="right" width="30%" style="padding:10px;">
+                                    <com:TActiveButton ID="commitBtnTop" Attributes.OnClick="preSubmitCheck(); return false;" Text="Commit All Changes"  ActiveControl.CallbackParameter="value" >
+                                    <prop:ClientSide
+                                            OnLoading="isTimeOut = true"
+                                            OnComplete="isTimeOut = false" />
+                                    </com:TActiveButton>
+                                    <com:TActiveButton OnClick="Page.cancelStockTake" Attributes.OnClick="if(!confirm('You are going to CANCEL all stocktake changes!\n\nDo you want to continue?')){return false;} return processing();" Text="Cancel Stocktake" />
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="50%" valign="top">
+                        <com:TPanel ID="orginalList">
+                        </com:TPanel>
+                    </td>
+                    <td valign="top">
+                        <com:TPanel ID="userList">
+                        </com:TPanel>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right" style="padding-top:15px;" colspan='2'>
+                        <com:TActiveButton ID="commitBtnBtm" Attributes.OnClick="preSubmitCheck(); return false;" Text="Commit All Changes"  ActiveControl.CallbackParameter="value" >
+                        <prop:ClientSide
+                                OnLoading="isTimeOut = true"
+                                OnComplete="isTimeOut = false" />
+                        </com:TActiveButton>
+                        <com:TActiveButton OnClick="Page.cancelStockTake" Attributes.OnClick="if(!confirm('You are going to CANCEL all stocktake changes!\n\nDo you want to continue?')){return false;}return processing();" Text="Cancel Stocktake" />
+                    </td>
+                </tr>
+            </table>
+        </com:TActivePanel>
+    </com:TPanel>
+    <com:TActiveButton Attributes.OnClick="processing();" OnClick="Page.finishStockTake" Style="display:none;" ID="commitButton" />
+</com:TContent>

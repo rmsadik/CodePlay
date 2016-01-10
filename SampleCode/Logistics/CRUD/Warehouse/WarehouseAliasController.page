@@ -1,0 +1,161 @@
+<%@MasterClass="Application.layouts.PlainEditLayout"%>
+<com:TContent ID="MainContent">
+	<div>
+		<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel">
+			<table width="100%">
+				<tr>
+					<td width="80%">
+						<com:THiddenField ID="SearchString" />
+						<com:THiddenField ID="focusObject" />	
+						<com:THiddenField ID="focusObjectArgument" />								
+					</td>
+					<td width="20%">
+						<com:TButton ID="AddButton" Text="<%[WarehouseAlias.addButton]%>" OnClick="add" />	
+					</td>
+				</tr>
+			</table>
+			<br /><hr /><br />
+		</com:TPanel>
+		
+<!---   ---------------- Adding Panel ---------------- --->	
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" >
+			<table width="100%">
+				<tr valign="top">
+					<td >
+						<table width="100%">
+							<tr>
+								<td width="7%"><%[WarehouseAlias.alias]%>:</td>
+								<td>
+									<com:TActiveTextBox ID="newWarehouseAliasAlias" width="70%" AutoPostBack="false" ValidationGroup="Group1" />
+									<com:TActiveLabel ID="newBarcode" />
+								</td>
+							</tr>
+							<tr><td colspan=2><com:TRequiredFieldValidator ControlToValidate="newWarehouseAliasAlias" ErrorMessage="Alias Required" ValidationGroup="Group1" EnableClientScript="true" /></td></tr>
+							<tr>
+								<td><%[WarehouseAlias.type]%>:</td>
+								<td>
+									<com:TActiveDropDownList ID="newWarehouseAliasType" 
+										AutoPostBack="true" 
+										DataValueField="id" 
+										DataTextField="name" 
+										OnSelectedIndexChanged="Page.generateBCL" >
+										<prop:ClientSide OnLoading="$('loading').show();" OnComplete="$('loading').hide();" />
+									</com:TActiveDropDownList>
+									<span id="loading" style="display: none;"><img src="/themes/images/ajax-loader.gif" alt="Loading..." /></span>
+								</td>
+							</tr>							
+						</table>
+					</td>
+					<td >
+						<table>
+							<tr>
+								<td>
+									<com:TButton ID="EditButton" Text="Save" Onclick="save" ValidationGroup="Group1" />
+								</td>						
+								<td >
+	    							<com:TButton ID="CancelEditButton" Text="Cancel" Onclick="cancel" />
+								</td>
+							</tr>
+						</table>
+					</td>					
+				</tr>
+			</table>	
+		</com:TPanel>
+<!---   ---------------- Editing Panel Ends Here---------------- --->					
+		<com:TPanel ID="StorageLocationAliasPanel">
+			<table width="100%" class="DataListTitle">
+				<tr><th><com:TLabel Text="<%[ WarehouseAlias.list ]%>" /><com:TLabel Id="WarehouseLabel" /></th></tr>
+			</table>
+			
+			<br />
+			
+			<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem" 
+					     OnEditCommand="edit"
+					     OnDeleteCommand="deleteWarehouseAlias"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList" 
+					     ItemStyle.CssClass="DataListItem" 
+					     AlternatingItemStyle.CssClass="DataListAlterItem" 
+					     EditItemStyle.CssClass="DataListEditItem" 
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="true" EnableViewState="true" PageSize="30">
+				
+			    <prop:HeaderTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<th width="30%"><%[ WarehouseAlias.type ]%></th>
+							<th><%[ WarehouseAlias.alias ]%></th>
+							<th width="5%">&nbsp;</th>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<td width="30%"><%# $this->DataItem->getWarehouseAliasType() %></td>
+							<td><%# $this->DataItem->getAlias() %></td>
+							<td style="text-align:left" width="5%">
+								<com:TImageButton ImageUrl="../../../themes/images/edit.png" Text="Edit" CommandName="edit" Visible="<%=$this->Page->showEditOrDeleteButton($this->DataItem) %>" ToolTip="Edit Record" />
+								<com:TImageButton ImageUrl="../../../themes/images/delete.png" Text="Delete" CommandName="delete" Visible="<%=$this->Page->showEditOrDeleteButton($this->DataItem) %>" ToolTip="Delete Record" Attributes.OnClick="if(!confirm('WARNING!  Are you sure you want to delete?')) return false;"/>
+							</td>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+				
+				<prop:EditItemTemplate>
+					<table width="100%">
+						<tr valign="top">
+							<td >
+								<table width="100%">
+									<tr><td width="7%"><%[WarehouseAlias.alias]%>:</td><td><com:TTextBox ID="newWarehouseAliasAlias" width="70%" Text="<%# $this->DataItem->getAlias() %>" AutoPostBack="false" ValidationGroup="Group1" /></td></tr>
+									<tr><td colspan=2><com:TRequiredFieldValidator ControlToValidate="newWarehouseAliasAlias" ErrorMessage="Warehouse Alias Required" ValidationGroup="Group1" EnableClientScript="true" /></td></tr>
+									<tr><td><%[WarehouseAlias.type]%>:</td><td><com:TDropDownList ID="newWarehouseAliasType" DataTextField="name" DataValueField="id"  Enabled="<%=$this->Page->enableDropDown($this->DataItem->getWarehouseAliasType()) %>" /></td></tr>							
+								</table>
+							</td>
+							<td >
+								<table>
+									<tr>
+										<td>
+											<com:TButton ID="EditButton" Text="Save" CommandName="update" ValidationGroup="Group1" />
+										</td>						
+										<td >
+			    							<com:TButton ID="CancelEditButton" Text="Cancel" CommandName="cancel" />
+										</td>
+									</tr>
+								</table>
+							</td>					
+						</tr>
+					</table>									
+				</prop:EditItemTemplate>
+								
+			    <prop:FooterTemplate>
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="3">
+								<div style="font-weight: bold; text-align: center;">
+									Total  <%# $this->Page->totalCount %> Location Alias(es)
+								</div>
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>				
+			</com:TDataList>
+
+		<com:TPanel ID="PaginationPanel">		
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>			
+		</com:TPanel>		
+	</div>
+</com:TContent>

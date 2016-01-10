@@ -1,0 +1,91 @@
+<com:TContent ID="MainContent">
+	<com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+
+	<com:TCallback ID="searchFieldTaskCallback" OnCallback="Page.searchFieldTask" />
+	<com:TCallback ID="updateTaskStatusCallback" OnCallback="Page.updateTaskStatus" />
+	<com:TCallback ID="searchReturnedPartCallback" OnCallback="Page.searchReturnedPart" />
+	<com:TCallback ID="balancePartsCallback" OnCallback="Page.balanceParts" />
+		
+	<div id='toolTip'></div>
+	
+	<input type="hidden" ID="ftId" value="3558671"/>
+	<input type="hidden" ID="parentPiId"/>
+	<input type="hidden" ID="parentPiInfo"/>
+	<input type="hidden" ID="currentStatus" />
+	<input type="hidden" ID="statusInfo" />
+	<input type="hidden" ID="nextStatuses" />
+	<input type="hidden" ID="recipe" value="[]"/>
+	<input type="hidden" ID="verifiedRecipe" /> 
+	<input type="hidden" ID="updateFieldTaskPropertyOnFinish" value="0" /> 
+	
+	<com:TActivePanel ID="pagePanel">
+		<div id="pagewrapper">
+			<h2 style="padding-bottom:20px;">Field Task Part Return (BOM TEST)</h2>
+			<span class="inlineBlock leftpanel vtop">
+				<div id="searchTaskDiv" class="currentRow" >
+		            <span class="inlineBlock title">Task No / Client Ref:</span>
+		            <span class="inlineBlock content">
+		                <div class="floatLeft"><input type="text" id="txtTaskNo" width="50%" value="" onkeydown="pageJs.keyPressInput(event, this);"/></div>
+		                <div class="floatRight"><input type="button" id="btnTaskNo" value="Search Field Task" onclick="pageJs.searchFieldTask();"/></div>
+		            </span>
+	            </div>
+				
+				<div id="taskStatusDiv" class="row hidden">
+					<span class="inlineBlock title">Task Status:</span>
+					<span class="inlineBlock content">
+					   <div class="floatLeft"><select ID="taskStatusList" onchange="pageJs.updateStatusChange();"></select></div>
+			           <div class="floatRight"><input type="button" id="btnUpdateStatus" value="Update Status" style="float:right;" onclick="pageJs.updateStatus();" /></div>
+					</span>
+				</div>
+				
+				<div id="serialNoDiv" class="row hidden">
+					<span class="inlineBlock title">Returned Serial No:</span> 
+					<span class="inlineBlock content">
+					   <div class="floatLeft">
+					       <input type="text" id="txtSerialNo" width="50%" value="" onkeydown="pageJs.keyPressInput(event, this);"/>
+					       <span style="color:red; font-size:10px; font-weight:bold; padding-left:8px;" id="scanKitMsg">SCAN PARENT/KIT HERE</span>
+					   </div>
+                       <div class="floatRight"><input type="button" id="btnSerialNo" value="Find Part" style="float:right;" onclick="pageJs.searchReturnedPart();"/></div>
+					</span>
+				</div>
+
+				<div id="recipeDiv" class="row hidden">
+					<div class="inlineBlock widePanel" style="padding-bottom: 7px;">
+						<table style="width:100%;" border="0">
+							<tr>
+								<td width="40px" style="text-align:center;"><img src="/themes/images/error_flag.gif" id="bomMatchImg" class="hidden" style="cursor:default; height:26px;" onmouseover="bsuiteJs.showTooltip(event, 'toolTip', 'There are parts missing from the BOM...')"/></td>
+								<td><div id="parentLbl"></div></td>
+								<td width="40px" style="text-align:center;padding-right:4px;"><img src="/themes/images/greenbutton.png" id="parentStatusImg" class="statusImg" style="cursor:default;" onmouseover="bsuiteJs.showTooltip(event, 'toolTip', 'Returned part type matched...')"/></td>
+							</tr>
+						</table>
+					</div>
+				</div>
+			</span>
+			 
+			<span class="inlineBlock rightpanel vtop">
+				<div id="resetPanel" class="row hidden">
+					<input type="button" id="btnResetPage" value="Reload Page" onclick="pageJs.resetPage();"/>
+				</div>
+				<div id="registerEditPanel" class="row hidden">
+                    <a href="javascript:void();" style="font-size:12px; font-weight:bold;" id="registerEditLink">Register Part Instance</a>
+                </div>
+				<div id="treePanel" class="row hidden">
+					<com:Application.controls.HYWHTree ID="warehouse" hidden="warehouseId" HideTree="false" Width="100px" AfterLoadedJavascript="$('txtTaskNo').focus();" RootNode="<%= $this->Page->getDefaultWarehouseId() %>" />
+					<com:THiddenField ID="warehouseId" value="" />
+					<div id="balancePanel" class="row">
+						<input type="button" id="btnBalanceParts" value="Balance Parts" onclick="pageJs.balanceParts();"/>
+					</div>
+				</div>
+			</span>
+		</div>
+	</com:TActivePanel>
+	<br />
+	<br />
+	<com:TClientScript>
+		var pageJs = new js(  '<%= $this->warehouseId->getClientId()%>',
+		                      '<%= $this->searchFieldTaskCallback->getUniqueID()%>',
+		                      '<%= $this->updateTaskStatusCallback->getUniqueID()%>',
+		                      '<%= $this->searchReturnedPartCallback->getUniqueID()%>',
+		                      '<%= $this->balancePartsCallback->getUniqueID()%>');
+	</com:TClientScript>
+</com:TContent>

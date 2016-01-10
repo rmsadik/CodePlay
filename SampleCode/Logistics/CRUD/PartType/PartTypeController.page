@@ -1,0 +1,1148 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+
+    <com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+
+	<style>.hide{display:none;}</style>
+
+<script type="text/javascript">
+
+	function validateAndDisable(button)
+	{
+        if($('<%= $this->newPartTypeCode->getClientId() %>').value!='' &&
+            $('<%= $this->newPartTypeName->getClientId() %>').value!='' &&
+            $('<%= $this->newPartTypeDescription->getClientId() %>').value!='' &&
+            $('<%= $this->ownerClient->getClientId() %>').value!='' &&
+            $('<%= $this->SearchContractText->contractIds->getClientId() %>').value)
+        {
+            button.disabled = true;
+            $('<%= $this->saveNew->getClientId() %>').click();
+        }
+        else
+        {
+            mb.hide();
+        }
+
+	}
+
+	function viewAddPartTypeAlias(){
+		$('<%= $this->PartTypeAliasLabel->getClientId() %>').style.display = "";
+	}
+
+	function addMore()
+	{
+		for(i=2;i<=10;i++)
+		{
+			var tr = 'tr' + i;
+			if($(tr).className =='hide')
+			{
+				$(tr).className = '';
+				break;
+			}
+		}
+	}
+
+
+	function showActiveAliases(num){
+		for(var i = 2; i <= num; i++){
+			$('tr' + i).className = '';
+		}
+	}
+
+	function hideAllAliases()
+	{
+		for(i=2;i<=10;i++)
+		{
+			var tr = 'tr' + i;
+			var alias = 'ctl0_MainContent_alias' + i;
+			var type = 'ctl0_MainContent_type' + i;
+			var mname = 'ctl0_MainContent_more' + i;
+			if($(tr)){
+				$(tr).className = 'hide';
+			}
+			if ($(alias))
+			{
+				$(alias).disabled = false;
+			}
+			if ($(type))
+			{
+				$(type).value = '';
+			}
+
+			if ($(mname))
+				$(mname).innerHTML = '';
+		}
+	}
+
+	function confirmDeactivate(active, parts)
+	{
+		var msg = 'ACTIVATE';
+		var msgIng = 'activating';
+		if (active == 1)
+		{
+			msg = 'DEACTIVATE';
+			msgIng = 'deactivating';
+		}
+
+   		if (false) //Noel Burridge request to ignore confirmation
+		{
+			alert('WARNING!\n\n You cannot deactivate the part type, there are (' + parts + ') active part instances associated with it.');
+			return false;
+		}
+		else
+		{
+			if (!confirm('Are you sure you want to ' + msg + ' this part type?'))
+				return false;
+
+			if (active == 1) //we are deactivating, so prompt for requester email address
+			{
+				$('<%= $this->deactivateEmailAddress->getClientId() %>').value = '';
+				var email = '';
+				while (true)
+				{
+				    email = prompt("Please enter the requester email address.", email);
+				    if (email == null)
+				    	return false;
+
+				    if (/^[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}$/igm.test(email))
+				    {
+				        $('<%= $this->deactivateEmailAddress->getClientId() %>').value = email.toLowerCase();
+				        break;
+				    }
+				    else
+				    {
+				        alert("Please enter a valid email address.");
+				    }
+				}
+			}
+			mb.showLoading(msgIng + ' part type');
+		}
+	}
+
+	function toggleDepList(el, disabled)
+	{
+		if ($(el))
+		{
+			var dd = el.replace('newDMChk','newDM');
+			if ($(el).checked)
+			{
+				//$('<%= $this->newDMChk->getClientId()%>').disabled = disabled;
+				//$('<%= $this->newDM->getClientId()%>').disabled = disabled;
+				$(dd).show();
+			}
+			else
+			{
+				//$('<%= $this->newDMChk->getClientId()%>').disabled = false;
+				//$('<%= $this->newDM->getClientId()%>').disabled = false;
+				$(dd).hide();
+			}
+		}
+		return false;
+	}
+
+	function toggleKitList(el, disabled)
+	{
+		if ($(el))
+		{
+			var dd = el.replace('kitCheck','kitList');
+			if ($(el).checked)
+			{
+				$(dd).show();
+			}
+			else
+			{
+				$(dd).hide();
+			}
+		}
+		return false;
+	}
+
+	function checkReturnableFlag(returnableId,nonSerializedId)
+	{
+		var nonSerialized = $(nonSerializedId).checked;
+		var returnable  = $(returnableId).checked;
+		if((!nonSerialized && !returnable) || (nonSerialized && returnable))
+		{
+			var confirmMsg = confirm("Changes made to this flag will affect the overdue parts report.Do you wish to continue.");
+			if(!confirmMsg)
+				 $(returnableId).checked= $(returnableId).checked?false:true;
+		}
+	}
+
+	function setReturnableFlag(returnableId,nonSerializedId)
+	{
+		var nonSerialized = $(nonSerializedId).checked;
+		if(nonSerialized)
+			$(returnableId).checked= false;
+		else
+			$(returnableId).checked= true;
+	}
+
+	function formatUnitPrice(txtBox)
+	{
+		var tmp = {};
+		tmp.unitPriceValue = $F(txtBox);
+		if(!tmp.unitPriceValue.blank() && bsuiteJs.getValueFromCurrency(tmp.unitPriceValue).match(/^\d+(\.\d{1,4})?$/) !== null) {
+			$(txtBox).setValue(bsuiteJs.getCurrency(bsuiteJs.getValueFromCurrency(tmp.unitPriceValue)));
+		}
+	}
+
+</script>
+	<br />
+	<com:TButton ID="saveNew" onClick="save" style='display:none;' Attributes.onclick="mb.showLoading('saving');"/>
+
+	<com:TActiveHiddenField ID="deactivateEmailAddress" value=""/>
+	<com:TActiveHiddenField ID="validateAdd" value="false"/>
+
+
+	<com:THiddenField ID="partTypeIdHidden" />
+	<com:THiddenField ID="newDMHidden" />
+	<com:TActiveLabel ID="jsLbl" Style="display:none;"/>
+	<div>
+		<table width="100%" border="0">
+			<tr>
+				<br />
+				<b><%[PartType.ManagePartType]%></b>
+			</tr>
+			<tr>
+				<td width="82%">
+					<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel" GroupingText="<%[PartType.searchLabel]%>" DefaultButton="SearchButton">
+						<table width="100%" border="0">
+							<tr>
+								<td width="17%">Part Code:</td>
+								<td ><com:TTextBox ID="SearchPartCode" AutoPostBack="false"/></td>
+								<td width="17%">Supplier Code:</td>
+								<td><com:TTextBox ID="SearchSupplierCode" AutoPostBack="false"/></td>
+							</tr>
+							<tr>
+								<td>Part Name:</td>
+								<td><com:TTextBox ID="SearchName" AutoPostBack="false"/></td>
+								<td>Part Description:</td>
+								<td><com:TTextBox ID="SearchDescription" AutoPostBack="false"/></td>
+							</tr>
+							<tr>
+								<td>Search by Alias:</td>
+								<td colspan="3">
+									<com:TDropDownList ID="SearchAliasType" DataValueField="0" DataTextField="1" Width="150px"/>
+									<com:TTextBox ID="SearchAliasText" Width="360px"/>
+								</td>
+							</tr>
+							<tr>
+								<td>Part Type Group:</td>
+								<td>
+									<com:Application.controls.HYAutoComplete ID="SearchPartTypeGroup"
+												Suggestions.DataKeyField="id"
+												ResultPanel.ScrollBars="Auto"
+												ResultPanel.CssClass="hydraautocomplete"
+												Type="PartTypeGroup"/>
+								</td>
+								<td>Manufacturer:</td>
+								<td>
+									<com:Application.controls.HYAutoComplete ID="SearchManufacturer"
+												Suggestions.DataKeyField="id"
+												ResultPanel.ScrollBars="Auto"
+												ResultPanel.CssClass="hydraautocomplete"
+												Type="Company"/>
+								</td>
+							</tr>
+							<tr>
+								<td>Contract:</td>
+								<td>
+									<com:Application.controls.HYAutoComplete ID="SearchContract"
+												Suggestions.DataKeyField="id"
+												ResultPanel.ScrollBars="Auto"
+												ResultPanel.CssClass="hydraautocomplete"
+												Type="Contract"	/>
+								</td>
+								<td width="17%">Version:</td>
+								<td><com:TTextBox ID="SearchVersion" AutoPostBack="false"/>
+								</td>
+							</tr>
+							<tr>
+								<td>Supplier:</td>
+								<td>
+									<com:Application.controls.HYAutoComplete ID="SearchSupplier"
+												Suggestions.DataKeyField="id"
+												ResultPanel.ScrollBars="Auto"
+												ResultPanel.CssClass="hydraautocomplete"
+												Type="Company"/>
+								</td>
+								<td>Active:</td>
+								<td>
+									<com:TDropDownList ID="SearchActive" AutoPostBack="false">
+										<com:TListItem Text="Yes" Value="1" />
+										<com:TListItem Text="No" Value="0" />
+										<com:TListItem Text="All" Value="All" />
+									</com:TDropDownList>
+								</td>
+							</tr>
+							<tr>
+								<td>Owner Client:</td>
+								<td><com:Application.controls.HYAutoComplete ID="owner" type="Client" ResultPanel.CssClass="hydraautocomplete"/></td>
+							    <td>Serialised:</td>
+								<td>
+									<com:TDropDownList ID="Serialised" AutoPostBack="false">
+									<com:TListItem Text="All" Value="All"/>
+										<com:TListItem Text="Yes" Value="1" />
+										<com:TListItem Text="No" Value="0" />
+
+									</com:TDropDownList>
+								</td>
+							</tr>
+								<tr>
+								<td>Kit Type:</td>
+								<td>
+									<com:TDropDownList ID="selectkitlist" AutoPostBack = "false" DataTextField="Name"
+										    DataValueField="id"
+										    EnableClientScript="true"
+										    >
+									</com:TDropDownList>
+									</td>
+									<td>Returnable:</td>
+	                                <td>
+	                                    <com:TDropDownList ID="Returnable" AutoPostBack="false">
+	                                    <com:TListItem Text="All" Value="All"/>
+	                                        <com:TListItem Text="Yes" Value="1" />
+	                                        <com:TListItem Text="No" Value="0" />
+	                                    </com:TDropDownList>
+	                                </td>
+							</tr>
+							<tr>
+								<td>
+									<com:THiddenField ID="SearchString" />
+									<com:THiddenField ID="focusObject" />
+									<com:THiddenField ID="focusObjectArgument" />
+								</td>
+								<td colspan="3">
+									<com:TButton ID="SearchButton" Text="Search Part Types" onCommand="search" Attributes.onclick="mb.showLoading('searching');"/>
+								</td>
+							</tr>
+						</table>
+					</com:TPanel>
+				</td>
+				<td width="18%" align="right" valign="top">
+				    <com:Application.controls.HYLock Feature="pages_all,feature_PartType_add">
+					<com:TButton ID="AddButton" Text="<%[PartType.addButton]%>" OnClick="add" Attributes.onclick="mb.showLoading('loading');"/>
+					</com:Application.controls.HYLock>
+				</td>
+			</tr>
+		</table>
+		<br />
+		<hr />
+		<br />
+
+<!---   ---------------- Adding Panel ---------------- --->
+		<com:TActivePanel ID="AddPanel" CssClass="AddPanel" >
+			<table width="100%" style="background:#eeeeee;" border="0">
+				<tr>
+					<td style="vertical-align:top">
+						<table border="0" width="550px">
+							<tr>
+								<td style="width:150px"><%[PartType.code]%><font color=red>*</font>:</td>
+								<td>
+									<com:TTextBox ID="newPartTypeCode" ReadOnly="true" AutoPostBack="false" ValidationGroup="Group1"/>
+									<com:TRequiredFieldValidator ControlToValidate="newPartTypeCode" ErrorMessage="Code Required" ValidationGroup="Group1" EnableClientScript="true" Display="Dynamic"/>
+								</td>
+							</tr>
+							<tr>
+								<td><%[PartType.name]%><font color=red>*</font>:</td>
+								<td>
+									<com:TTextBox ID="newPartTypeName" AutoPostBack="false" ValidationGroup="Group1" width="100%"/>
+									<com:TRequiredFieldValidator ControlToValidate="newPartTypeName" ErrorMessage="Name Required" ValidationGroup="Group1" EnableClientScript="true"  Display="Dynamic"/>
+								</td>
+							</tr>
+							<tr>
+								<td style="vertical-align:top"><%[PartType.description]%><font color=red>*</font>:</td>
+								<td>
+									<com:TTextBox ID="newPartTypeDescription" AutoPostBack="false" ValidationGroup="Group1" TextMode="MultiLine" Rows="2" width="100%" />
+									<com:TRequiredFieldValidator ControlToValidate="newPartTypeDescription" ErrorMessage="Description Required" ValidationGroup="Group1" EnableClientScript="true" Display="Dynamic"/>
+								</td>
+							</tr>
+							<tr>
+								<td><%[PartType.manufacturer]%>:</td>
+								<td><com:TDropDownList ID="newPartTypeManufacturer" PromptText="Please Select" DataTextField="name" DataValueField="id" width="102%"/></td>
+							</tr>
+							<tr>
+								<td>Owner Client:<font color=red>*</font></td>
+								<td>
+									<com:Application.controls.HYAutoComplete ID="newPartTypeOwner"
+											type="Client"
+											ResultPanel.CssClass="hydraautocomplete"
+											Width="94%" Suggestions.DataKeyField="id"
+											pageMethod="ownerClientSelected"
+											pageOnSuggestMethod="ownerClientSuggest" >
+										<prop:Suggestions.ItemTemplate>
+							            	<li><%# $this->Data->getClientName() %></li>
+										</prop:Suggestions.ItemTemplate>
+									</com:Application.controls.HYAutoComplete>
+									<com:TActiveHiddenField ID="ownerClient" />
+									<com:TActiveLabel ID="ownerClientError" style='display:none'/>
+									<com:TRequiredFieldValidator ControlToValidate="ownerClient" ErrorMessage="Owner Client Required" ValidationGroup="Group1" EnableClientScript="true" Display="Dynamic"/>
+								</td>
+							</tr>
+							<tr>
+								<td style="vertical-align:top;"><%[PartType.suppliers]%>:</td>
+								<td>
+									<com:Application.controls.HYAutoComplete ID="SearchSupplierText"
+												ResultPanel.ScrollBars="Auto"
+												Suggestions.DataKeyField="id"
+												ResultPanel.CssClass="hydraautocomplete"
+												PageMethod="handleSelectedSupplier"
+												PageOnSuggestMethod="onSuggestSupplier" width="94%" />
+									<com:TActiveListBox ID="newPartTypeSuppliers" DataTextField="name" DataValueField="id" Rows="3" width="100%"/>
+									<com:TActiveButton Text="Remove"  OnCommand="Page.removeSelectedItem" CommandParameter="newPartTypeSuppliers" >
+										<prop:ClientSide
+	                                                OnLoading="mb.showLoading('removing supplier');"
+	                                                OnComplete="mb.hide();" />
+                                    </com:TActiveButton>
+								</td>
+							</tr>
+							<tr>
+								<td style="vertical-align:top; width:80px">Part Type Group:</td>
+								<td>
+									<com:Application.controls.HYAutoComplete ID="SearchPartTypeGroupText"
+												Suggestions.DataKeyField="id"
+												ResultPanel.ScrollBars="Auto"
+												PageMethod="handleSelectedPartTypeGroup"
+												ResultPanel.CssClass="hydraautocomplete"
+												PageOnSuggestMethod="onSuggestPartTypeGroup" width="94%"/>
+									<com:TActiveListBox ID="newPartTypeGroups" DataTextField="name" DataValueField="id" Rows="3" width="100%"/>
+									<com:TActiveButton Text="Remove" OnCommand="Page.removeSelectedItem" CommandParameter="newPartTypeGroups" >
+										<prop:ClientSide
+	                                            OnLoading="mb.showLoading('removing part type group');"
+	                                            OnComplete="mb.hide();" />
+                                    </com:TActiveButton>
+								</td>
+							</tr>
+							<tr>
+                                <td>Unit Price<font color=red>*</font>:</td>
+                                <td>
+                                    <com:TActiveTextBox ID="unitPrice" Attributes.onChange="formatUnitPrice(this); return false;" />
+                                </td>
+                            </tr>
+							<tr>
+								<td>Repairable?:</td>
+								<td><com:TActiveCheckBox ID="repairable"/></td>
+							</tr>
+							<tr>
+                                <td>Returnable?:</td>
+                                <td><com:TActiveCheckBox ID="returnable_add" Attributes.onclick="checkReturnableFlag($('<%= $this->returnable_add->getClientId()%>'),$('<%= $this->newSerialized->getClientId()%>'));" Attributes.Checked="true" /></td>
+                            </tr>
+							<tr>
+								<td>Non-Serialised?:</td>
+								<td>
+									<com:TActiveCheckBox ID="newSerialized" Checked="false" AutoPostBack="true" Attributes.onclick="setReturnableFlag($('<%= $this->returnable_add->getClientId()%>'),$('<%= $this->newSerialized->getClientId()%>'));" OnCheckedChanged="Page.toggleNewSerializedPartPanel">
+										<prop:ClientSide
+											OnLoading="$('showBarcode').show();
+														hideAliasList_<%=$this->SearchContractText->getId()%>(!$('<%= $this->newSerialized->getClientId()%>').checked);
+
+														"
+											OnComplete="$('showBarcode').hide();
+														if($('<%= $this->newSerialized->getClientId()%>').checked)
+														{
+															$('<%= $this->newBarcode->getClientId()%>').show();
+															$('<%= $this->newDMChk->getClientId()%>').checked=false;
+														}
+														else
+														{
+															$('<%= $this->newBarcode->getClientId()%>').hide();
+															$('<%= $this->newDMChk->getClientId()%>').checked=true;
+														}
+														toggleDepList('<%= $this->newDMChk->getClientId()%>', false);
+														" />
+									</com:TActiveCheckBox>
+									<img id="showBarcode" src="/themes/images/ajax-loader.gif" style="display: none;"/>
+									<com:TActiveTextBox ID="newBarcode" AutoPostBack="false" ReadOnly="true" style="border:none;background:transparent;display:none;"/>
+								</td>
+							</tr>
+							<tr>
+								<td>To be Depreciated?:</td>
+								<td>
+									<com:TActiveCheckBox ID="newDMChk" Text="" Checked="false" AutoPostBack="true">
+									<prop:ClientSide
+											OnLoading="$('showDepList').show();"
+											OnComplete="$('showDepList').hide(); toggleDepList('<%= $this->newDMChk->getClientId()%>', false);" />
+									</com:TActiveCheckBox>
+									<img id="showDepList" src="/themes/images/ajax-loader.gif" style="display: none;"/>
+									<com:TActiveDropDownList
+										DataTextField="description"
+				    					DataValueField="id"
+				    					ID="newDM"
+				    					AutoPostBack="false"
+				    					Style="display:none;" />
+				    				&nbsp;
+								</td>
+							</tr>
+							<tr>
+								<td>Kit?:</td>
+								<td>
+									<com:TActiveCheckBox ID="kitCheck" Text="" Checked="false" AutoPostBack="true">
+									<prop:ClientSide
+											OnLoading="$('showKitTypeList').show();"
+											OnComplete="$('showKitTypeList').hide();toggleKitList('<%= $this->kitCheck->getClientId()%>', false);" />
+									</com:TActiveCheckBox>
+									<img id="showKitTypeList" src="/themes/images/ajax-loader.gif" style="display: none;"/>
+									<com:TActiveDropDownList
+										DataTextField="name"
+				    					DataValueField="id"
+				    					ID="kitList"
+				    					AutoPostBack="false"
+				    					promptText="Please Select...."
+				    					Style="display:none;" />
+				    				&nbsp;
+								</td>
+							</tr>
+							<tr>
+							<td>&nbsp;</td>
+							<td>
+								<com:TActiveButton ID="AddPartTypeAliasButton" Text="Add Part Type Alias" >
+									<prop:ClientSide OnLoading=""
+											OnComplete="viewAddPartTypeAlias()"  />
+
+
+								</com:TActiveButton>
+								<img id="showKitTypeList2" src="/themes/images/ajax-loader.gif" style="display: none;"/>
+							</td>
+							</tr>
+						<tr>
+							<td><com:TLabel ID="LabelText" Text="Label"/></td>
+							<td>
+	                           <com:TListBox ID = "tempList"	AutoPostBack = "false" width = "300px"
+											DataValueField = "id"
+											DataTextField = "name"
+											Rows = "5"
+											EnableClientScript="true"
+											SelectionMode = "Multiple"
+											  /><br/><br/>
+
+                                <com:TLabel ID="LabelText1" Text="Ctrl + click to select multiple"/>
+
+									</td>
+								</tr>
+						</table>
+					</td>
+					<td style="vertical-align:top;" width="400px">
+						<com:Application.pages.Logistics.CRUD.PartType.ContractPartTypePanel.ContractPartTypePanel ID="SearchContractText" CssStyle="margin:0 0 0 15px;" ValidationGroup="Group1"/>
+					</td>
+					<td style="text-align:right; vertical-align:top" width="10px">
+						<com:TActiveButton ID="checkButton" Text="Save" OnClick="validatePartType" >
+						<prop:ClientSide
+							OnLoading="mb.showLoading('validating'); $('addProcessing').show();"
+							OnComplete="if($('<%=$this->validateAdd->getClientId() %>').value=='true'){$('<%= $this->EditButton->getClientId()%>').click();} else {mb.hide();} $('addProcessing').hide();" />
+						</com:TActiveButton>
+						<img id='addProcessing' src='/themes/images/ajax-loader.gif' style="display:none;" />
+						<com:TButton ID="EditButton" Text="Save" Attributes.onclick="validateAndDisable(this);" style="display:none" ValidationGroup="Group1" />
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+						<com:TButton ID="CancelEditButton" Text="Cancel" Onclick="cancel" Attributes.onclick="mb.showLoading('loading');"/>
+					</td>
+				</tr>
+
+			</table>
+
+			<com:TLabel ID="PartTypeAliasLabel" style="display:none">
+
+				<table width="100%" style="background:#eeeeee;" border="0">
+					<tr>
+						<td colspan='4'><hr></td>
+					</tr>
+
+					<tr>
+						<td colspan='5'><a href="javascript:void(0)" onClick='addMore()'>Add More</a></td>
+					</tr>
+
+
+
+
+
+	  				<tr>
+	  					<th style='width:20%;font-weight:bold'>Type</th>
+	  					<th style='width:30%;font-weight:bold'>Alias</th>
+	  					<th style='width:25%;font-weight:bold'>Created By</th>
+	  					<th style='width:25%;font-weight:bold'>Updated By</th>
+	  				</tr>
+
+			    	<tr id="tr1" class="">
+				    	<td><com:TActiveDropDownList Id="type1" DataTextField="name" DataValueField="id" /></td>
+				    	<td><com:TActiveTextBox id="alias1" width="80%" /></td>
+				    	<td><com:TActiveLabel ID="created1" /></td>
+					    <td><com:TActiveLabel ID="updated1" /></td>
+			    	</tr>
+					<tr id="tr2" class="hide">
+				    	<td><com:TActiveDropDownList Id="type2" DataTextField="name" DataValueField="id" /></td>
+				    	<td><com:TActiveTextBox id="alias2" width="80%" /></td>
+				    	<td><com:TActiveLabel ID="created2" /></td>
+					    <td><com:TActiveLabel ID="updated2" /></td>
+			    	</tr>
+			    	<tr id="tr3" class="hide">
+				    	<td><com:TActiveDropDownList Id="type3" DataTextField="name" DataValueField="id" /></td>
+				    	<td><com:TActiveTextBox id="alias3" width="80%" /></td>
+				    	<td><com:TActiveLabel ID="created3" /></td>
+					    <td><com:TActiveLabel ID="updated3" /></td>
+			    	</tr>
+			    	<tr id="tr4" class="hide">
+				    	<td><com:TActiveDropDownList Id="type4" DataTextField="name" DataValueField="id" /></td>
+				    	<td><com:TActiveTextBox id="alias4" width="80%" /></td>
+				    	<td><com:TActiveLabel ID="created4" /></td>
+					    <td><com:TActiveLabel ID="updated4" /></td>
+			    	</tr>
+			    	<tr id="tr5" class="hide">
+				    	<td><com:TActiveDropDownList Id="type5" DataTextField="name" DataValueField="id" /></td>
+				    	<td><com:TActiveTextBox id="alias5" width="80%" /></td>
+				    	<td><com:TActiveLabel ID="created5" /></td>
+					    <td><com:TActiveLabel ID="updated5" /></td>
+			    	</tr>
+			    	<tr id="tr6" class="hide">
+				    	<td><com:TActiveDropDownList Id="type6" DataTextField="name" DataValueField="id" /></td>
+				    	<td><com:TActiveTextBox id="alias6" width="80%" /></td>
+				    	<td><com:TActiveLabel ID="created6" /></td>
+					    <td><com:TActiveLabel ID="updated6" /></td>
+			    	</tr>
+			    	<tr id="tr7" class="hide">
+				    	<td><com:TActiveDropDownList Id="type7" DataTextField="name" DataValueField="id" /></td>
+				    	<td><com:TActiveTextBox id="alias7" width="80%" /></td>
+				    	<td><com:TActiveLabel ID="created7" /></td>
+					    <td><com:TActiveLabel ID="updated7" /></td>
+			    	</tr>
+			    	<tr id="tr8" class="hide">
+				    	<td><com:TActiveDropDownList Id="type8" DataTextField="name" DataValueField="id" /></td>
+				    	<td><com:TActiveTextBox id="alias8" width="80%" /></td>
+				    	<td><com:TActiveLabel ID="created8" /></td>
+					    <td><com:TActiveLabel ID="updated8" /></td>
+			    	</tr>
+			    	<tr id="tr9" class="hide">
+				    	<td><com:TActiveDropDownList Id="type9" DataTextField="name" DataValueField="id" /></td>
+				    	<td><com:TActiveTextBox id="alias9" width="80%" /></td>
+				    	<td><com:TActiveLabel ID="created9" /></td>
+					    <td><com:TActiveLabel ID="updated9" /></td>
+			    	</tr>
+			    	<tr id="tr10" class="hide">
+				    	<td><com:TActiveDropDownList Id="type10" DataTextField="name" DataValueField="id" /></td>
+				    	<td><com:TActiveTextBox id="alias10" width="80%" /></td>
+				    	<td><com:TActiveLabel ID="created10" /></td>
+					    <td><com:TActiveLabel ID="updated10" /></td>
+			    	</tr>
+	  			</table>
+
+			</com:TLabel>
+
+
+		</com:TActivePanel>
+<!---   ---------------- Add Panel Ends Here---------------- --->
+	<com:TPanel ID="ListingPanel">
+		<com:TActivePanel ID="DataListPanel">
+			<table width="100%" class="DataListTitle">
+				<tr>
+						<th>
+							<td align="left">
+									<com:TLabel Text="<%[ PartType.list ]%>" />
+									<com:TLabel ID="PartTypeLabel" />
+							</td>
+						</th>
+				</tr>
+			</table>
+
+			<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem"
+					     OnEditCommand="edit"
+					     OnDeleteCommand="deletePartType"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList"
+					     ItemStyle.CssClass="DataListItem"
+					     AlternatingItemStyle.CssClass="DataListAlterItem"
+					     EditItemStyle.CssClass="DataListEditItem"
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="true" PageSize="20" EnableViewState="true">
+
+			    <prop:HeaderTemplate>
+					<table width="100%" height="25" border="0">
+						<tr>
+							<th width="8%" style="text-align:center;"><%[ PartType.partCode ]%></th>
+							<th><%[ PartType.name ]%></th>
+							<th width="4%" Title="Serialised" style="text-align:center;">Ser?</th>
+							<th width="4%" Title="Repairable" style="text-align:center;">Rep?</th>
+							<th width="4%" Title="Returnable" style="text-align:center;">Ret?</th>
+							<th width="4%" Title="To Be Depreciated" style="text-align:center;">Dep?</th>
+							<th width="5%" style="text-align:center;">Qty</th>
+							<th width="18%" style="text-align:center;">Created (UTC)<br />Updated (UTC)</th>
+							<th width="5%" style="text-align:center;">Active</th>
+							<th width="6%">&nbsp;</th>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" height="25" border="0">
+						<tr>
+							<td width="8%" style="text-align:center;">
+								<com:THyperLink
+							 		Attributes.OnMouseOver = "$('PartTypeDetails_<%# $this->DataItem->getId() %>').show();"
+		                 			Attributes.OnMouseOut = "$('PartTypeDetails_<%# $this->DataItem->getId() %>').hide();"
+		                 			ID="BytTransitNote">
+								<%#  is_object($this->DataItem) ? $this->DataItem->getAlias(1,'<br />') : "" %>
+		                 		</com:THyperLink>
+									<div ID="PartTypeDetails_<%# $this->DataItem->getId() %>" style="display: none; " class="toolTipWindow">
+										Manufacturer: <%# $this->DataItem->getManufacturer() %><br />
+										<%%
+										if (is_object($this->DataItem))
+										{
+											if($this->DataItem->getModel() != "")
+												echo "Model:" . (string)$this->DataItem->getModel() . "<br>";
+										 	if($this->DataItem->getModel() != "")
+												echo "Version:" . (string)$this->DataItem->getVersion() . "<br>";
+											foreach($this->DataItem->getPartTypeAlias() as $partTypeAlias)
+											{
+												if(strtoupper($partTypeAlias->getPartTypeAliasType()->getName()) != 'CODE NAME')
+												 	echo $partTypeAlias->getPartTypeAliasType() . ": " . (string)$partTypeAlias->getAlias() . "<br>";
+											}
+										}
+										%>
+									</div>
+							</td>
+							<td>
+								<%# $this->DataItem->getName() %>
+							</td>
+							<td width="4%" style="text-align:center;">
+								<com:TImage ID="serialisedFlag" ToolTip="This Part Is Serialised" ImageUrl="/themes/images/small_yes.gif" Visible="<%# $this->DataItem->getSerialised()%>"/>
+							</td>
+							<td width="4%" style="text-align:center;">
+								<com:TImage ID="repairableFlag" ToolTip="This Part Is Repairable" ImageUrl="/themes/images/repair.gif" Visible="<%# $this->DataItem->getRepairable()%>"/>
+							</td>
+							<td width="4%" style="text-align:center;">
+								<com:TImage ID="returnableFlag" ToolTip="This Part Is Returnable" ImageUrl="/themes/images/returnable.png" Visible="<%# $this->DataItem->getReturnable()%>"/>
+							</td>
+							<td width="4%" style="text-align:center;">
+								<com:TImage ID="depreciationFlag" ToolTip="This Part Is To Be Depreciated" ImageUrl="/themes/images/small_yes.gif" Visible="<%# is_null($this->DataItem->getDepreciationMethod()) ? false : true %>"/>
+							</td>
+							<td width="5%" style="text-align:center;">
+								<com:THyperLink
+									Text="<%# $this->Page->getInstanceQuantity($this->DataItem->getId()) %>"
+									NavigateUrl = "/partquantityatlocation/<%# $this->DataItem->getId() %>/1/null/null/2/null/null/null"
+									ToolTip="Click here to view all part instances for this part type"
+									/>
+							</td>
+							<td width="18%" style="font-size:9px; text-align:center;">
+								<b>Created:</b> <%# $this->Page->getCreatedBy($this->DataItem->getId()) %>
+								<br />
+								@ <%#$this->DataItem->getCreated()%>
+								<br />
+								<b>Updated:</b> <%# $this->Page->getUpdatedBy($this->DataItem->getId()) %>
+								<br />
+								@ <%#$this->DataItem->getUpdated()%>
+							</td>
+							<td width="5%" style="text-align:center;">
+								&nbsp;&nbsp;
+								<com:TCheckBox ID="Active" Enabled="<%= $this->Page->canDeactivatPartType %>"
+									Checked="<%# $this->DataItem->getActive() %>"
+									AutoPostBack="true"
+									OnCheckedChanged="Page.toggleActive"
+									Attributes.OnClick="return confirmDeactivate(<%# $this->DataItem->getActive() %>, <%# $this->Page->getInstanceQuantity($this->DataItem->getId(), true) %>);" />
+							</td>
+							<td align="right" width="6%" style="text-align:center;">
+								<com:TImageButton ImageUrl="/themes/images/edit.png" Text="Edit" CommandName="edit" ToolTip="Edit Record" Visible="<%# (Core::getRole() == 'System Admin')?true:$this->DataItem->getActive() %>"  Attributes.onclick="mb.showLoading('loading');"/>
+								<com:THyperLink
+									ImageUrl="/themes/images/toalias.gif"
+									NavigateUrl="/parttypealias/<%# $this->DataItem->getId()%>/"
+									ToolTip="To Alias"
+									Target="_blank" />
+								<com:THyperLink
+									ImageUrl="/themes/images/tobom.gif"
+									NavigateUrl="/billofmaterials/<%# $this->DataItem->getId()%>/"
+									ToolTip="To BOM" />
+							</td>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+
+				<prop:EditItemTemplate>
+					<com:TActiveHiddenField ID="validateEdit" value="false"/>
+				<table width="100%" style="background:#eeeeee;" border="0">
+					<tr>
+						<td style="vertical-align:top">
+							<table border="0" width="550px">
+								<tr>
+									<td width="150px"><%[PartType.code]%><font color=red>*</font>:</td>
+									<td>
+										<com:TTextBox ID="newPartTypeCode" ReadOnly="true" AutoPostBack="false" ValidationGroup="Group1"/>
+										<com:TRequiredFieldValidator ControlToValidate="newPartTypeCode" ErrorMessage="Code Required" ValidationGroup="Group1" EnableClientScript="true" Display="Dynamic"/>
+									</td>
+								</tr>
+								<tr>
+									<td><%[PartType.name]%><font color=red>*</font>:</td>
+									<td>
+										<com:TTextBox ID="newPartTypeName" AutoPostBack="false" ValidationGroup="Group1" width="100%"/>
+										<com:TRequiredFieldValidator ControlToValidate="newPartTypeName" ErrorMessage="Name Required" ValidationGroup="Group1" EnableClientScript="true"  Display="Dynamic"/>
+									</td>
+								</tr>
+								<tr>
+									<td style="vertical-align:top"><%[PartType.description]%><font color=red>*</font>:</td>
+									<td>
+										<com:TTextBox ID="newPartTypeDescription" AutoPostBack="false" ValidationGroup="Group1" TextMode="MultiLine" Rows="2" width="100%" />
+										<com:TRequiredFieldValidator ControlToValidate="newPartTypeDescription" ErrorMessage="Description Required" ValidationGroup="Group1" EnableClientScript="true" Display="Dynamic"/>
+									</td>
+								</tr>
+								<tr>
+									<td>Owner Client:<font color=red>*</font></td>
+									<td>
+										<com:Application.controls.HYAutoComplete ID="newPartTypeOwner" type="Client" ResultPanel.CssClass="hydraautocomplete" Width="94%" Suggestions.DataKeyField="id" pageMethod="ownerClientSelected" pageOnSuggestMethod="ownerClientSuggest" >
+											<prop:Suggestions.ItemTemplate>
+								            	<li><%# $this->Data->getClientName() %></li>
+											</prop:Suggestions.ItemTemplate>
+										</com:Application.controls.HYAutoComplete>
+										<com:TActiveHiddenField ID="ownerClient" />
+										<com:TRequiredFieldValidator ControlToValidate="ownerClient" ErrorMessage="Owner Client Required" ValidationGroup="Group1" EnableClientScript="true" Display="Dynamic"/>
+									</td>
+								</tr>
+								<tr>
+									<td><%[PartType.manufacturer]%>:</td>
+									<td><com:TDropDownList ID="newPartTypeManufacturer" PromptText="Please Select" DataTextField="name" DataValueField="id" width="102%"/></td>
+								</tr>
+								<tr>
+									<td style="vertical-align:top;"><%[PartType.suppliers]%>:</td>
+									<td>
+										<com:Application.controls.HYAutoComplete ID="SearchSupplierText"
+													ResultPanel.ScrollBars="Auto"
+													Suggestions.DataKeyField="id"
+													ResultPanel.CssClass="hydraautocomplete"
+													PageMethod="handleSelectedSupplier"
+													PageOnSuggestMethod="onSuggestSupplier" width="94%" />
+										<com:TActiveListBox ID="newPartTypeSuppliers" DataTextField="name" DataValueField="id" Rows="3" width="100%"/>
+										<com:TActiveButton Text="Remove"  OnCommand="Page.removeSelectedItem" CommandParameter="newPartTypeSuppliers" >
+											<prop:ClientSide
+	                                                OnLoading="mb.showLoading('removing supplier');"
+	                                                OnComplete="mb.hide();" />
+	                                    </com:TActiveButton>
+									</td>
+								</tr>
+								<tr>
+									<td style="vertical-align:top; width:80px">Part Type Group:</td>
+									<td>
+										<com:Application.controls.HYAutoComplete ID="SearchPartTypeGroupText"
+													Suggestions.DataKeyField="id"
+													ResultPanel.ScrollBars="Auto"
+													PageMethod="handleSelectedPartTypeGroup"
+													ResultPanel.CssClass="hydraautocomplete"
+													PageOnSuggestMethod="onSuggestPartTypeGroup" width="94%"/>
+										<com:TActiveListBox ID="newPartTypeGroups" DataTextField="name" DataValueField="id" Rows="3" width="100%"/>
+										<com:TActiveButton Text="Remove" OnCommand="Page.removeSelectedItem" CommandParameter="newPartTypeGroups" >
+											<prop:ClientSide
+	                                                OnLoading="mb.showLoading('removing part type group');"
+	                                                OnComplete="mb.hide();" />
+	                                    </com:TActiveButton>
+									</td>
+								</tr>
+								<tr>
+	                                <td>Unit Price<font color=red>*</font>:</td>
+	                                <td>
+	                                    <com:TActiveTextBox ID="unitPrice" Attributes.onChange="formatUnitPrice(this); return false;"/>
+	                                </td>
+	                            </tr>
+								<tr>
+									<td>Repairable?:</td>
+									<td><com:TActiveCheckBox ID="repairable"/></td>
+								</tr>
+								<tr>
+									<td>Returnable?:</td>
+									<td><com:TActiveCheckBox ID="returnable" Attributes.onclick="checkReturnableFlag($('<%= $this->returnable->getClientId()%>'),$('<%= $this->newSerialized->getClientId()%>'));" /></td>
+								</tr>
+								<tr>
+									<td>Non-Serialised?:</td>
+									<td>
+										<com:TActiveCheckBox ID="newSerialized" Checked="false" AutoPostBack="true" Attributes.onclick="setReturnableFlag($('<%= $this->returnable->getClientId()%>'),$('<%= $this->newSerialized->getClientId()%>'));" OnCheckedChanged="Page.toggleNewSerializedPartPanel">
+											<prop:ClientSide
+												OnLoading="$('showBarcode').show();
+															hideAliasList_<%=$this->SearchContractText->getId()%>(!$('<%= $this->newSerialized->getClientId()%>').checked);
+															"
+												OnComplete="$('showBarcode').hide();
+															if($('<%= $this->newSerialized->getClientId()%>').checked){$('<%= $this->newBarcode->getClientId()%>').show();}
+															else{$('<%= $this->newBarcode->getClientId()%>').hide();}" />
+										</com:TActiveCheckBox>
+										<img id="showBarcode" src="/themes/images/ajax-loader.gif" style="display: none;"/>
+										<com:TActiveTextBox ID="newBarcode" AutoPostBack="false" ReadOnly="true" style="border:none;background:transparent;<%= $this->newSerialized->Checked ? '': 'display:none;'%>"/>
+									</td>
+								</tr>
+								<tr>
+									<td>To be Depreciated?:</td>
+									<td>
+										<com:TActiveCheckBox ID="newDMChk" Text="" Checked="false" AutoPostBack="true">
+										<prop:ClientSide
+												OnLoading="$('showDepList').show();"
+												OnComplete="$('showDepList').hide(); toggleDepList('<%= $this->newDMChk->getClientId()%>', false);" />
+										</com:TActiveCheckBox>
+										<img id="showDepList" src="/themes/images/ajax-loader.gif" style="display: none;"/>
+										<com:TActiveDropDownList
+											DataTextField="description"
+					    					DataValueField="id"
+					    					ID="newDM"
+					    					AutoPostBack="false"
+					    					Style="display:none;"
+					    				/>
+									</td>
+								</tr>
+								<tr>
+									<td>Kit?:</td>
+									<td>
+										<com:TActiveCheckBox ID="kitCheck" Text="" Checked="false" AutoPostBack="true">
+										<prop:ClientSide
+												OnLoading="$('showKitTypeList').show();"
+												OnComplete="$('showKitTypeList').hide();toggleKitList('<%= $this->kitCheck->getClientId()%>', false);" />
+										</com:TActiveCheckBox>
+										<img id="showKitTypeList" src="/themes/images/ajax-loader.gif" style="display: none;"/>
+										<com:TActiveDropDownList
+											DataTextField="name"
+					    					DataValueField="id"
+					    					ID="kitList"
+					    					AutoPostBack="false"
+					    					promptText="Please Select...."
+					    					Style="display:none;" />
+					    				&nbsp;
+									</td>
+								</tr>
+									<tr>
+									<td> <com:TLabel ID="LabelText" Text="Label"/>
+                                    </td>
+									<td>
+		                            <br/><br/>
+	                                   <com:TListBox ID = "tempList" AutoPostBack = "false"
+											DataValueField = "id"
+											DataTextField = "name"
+											Rows = "5"
+											EnableClientScript="true"
+											SelectionMode = "Multiple"
+										    width="300px"
+											  /><br/><br/>
+									<i style="font-size: 9px; width: 95%; margin: 0 5px 5px 5px;">
+									<com:TLabel ID="LabelText1" Text="Ctrl + click to select multiple"/></i>
+									</td>
+								</tr>
+							</table>
+						</td>
+						<td style="vertical-align:top" width="400px">
+							<com:Application.pages.Logistics.CRUD.PartType.ContractPartTypePanel.ContractPartTypePanel ID="SearchContractText" CssStyle="margin:0 0 0 15px;" ValidationGroup="Group1"/>
+						</td>
+						<td style="text-align:right; vertical-align:top" width="10px">
+							<com:TActiveButton ID="checkButton2" Text="Save" OnClick="Page.validatePartType" ValidationGroup="Group1">
+								<prop:ClientSide
+								OnLoading="mb.showLoading('validating');$('editProcessing').show();"
+								OnComplete="if($('<%=$this->validateEdit->getClientId() %>').value=='true'){$('<%= $this->EditButton->getClientId()%>').click();} else {mb.hide();} $('editProcessing').hide();"
+								/>
+							</com:TActiveButton>
+							<img id='editProcessing' src='/themes/images/ajax-loader.gif' style="display:none;" />
+							<com:TButton ID="EditButton" Text="Save" CommandName="update" ValidationGroup="Group1" TabIndex="30" style='display:none' Attributes.onclick="mb.showLoading('saving');"/>
+							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  							<com:TButton ID="CancelEditButton" Text="Cancel" CommandName="cancel" TabIndex="31" Attributes.onclick="mb.showLoading('loading');"/>
+						</td>
+					</tr>
+				</table>
+
+				<com:TLabel ID="PartTypeAliasLabel" style="display:none">
+
+					<table width="100%" style="background:#eeeeee;" border="0">
+						<tr>
+							<td colspan='5'><hr></td>
+						</tr>
+
+						<tr>
+							<td colspan='5'><a href="javascript:void(0)" onClick='addMore()'>Add More</a></td>
+						</tr>
+
+
+						<tr>
+							<td colspan='5'><com:TActiveLabel ID="aliasOverflowMessage" style="display:none"></com:TActiveLabel></td>
+						</tr>
+		  				<tr>
+		  					<th style="width:20%;font-weight:bold;">Type</th>
+		  					<th style="width:18%;font-weight:bold;">Alias</th>
+		  					<th style="width:20%;font-weight:bold;">Created By</th>
+		  					<th style="width:20%;font-weight:bold;">Updated By</th>
+		  					<th style="width:20%;font-weight:bold;">&nbsp;</th>
+		  				</tr>
+
+				    	<tr id="tr1" class="">
+					    	<td><com:TActiveDropDownList Id="type1" DataTextField="name" DataValueField="id" onSelectedIndexChanged="Page.getValueType"/>
+					    		<com:TActiveHiddenField ID="aliasId1" />
+					    	</td>
+					    	<td>
+					    	<com:TActiveCheckBox id="alias1Chk" />
+					    	<com:TActiveTextBox id="alias1" />
+					    	</td>
+					    	<td><com:TActiveLabel ID="created1"/></td>
+					    	<td><com:TActiveLabel ID="updated1"/></td>
+					    	<td>
+					    		<com:TActiveImageButton Attributes.OnClick="$('<%=$this->deleteAliasLoader1->getClientId() %>').className = '';" OnCommand="Page.deleteAlias" CommandParameter="1" ID="delete1" ImageUrl="../../../themes/images/delete.png" Text="Delete"  ToolTip="Delete Record"  Visible="false" />
+				    			<com:TActiveImage ID="deleteAliasLoader1"  ImageUrl="/themes/images/ajax-loader.gif" CssClass="hide"/>
+
+				    		</td>
+				    	</tr>
+						<tr id="tr2" class="hide">
+					    	<td><com:TActiveDropDownList Id="type2" DataTextField="name" DataValueField="id" onSelectedIndexChanged="Page.getValueType"/>
+					    		<com:TActiveHiddenField ID="aliasId2" />
+					    	</td>
+					    	<td>
+					    	<com:TActiveCheckBox id="alias2Chk" />
+					    	<com:TActiveTextBox id="alias2"  />&nbsp;</td>
+					    	<td><com:TActiveLabel ID="created2" /></td>
+					    	<td><com:TActiveLabel ID="updated2" /></td>
+					    	<td>
+					    		<com:TActiveImageButton Attributes.OnClick="$('<%=$this->deleteAliasLoader2->getClientId() %>').className = '';" OnCommand="Page.deleteAlias" CommandParameter="2"  ID="delete2" ImageUrl="../../../themes/images/delete.png" Text="Delete"  ToolTip="Delete Record"  Visible="false" />
+				    			<com:TActiveImage ID="deleteAliasLoader2"  ImageUrl="/themes/images/ajax-loader.gif" CssClass="hide"/>
+				    		</td>
+				    	</tr>
+				    	<tr id="tr3" class="hide">
+					    	<td><com:TActiveDropDownList Id="type3" DataTextField="name" DataValueField="id" onSelectedIndexChanged="Page.getValueType"/>
+					    		<com:TActiveHiddenField ID="aliasId3" />
+					    	</td>
+					    	<td>
+					    	<com:TActiveCheckBox id="alias3Chk" />
+					    	<com:TActiveTextBox id="alias3"  />&nbsp;
+					    	</td>
+					    	<td><com:TActiveLabel ID="created3" /></td>
+					    	<td><com:TActiveLabel ID="updated3" /></td>
+					    	<td>
+					    		<com:TActiveImageButton Attributes.OnClick="$('<%=$this->deleteAliasLoader3->getClientId() %>').className = '';" OnCommand="Page.deleteAlias" CommandParameter="3" ID="delete3" ImageUrl="../../../themes/images/delete.png" Text="Delete"  ToolTip="Delete Record"  Visible="false" />
+				    			<com:TActiveImage ID="deleteAliasLoader3"  ImageUrl="/themes/images/ajax-loader.gif" CssClass="hide"/>
+				    		</td>
+				    	</tr>
+				    	<tr id="tr4" class="hide">
+					    	<td><com:TActiveDropDownList Id="type4" DataTextField="name" DataValueField="id"  onSelectedIndexChanged="Page.getValueType"/>
+					    		<com:TActiveHiddenField ID="aliasId4" />
+					    	</td>
+					    	<td>
+					    	<com:TActiveCheckBox id="alias4Chk" />
+					    	<com:TActiveTextBox id="alias4" />&nbsp;
+					    	</td>
+					    	<td><com:TActiveLabel ID="created4" /></td>
+					    	<td><com:TActiveLabel ID="updated4" /></td>
+					    	<td>
+					    		<com:TActiveImageButton Attributes.OnClick="$('<%=$this->deleteAliasLoader4->getClientId() %>').className = '';" OnCommand="Page.deleteAlias" CommandParameter="4" ID="delete4" ImageUrl="../../../themes/images/delete.png" Text="Delete"  ToolTip="Delete Record"  Visible="false" />
+				    			<com:TActiveImage ID="deleteAliasLoader4"  ImageUrl="/themes/images/ajax-loader.gif" CssClass="hide"/>
+				    		</td>
+				    	</tr>
+				    	<tr id="tr5" class="hide">
+					    	<td><com:TActiveDropDownList Id="type5" DataTextField="name" DataValueField="id" onSelectedIndexChanged="Page.getValueType" />
+					    		<com:TActiveHiddenField ID="aliasId5" />
+					    	</td>
+					    	<td><com:TActiveCheckBox id="alias5Chk" />
+					    	<com:TActiveTextBox id="alias5"  />
+					    	</td>
+					    	<td><com:TActiveLabel ID="created5" /></td>
+					    	<td><com:TActiveLabel ID="updated5" /></td>
+					    	<td>
+					    		<com:TActiveImageButton Attributes.OnClick="$('<%=$this->deleteAliasLoader5->getClientId() %>').className = '';" OnCommand="Page.deleteAlias" CommandParameter="5" ID="delete5" ImageUrl="../../../themes/images/delete.png" Text="Delete"  ToolTip="Delete Record"  Visible="false" />
+				    			<com:TActiveImage ID="deleteAliasLoader5"  ImageUrl="/themes/images/ajax-loader.gif" CssClass="hide"/>
+				    		</td>
+				    	</tr>
+
+				    	<tr id="tr6" class="hide">
+					    	<td><com:TActiveDropDownList Id="type6" DataTextField="name" DataValueField="id" onSelectedIndexChanged="Page.getValueType" />
+					    		<com:TActiveHiddenField ID="aliasId6" />
+					    	</td>
+					    	<td><com:TActiveCheckBox id="alias6Chk" />
+					    	<com:TActiveTextBox id="alias6"  />
+					    	</td>
+					    	<td><com:TActiveLabel ID="created6" /></td>
+					    	<td><com:TActiveLabel ID="updated6" /></td>
+					    	<td>
+					    		<com:TActiveImageButton Attributes.OnClick="$('<%=$this->deleteAliasLoader6->getClientId() %>').className = '';" OnCommand="Page.deleteAlias" CommandParameter="6" ID="delete6" ImageUrl="../../../themes/images/delete.png" Text="Delete"  ToolTip="Delete Record" Visible="false" />
+				    			<com:TActiveImage ID="deleteAliasLoader6"  ImageUrl="/themes/images/ajax-loader.gif" CssClass="hide"/>
+				    		</td>
+				    	</tr>
+
+				    	<tr  id="tr7" class="hide">
+					    	<td><com:TActiveDropDownList Id="type7" DataTextField="name" DataValueField="id" onSelectedIndexChanged="Page.getValueType" />
+					    		<com:TActiveHiddenField ID="aliasId7" />
+					    	</td>
+					    	<td><com:TActiveCheckBox id="alias7Chk" />
+					    	<com:TActiveTextBox id="alias7"  />
+					    	</td>
+					    	<td><com:TActiveLabel ID="created7" /></td>
+					    	<td><com:TActiveLabel ID="updated7" /></td>
+					    	<td>
+					    		<com:TActiveImageButton Attributes.OnClick="$('<%=$this->deleteAliasLoader7->getClientId() %>').className = '';" OnCommand="Page.deleteAlias" CommandParameter="7"  ID="delete7" ImageUrl="../../../themes/images/delete.png" Text="Delete"  ToolTip="Delete Record" Visible="false" />
+				    			<com:TActiveImage ID="deleteAliasLoader7"  ImageUrl="/themes/images/ajax-loader.gif" CssClass="hide"/>
+				    		</td>
+				    	</tr>
+
+				    	<tr id="tr8" class="hide">
+					    	<td><com:TActiveDropDownList Id="type8" DataTextField="name" DataValueField="id" onSelectedIndexChanged="Page.getValueType" />
+					    		<com:TActiveHiddenField ID="aliasId8" />
+					    	</td>
+					    	<td><com:TActiveCheckBox id="alias8Chk" />
+					    	<com:TActiveTextBox id="alias8"  />
+					    	</td>
+					    	<td><com:TActiveLabel ID="created8" /></td>
+					    	<td><com:TActiveLabel ID="updated8" /></td>
+					    	<td>
+					    		<com:TActiveImageButton Attributes.OnClick="$('<%=$this->deleteAliasLoader8->getClientId() %>').className = '';" OnCommand="Page.deleteAlias" CommandParameter="8"  ID="delete8" ImageUrl="../../../themes/images/delete.png" Text="Delete"  ToolTip="Delete Record" Visible="false" />
+				    			<com:TActiveImage ID="deleteAliasLoader8"  ImageUrl="/themes/images/ajax-loader.gif" CssClass="hide"/>
+				    		</td>
+				    	</tr>
+
+				    	<tr id="tr9" class="hide">
+					    	<td><com:TActiveDropDownList Id="type9" DataTextField="name" DataValueField="id" onSelectedIndexChanged="Page.getValueType" />
+					    		<com:TActiveHiddenField ID="aliasId9" />
+					    	</td>
+					    	<td><com:TActiveCheckBox id="alias9Chk" />
+					    	<com:TActiveTextBox id="alias9"  />&nbsp;
+					    	</td>
+					    	<td><com:TActiveLabel ID="created9" /></td>
+					    	<td><com:TActiveLabel ID="updated9" /></td>
+					    	<td>
+					    		<com:TActiveImageButton Attributes.OnClick="$('<%=$this->deleteAliasLoader9->getClientId() %>').className = '';" OnCommand="Page.deleteAlias" CommandParameter="9"  ID="delete9" ImageUrl="../../../themes/images/delete.png" Text="Delete"  ToolTip="Delete Record" Visible="false" />
+				    			<com:TActiveImage ID="deleteAliasLoader9"  ImageUrl="/themes/images/ajax-loader.gif" CssClass="hide"/>
+				    		</td>
+				    	</tr>
+
+				    	<tr id="tr10" class="hide">
+					    	<td><com:TActiveDropDownList Id="type10" DataTextField="name" DataValueField="id" onSelectedIndexChanged="Page.getValueType" />
+					    		<com:TActiveHiddenField ID="aliasId10" />
+					    	</td>
+					    	<td><com:TActiveCheckBox id="alias10Chk" />
+					    	<com:TActiveTextBox id="alias10"  /></td>
+					    	<td><com:TActiveLabel ID="created10" /></td>
+					    	<td><com:TActiveLabel ID="updated10" /></td>
+					    	<td>
+					    		<com:TActiveImageButton Attributes.OnClick="$('<%=$this->deleteAliasLoader10->getClientId() %>').className = '';" OnCommand="Page.deleteAlias" CommandParameter="10"  ID="delete10" ImageUrl="../../../themes/images/delete.png" Text="Delete"  ToolTip="Delete Record" Visible="false" />
+				    			<com:TActiveImage ID="deleteAliasLoader10"  ImageUrl="/themes/images/ajax-loader.gif" CssClass="hide"/>
+				    		</td>
+				    	</tr>
+
+
+
+		  			</table>
+
+				</com:TLabel>
+
+
+				</prop:EditItemTemplate>
+
+			    <prop:FooterTemplate>
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="3">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Parent->VirtualItemCount %> Part Type(s)
+								</div>
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>
+			</com:TDataList>
+
+		<com:TPanel ID="PaginationPanel">
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+						<com:Application.controls.ResultsPerPageList.ResultsPerPageList ID="resultsPerPageList" onPageResultsChanged="resultsPerPageChanged" defaultPerPage="50" AutoPostBack="true" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>
+	  </com:TActivePanel>
+	</com:TPanel>
+	</div>
+</com:TContent>

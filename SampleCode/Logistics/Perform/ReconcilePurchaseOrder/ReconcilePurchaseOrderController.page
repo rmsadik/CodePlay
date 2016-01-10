@@ -1,0 +1,211 @@
+<com:TContent ID="MainContent">
+	<style>
+	
+	.tdHeadings{
+		font-weight:bold; 
+		margin-left:5px; 
+		background-color:#7c7c7c; 
+		color:white;
+	}
+	.divHeadings{
+		font-weight:bold; 
+		margin-left:3px; 
+		background-color:#7c7c7c; 
+		color:white;
+		float:left;
+		font-size:10px;
+		margin-top:2px;
+		margin-bottom:2px;
+	}
+	.divText{
+		float:left;
+		margin-left:3px; 
+		word-wrap: break-word;
+		margin-bottom:3px; 
+	}
+	.row{
+		float:left;
+		clear:left;
+		width:100%;
+	}
+	
+	.buttonPanel{
+		width:100%;	
+		float:left;
+	}
+	
+	.buttonPanel input{
+		float:right;
+	}
+	
+	.clsBorderRed{
+		border:1.5px solid #ff0000;
+		float:left;
+		width:94%;
+		margin-bottom:10px;
+		padding:3px;
+	}
+	
+	.clsBorder{
+		border:1.5px solid #7C7C7C;
+		background-color:#F0F0F0;
+		float:left;
+		width:94%;
+		margin-bottom:10px;
+		padding:3px;
+	}
+	
+	</style>
+	<script type="text/javascript">
+	
+	function add_new(){
+		$('<%= $this->addNew->getClientId() %>').click();
+	}
+	
+	
+	
+	function poPartRadioClicked(ptId, partStr, poId, poPartsId, qty)
+	{			
+		$('<%= $this->hiddenPoPartsId->getClientId() %>').value = poPartsId;
+		$('<%= $this->hiddenPoId->getClientId() %>').value = poId;
+		$('<%= $this->hiddenQty->getClientId() %>').value = qty;
+		$('<%= $this->hiddenPartTypeId->getClientId() %>').value = ptId;
+		$('<%= $this->poPartsButton->getClientId() %>').click();
+	}	
+	
+	function saveDelivery(poNumber,poPartIds)
+	{
+		var JSONstring = '';
+		JSONstring += '{"DeliveryDocketNumber":"' + encodeURI(document.forms[0].DeliveryDocketNumber.value) + '",';
+		JSONstring += '"ForwardedTo":"' + encodeURI(document.forms[0].ForwardedTo.value) + '",';
+		JSONstring += '"DeliveryNotes":"' + encodeURI(document.forms[0].DeliveryNotes.value) + '",';
+		JSONstring += '"ReconciledParts":[';
+		var splitIds = poPartIds.split(",");
+		for(var i=0;i<splitIds.length-1;i++){
+			
+			JSONstring += '{"PartId":"' + splitIds[i] + '",';
+			JSONstring += '"ReconciledQuantity":"' + encodeURI(eval("document.forms[0].reconcile_" + splitIds[i] + ".value;")) + '",';
+			JSONstring += '"ReconciledNotes":"' + encodeURI(eval("document.forms[0].notes_" + splitIds[i] + ".value;")) + '"}';
+			
+			if(i<splitIds.length-2){
+				JSONstring += ',';
+			}
+		}
+		JSONstring += ']}';		
+		$('<%= $this->hiddenPoReconcileData->getClientId() %>').value =  String(JSONstring);
+		$('<%= $this->hiddenPoId->getClientId() %>').value = poNumber;
+		$('<%= $this->saveDelivery->getClientId() %>').click();
+	}
+	
+	function populateEdit(poNumber,deliveryId){
+		$('<%= $this->hiddenPoId->getClientId() %>').value = poNumber;
+		$('<%= $this->hiddenDeliveryId->getClientId() %>').value = deliveryId;
+		$('<%= $this->updateDelivery->getClientId() %>').click();
+	}
+	
+	</script>
+		
+	<div>
+		<br />
+		<br />
+		
+		<com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />									  								  			
+		<b><com:TLabel ID="UserLabel" Style="color:#ffffff"/></b>
+		
+		<com:TActiveLabel ID="jsLbl" Style="display:none;"/>
+		
+		<com:THiddenField ID="SearchString" />
+		<com:THiddenField ID="focusObject" />
+		<com:THiddenField ID="focusObjectArgument" />
+		<com:THiddenField ID="hiddenQty" />
+		<com:THiddenField ID="ffBugIgnoreScanner" Value="false" />
+		<com:THiddenField ID="hiddenPoId" />
+		<com:THiddenField ID="hiddenPoPartsId" />
+		<com:THiddenField ID="hiddenPartTypeId" />
+		<com:THiddenField ID="hiddenPoReconcileData" />
+		<com:TActiveHiddenField ID="hiddenDeliveryId" />
+		
+		
+		<com:TActiveButton ID="poPartsButton" Style="display:none;" OnClick="Page.poPartsButtonClicked"/>
+		<com:TActiveButton ID="resetButton" Style="display:none;" OnClick="Page.doReset"/>
+		<com:TActiveButton ID="saveDelivery" Style="display:none;" OnClick="Page.saveDelivery"/>
+		<com:TActiveButton ID="updateDelivery" Style="display:none;" OnClick="Page.updateDelivery"/>
+		<com:TActiveButton ID="addNew" Style="display:none;" OnClick="Page.addNew"/>
+		
+		<com:TActivePanel ID="printPanel">
+			<table width="100%" border="0">
+				<tr>
+					<td valign="top">
+						<com:TActivePanel ID="purchaseOrderRow" Style="display:none;">
+							<table border="0" width="100%" > 	
+								<tr>
+									<td width="140px" valign="top" style="padding-top:3px;">Purchase Order No:</td>
+								  	<td colspan="3" style="vertical-align:middle;">							
+										<table width="100%" cellspacing="1" cellpadding="1" >
+											<tr>
+												<td>
+													<com:Application.controls.EntityAutoComplete.HYPurchaseOrderComplete 
+														ID="poNo" 
+										  				ResultPanel.CssClass="hydraautocomplete" 
+										  				QtyGreaterThanFilter="reconciled"
+										  				SearchLimit="50"
+										  				width="94%" 
+										  				TabIndex="1" />
+										  		</td>
+											</tr>
+											<tr><td><com:TActiveLabel ID="poPartsLbl" Visible="true" /></td></tr>
+										</table>
+								  		<com:THiddenField ID="poId" />
+								  	</td>
+								</tr>
+							</table>
+						</com:TActivePanel>
+						
+					</td>
+					
+				</tr>
+				
+			</table>
+		
+		
+	<!---   ---------------- Listing Panel Starts---------------- --->					
+			<com:TPanel>		
+				<br />
+				
+				<com:TDataList ID="DataList" DataKeyField="0" OnSelectedIndexChanged="selectItem"
+							 RepeatLayout="Raw"
+							 OnEditCommand="edit"
+						     OnUpdateCommand="save" OnCancelCommand="cancel"
+						     CssClass="DataList" 
+						     ItemStyle.CssClass="DataListItem" 
+						     AlternatingItemStyle.CssClass="DataListAlterItem" 
+						     EditItemStyle.CssClass="DataListEditItem" 
+							 width="100%"
+							 AllowPaging="true" AllowCustomPaging="true" PageSize="10" EnableViewState="true">
+					
+				    <prop:HeaderTemplate>
+					</prop:HeaderTemplate>
+	
+					<prop:ItemTemplate>
+					</prop:ItemTemplate>
+				
+					<prop:EditItemTemplate>	
+					</prop:EditItemTemplate>
+								
+				    <prop:FooterTemplate>
+					</prop:FooterTemplate>				
+				</com:TDataList>
+			</com:TPanel>		
+	
+			<com:TPanel ID="PaginationPanel">		
+			</com:TPanel>	
+			
+			
+		</com:TActivePanel>		
+	</div>
+</com:TContent>
+
+
+
+
+

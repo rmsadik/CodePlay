@@ -1,0 +1,189 @@
+<%@MasterClass="Application.layouts.PlainEditLayout"%>
+<com:TContent ID="MainContent">
+	<div>
+		<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel">
+			<table width="100%">
+				<tr>
+					<td width="80%">
+						<com:THiddenField ID="SearchString" />
+						<com:THiddenField ID="focusObject" />	
+						<com:THiddenField ID="focusObjectArgument" />
+					</td>
+				</tr>
+			</table>
+		</com:TPanel>
+		
+<!---   ---------------- Adding Panel ---------------- --->	
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" >
+			<table width="100%">
+				<tr valign="top">
+					<td >
+						<table width="100%">
+							<tr>
+								<td width="7%"><%[PartTypeAlias.alias]%>:</td>
+								<td>
+								    <com:TActivePanel ID="chkBoxPanel">
+								        <com:TActiveCheckBox ID="newPartTypeAliasAliasChk" />
+								    </com:TActivePanel>
+								    <com:TActivePanel ID="textBoxPanel">
+								        <com:TActiveTextBox ID="newPartTypeAliasAlias"  AutoPostBack="false" width="60%" ValidationGroup="Group1" />
+								        <com:TRequiredFieldValidator ControlToValidate="newPartTypeAliasAlias" ErrorMessage="Part Name Required" ValidationGroup="Group1" EnableClientScript="true" />    
+								    </com:TActivePanel>
+								</td>
+							</tr>
+							<tr>
+							     <td colspan=2></td>
+							</tr>
+							<tr>
+								<td><%[PartTypeAlias.type]%>:</td>
+								<td><com:TActiveDropDownList ID="newPartTypeAliasType" DataTextField="name" DataValueField="id" onSelectedIndexChanged="Page.getValueType"/></td>
+							</tr>							
+						</table>
+					</td>
+					<td >
+						<table>
+							<tr>
+								<td>
+									<com:TButton ID="EditButton" Text="Save" Onclick="save"  />
+								</td>						
+								<td >
+	    							<com:TButton ID="CancelEditButton" Text="Cancel" Onclick="cancel" />
+								</td>
+							</tr>
+						</table>
+					</td>					
+				</tr>
+			</table>	
+		</com:TPanel>
+<!---   ---------------- Editing Panel Ends Here---------------- --->					
+		<com:TPanel ID="PartTypeAliasPanel">
+			<table width="100%" class="DataListTitle">
+				<tr>
+					<th>
+						<td align="left">
+							<com:TLabel Text="<%[ PartTypeAlias.list ]%>" /> 
+							<com:TLabel ID="PartTypeAliasLabel" />
+						</td>
+						<td width="20%" align="right">
+							<com:TButton ID="AddButton" Text="<%[PartTypeAlias.addButton]%>" OnClick="add" width="80%"/>	
+							<com:TImageButton ImageUrl="../../../themes/images/back.gif" OnClick="Page.redirectToPartType" ToolTip="Back" Visible="false"/>					
+						</td>
+					</th>
+				</tr>
+			</table>
+			
+			<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem" 
+					     OnEditCommand="edit"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList" 
+					     ItemStyle.CssClass="DataListItem" 
+					     AlternatingItemStyle.CssClass="DataListAlterItem" 
+					     EditItemStyle.CssClass="DataListEditItem" 
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="true" PageSize="30" EnableViewState="true">
+				
+			    <prop:HeaderTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<th width="30%"><%[ PartTypeAlias.alias ]%></th>
+							<th width="20%"><%[ PartTypeAlias.type ]%></th>
+							<th width="20%">Created By</th>
+							<th width="20%">Updated By</th>
+							<th>&nbsp;</th>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" height="25">
+						<tr>                                  
+							<td width="30%"><com:TActiveCheckBox ID="aliasChk" style="<%# $this->DataItem->getPartTypeAliasType()->getValueType()=== StringUtils::VALUE_TYPE_BOOL ? 'display:in-line;':'display:none;'%>"  Checked="<%# $this->DataItem->getAlias()==='1' ? 'true':'false'%>" Enabled="false"/> 
+							                <com:TActiveLabel ID="aliasText" style="<%# $this->DataItem->getPartTypeAliasType()->getValueType()=== StringUtils::VALUE_TYPE_STRING ? 'display:in-line;':'display:none;'%>" Text="<%# $this->DataItem->getAlias() %>" />
+							</td>
+							<td width="20%"><%# $this->DataItem->getPartTypeAliasType() %></td>
+							<td width="20%"><%# $this->DataItem->getCreatedBy()->getPerson()->getFirstName() %> <%# $this->DataItem->getCreatedBy()->getPerson()->getLastName() %></td>
+							<td width="20%"><%# $this->DataItem->getUpdatedBy()->getPerson()->getFirstName() %> <%# $this->DataItem->getUpdatedBy()->getPerson()->getLastName() %></td>
+							<td align="left">
+								&nbsp;
+								<com:Application.controls.HYLock Feature="menu_all,pages_all,feature_PartTypeAlias_deactivate">
+									<com:TImageButton ImageUrl="../../../themes/images/delete.png" Text="Delete" OnCommand="Page.deletePartTypeAlias" CommandParameter="<%# $this->DataItem->getId() %>" ToolTip="Delete Record" Attributes.OnClick="if(!confirm('WARNING!  Are you sure you want to delete this alias?')) return false;" Visible="<%# $this->Page->showThis($this->DataItem->getPartTypeAliasType()) %>" />
+								</com:Application.controls.HYLock>
+								<com:TImageButton ID="editButton" ImageUrl="../../../themes/images/edit.png" Text="Edit" CommandName="edit" ToolTip="Edit Record" Visible="<%# $this->Page->showThis($this->DataItem->getPartTypeAliasType()) %>"/>
+							</td>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+				
+				<prop:EditItemTemplate>
+					<table width="100%">
+						<tr valign="top">
+							<td >
+								<table width="100%">
+									<tr>
+										<td width="7%"><%[PartTypeAlias.alias]%>:</td>
+										<td>
+											<com:TActivePanel ID="chkBoxEditPanel">
+	                                           <com:TActiveCheckBox ID="newPartTypeAliasAliasChk"  Checked="<%# $this->DataItem->getAlias()==='1' ? 'true':'false'%>"/>
+		                                    </com:TActivePanel>
+		                                    <com:TActivePanel ID="textBoxEditPanel">
+		                                        <com:TActiveTextBox ID="newPartTypeAliasAlias" Text="<%# $this->DataItem->getPartTypeAliasType()->getValueType()=== 'string' ? $this->DataItem->getAlias() :''%>" AutoPostBack="false" width="60%" ValidationGroup="Group1" />
+		                                        <com:TRequiredFieldValidator ControlToValidate="newPartTypeAliasAlias" ErrorMessage="Part Name Required" ValidationGroup="Group1" EnableClientScript="true" />    
+		                                    </com:TActivePanel>
+										    
+										</td>
+									</tr>
+									
+									<tr>
+										<td><%[PartTypeAlias.type]%>:</td>
+										<td>
+											<com:TActiveDropDownList ID="newPartTypeAliasType" DataTextField="name" DataValueField="id" onSelectedIndexChanged="Page.getValueTypeOnEdit"/>
+										</td>
+									</tr>							
+								</table>
+							</td>
+							<td >
+								<table>
+									<tr>
+										<td>
+											<com:TButton ID="EditButton" Text="Save" CommandName="update" />
+										</td>						
+										<td >
+			    							<com:TButton ID="CancelEditButton" Text="Cancel" CommandName="cancel" />
+										</td>
+									</tr>
+								</table>
+							</td>					
+						</tr>
+					</table>									
+				</prop:EditItemTemplate>
+								
+			    <prop:FooterTemplate>
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="3">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Parent->VirtualItemCount %> Part Type Alias(es)
+								</div>
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>				
+			</com:TDataList>
+		</com:TPanel>		
+
+		<com:TPanel ID="PaginationPanel">		
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>			
+	</div>
+</com:TContent>

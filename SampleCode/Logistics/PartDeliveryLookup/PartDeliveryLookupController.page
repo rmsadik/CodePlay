@@ -1,0 +1,465 @@
+<%@MasterClass="Application.layouts.DefaultLayout"%>
+<com:TContent ID="MainContent">
+
+    <com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+    <com:TActiveLabel ID="jsLbl" Style="display:none;" />
+
+	<com:TClientScript>
+		function confirmDeactivate(active)
+		{
+			if (!confirm('Are you sure you want to Deactivate?'))
+				return false;
+
+			mb.showLoading('deactivating');
+		}
+	</com:TClientScript>
+
+	<div>
+	<div align="center">
+		<com:TActiveLabel ID="activeErrorMessage" style="font-weight: bold;color:red;"></com:TActiveLabel>
+		<com:TActiveLabel ID="activeInfoMessage" style="font-weight: bold;color:blue;"></com:TActiveLabel>
+	</div>
+
+	<div align="right">
+		<b><com:TActiveLinkButton ID="ShowOptionLabel" Text="Show Search / Add Panel" Attributes.OnClick="$('<%= $this->Page->SearchAddPanel->getClientId() %>').show();$('<%= $this->Page->ShowOptionLabel->getClientId() %>').hide();$('<%= $this->Page->HideOptionLabel->getClientId() %>').show();"  /></b>
+		<b><com:TActiveLinkButton ID="HideOptionLabel" Text="Hide Search / Add Panel" Attributes.OnClick="$('<%= $this->Page->SearchAddPanel->getClientId() %>').hide();$('<%= $this->Page->HideOptionLabel->getClientId() %>').hide();$('<%= $this->Page->ShowOptionLabel->getClientId() %>').show();" style="display:none;" /></b>
+	</div>
+		<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel" DefaultButton="SearchButton">
+			<fieldset>
+			<legend>Part Delivery Lookup</legend>
+			<table width="100%">
+				<tr>
+					<td width="90%">
+						<table width="100%">
+							<tr>
+								<td width="16%">
+									<b>Issuing Warehouse:</b>
+								</td>
+								<td width="30%">
+
+									<com:Application.controls.HYAutoComplete ID="search_FacilityWarehouse"
+											AutoPostBack="false"
+											PageOnSuggestMethod="suggestIssuingWarehouses"
+											Suggestions.DataKeyField="0"
+											ResultPanel.ScrollBars="Auto"
+											ResultPanel.CssClass="hydraautocomplete"
+											Width="260px" >
+											<prop:Suggestions.ItemTemplate>
+									            <li><%# $this->Data["1"] %></li>
+											</prop:Suggestions.ItemTemplate>
+									</com:Application.controls.HYAutoComplete>
+
+								</td>
+								<td width=16%">
+									<b>Recipient Warehouse:</b>
+								</td>
+								<td width="30%">
+
+									<com:Application.controls.HYAutoComplete ID="search_RemoteWarehouse"
+											AutoPostBack="false"
+											PageOnSuggestMethod="suggestRecipientWarehouses"
+											Suggestions.DataKeyField="0"
+											ResultPanel.ScrollBars="Auto"
+											ResultPanel.CssClass="hydraautocomplete"
+											Width="260px" >
+											<prop:Suggestions.ItemTemplate>
+									            <li><%# $this->Data["1"] %></li>
+											</prop:Suggestions.ItemTemplate>
+									</com:Application.controls.HYAutoComplete>
+
+								</td>
+							</tr>
+							<!-- <tr><td>&nbsp;</td></tr> -->
+							<tr>
+								<td valign="top">
+									<b>Work Type:</b>
+								</td>
+								<td>
+									<com:TListBox ID="search_workTypeList"
+										AutoPostBack="false"
+										DataTextField="LongName"
+										DataValueField="id"
+										Rows="10"
+										style="width:90%"
+										SelectionMode="Multiple"
+										/>
+								</td>
+								<td valign="top">
+									<b>Zone Set:</b>
+								</td>
+								<td>
+									<com:TListBox ID="search_zoneSetList"
+										AutoPostBack="false"
+										DataTextField="name"
+										DataValueField="id"
+										Rows="10"
+										style="width:90%"
+										SelectionMode="Multiple"
+										/>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<com:TButton Text="Search" OnClick="search" ID="SearchButton" Attributes.OnClick="mb.showLoading('searching');"/>
+									<com:TButton Text="Reset" OnClick="reset" Attributes.OnClick="mb.showLoading('loading');"/>
+
+								</td>
+								<td>
+									<com:TTextBox ID="SearchText" AutoPostBack="false" Columns="45" Visible="false" />
+									<com:THiddenField ID="SearchString" />
+									<com:THiddenField ID="focusObject" />
+									<com:THiddenField ID="focusObjectArgument" />
+								</td>
+							</tr>
+						</table>
+					</td>
+					<td width="10%" align="right" valign="top">
+						<com:Application.controls.HYLock Feature="pages_all,feature_partdeliverylookup_add">
+							<com:TButton ID="AddButton" Text="Add" OnClick="add" Attributes.OnClick="mb.showLoading('loading');" />
+						</com:Application.controls.HYLock>
+
+					</td>
+				</tr>
+			</table>
+			</fieldset>
+			<br />
+		</com:TPanel>
+			<br />
+		<com:TActivePanel ID="AddPanel" CssClass="AddPanel" >
+			<table width="100%">
+				<tr valign="top">
+					<td width="30%">
+						Work Type(s):<br />
+						<com:TActiveListBox ID="workTypeList"
+							AutoPostBack="false"
+							DataTextField="LongName"
+							DataValueField="id"
+							ValidationGroup="Group1"
+							Rows="15"
+							style="width:95%"
+							SelectionMode="Multiple"
+							/>
+						<br />
+						<com:TListControlValidator
+							ControlToValidate="workTypeList"
+							ErrorMessage="Work Type needed!"
+							MinSelection="1"
+							EnableClientScript="true"
+							ValidationGroup="Group1"
+							/>
+						<br />
+						Zone Set(s):<br />
+						<com:TActiveListBox ID="zoneSetList"
+							AutoPostBack="false"
+							DataTextField="name"
+							DataValueField="id"
+							ValidationGroup="Group1"
+							Rows="15"
+							style="width:95%"
+							SelectionMode="Multiple"
+							/>
+						<br />
+						<com:TListControlValidator
+							ControlToValidate="zoneSetList"
+							ErrorMessage="Zone Set Needed!"
+							MinSelection="1"
+							Display="Dynamic"
+							ValidationGroup="Group1"
+							/>
+					</td>
+
+					<td width="64%">
+
+						Issuing Warehouse:<br />
+						<span style='font-size:9px;font-weight:bold;'>The warehouse factilty request will be created against!</span><br />
+
+							<com:Application.controls.HYAutoComplete ID="facilityWarehouse"
+									AutoPostBack="false"
+									PageOnSuggestMethod="suggestIssuingWarehouses"
+									PageMethod="handleSelectedIssuingWarehouse"
+									Suggestions.DataKeyField="0"
+									ResultPanel.ScrollBars="Auto"
+									ResultPanel.CssClass="hydraautocomplete"
+									Width="90%" >
+									<prop:Suggestions.ItemTemplate>
+							            <li><%# $this->Data["1"] %></li>
+									</prop:Suggestions.ItemTemplate>
+							</com:Application.controls.HYAutoComplete>
+
+                        <br /><br />
+
+						Recipient Warehouse:<br />
+						<span style='font-size:9px;font-weight:bold;'>The contractor's / agent's warehouse</span><br />
+
+							<com:Application.controls.HYAutoComplete ID="partToWarehouse"
+									AutoPostBack="false"
+									PageOnSuggestMethod="suggestMSLRecipientWarehouses"
+									Suggestions.DataKeyField="0"
+									ResultPanel.ScrollBars="Auto"
+									ResultPanel.CssClass="hydraautocomplete"
+									Width="90%"	>
+									<prop:Suggestions.ItemTemplate>
+							            <li><%# $this->Data["1"] %></li>
+									</prop:Suggestions.ItemTemplate>
+							</com:Application.controls.HYAutoComplete>
+
+                        <br /><br />
+
+						Courier Control:<br />
+						<span style='font-size:9px;font-weight:bold;'>The courier control to link courier's system. Contact technology if you don't know what to do!</span><br />
+						<com:TDropDownList ID="courierControlList"
+							AutoPostBack="false"
+							DataTextField="courier"
+							DataValueField="id"
+							ValidationGroup="Group1"
+							promptText="Please Select ..."
+							promptValue=" "
+							style="width:95%"
+							/>
+						<br />
+						<br />
+
+						Service Company:<br />
+						<span style='font-size:9px;font-weight:bold;'>Contractor / Agent's company<br /></span><br />
+						<com:TDropDownList ID="serviceCompanyList"
+							AutoPostBack="false"
+							DataTextField="name"
+							DataValueField="id"
+							ValidationGroup="Group1"
+							promptText="Please Select ..."
+							promptValue=" "
+							style="width:95%"
+							/>
+
+					</td>
+					<td>
+						<com:TActiveButton ID="EditButton_Save" Text="Save" Onclick="Page.saveNew" ValidationGroup="Group1">
+						    <prop:ClientSide
+                               OnLoading="mb.showLoading('saving');"
+                               OnComplete="mb.hide();" />
+						</com:TActiveButton>
+						<com:TActiveButton ID="CancelEditButton" Text="Cancel" Onclick="cancel" Attributes.OnClick="mb.showLoading('loading');" />
+					</td>
+				</tr>
+			</table>
+		</com:TActivePanel>
+
+		<com:TPanel ID="ListingPanel">
+			<b>List of Part Delivery Lookup Records:</b>
+			<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem"
+					     OnEditCommand="edit"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList"
+					     ItemStyle.CssClass="DataListItem"
+					     AlternatingItemStyle.CssClass="DataListAlterItem"
+					     EditItemStyle.CssClass="DataListEditItem"
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="true" PageSize="20" EnableViewState="true">
+			    <prop:HeaderTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<td width="20%">WorkType</td>
+							<td width="15%">ZoneSet</td>
+							<td>Warehouses</td>
+							<!--<td width="25%">Courier Control &<br /> Service Company</td> -->
+							<td width="5%"></td>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" style='padding-top:5px; padding-bottom:5px;'>
+						<tr>
+							<td width="20%"><%# $this->DataItem->getLu_WorkType_Zoneset()->getWorkType()->getContract() %> - <%# $this->DataItem->getLu_WorkType_Zoneset()->getWorkType() %></td>
+							<td width="15%"><%# $this->DataItem->getLu_WorkType_Zoneset()->getZoneSet() %></td>
+							<td>
+								<b>Issuing Warehouse:</b> <%# $this->Page->getWarehouseBreadCrumb($this->DataItem->getFacilityWarehouse()) %><br />
+									&nbsp;&nbsp;&nbsp;&nbsp;<font style='font-size:9px;'><b>Addr</b>: <%# $this->Page->getWarehouseAddress($this->DataItem->getFacilityWarehouse()) %></font><br /><br />
+								<b>Recipient Warehouse:</b> <%# $this->Page->getWarehouseBreadCrumb($this->DataItem->getRemoteWarehouse()) %> <br />
+									&nbsp;&nbsp;&nbsp;&nbsp;<font style='font-size:9px;'><b>Addr</b>: <%# $this->Page->getWarehouseAddress($this->DataItem->getRemoteWarehouse()) %></font>
+							<!--<td width="25%">
+								<b>Service Company:</b> <%# $this->DataItem->getServiceCompany() %><br /><br />
+								<b>Courier Control:</b> <%# $this->DataItem->getCourierControl() %>
+							</td> -->
+							<td width="5%">
+								<com:Application.controls.HYLock Feature="pages_all,feature_partdeliverylookup_edit">
+									<com:TImageButton ImageUrl="../../../themes/images/edit.png" Text="Edit" CommandName="edit" Visible="<%=$this->Page->showEditOrDeleteButton($this->DataItem) %>" ToolTip="Edit Record" Attributes.OnClick="mb.showLoading('loading');"/>
+								</com:Application.controls.HYLock>
+
+								<com:Application.controls.HYLock Feature="pages_all,feature_partdeliverylookup_deactivate" >
+									<com:TImageButton ImageUrl="../../../themes/images/delete.png" Text="Delete" OnCommand="Page.delete" Visible="<%=$this->Page->showEditOrDeleteButton($this->DataItem) %>" ToolTip="Delete Record" Attributes.OnClick="return confirmDeactivate(<%# $this->DataItem->getActive() %>);" CommandParameter="<%# $this->DataItem->getId() %>"/>
+								</com:Application.controls.HYLock>
+
+							</td>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+
+				<prop:EditItemTemplate>
+					<table width="100%" class="form">
+						<tr>
+							<td colspan="3" class="header">Edit Part Delivery Lookup</th>
+						</tr>
+
+						<tr valign="top">
+							<td width="30%">
+								Work Type:<br />
+								<com:TDropDownList ID="workTypeList"
+									AutoPostBack="false"
+									DataTextField="typeName"
+									DataValueField="id"
+									ValidationGroup="Group1"
+									style="width:95%"
+									/>
+								<br />
+								<com:TListControlValidator
+									ControlToValidate="workTypeList"
+									ErrorMessage="Work Type needed!"
+									MinSelection="1"
+									EnableClientScript="true"
+									ValidationGroup="Group1"
+									/>
+								<br />
+								<br />
+
+								Zone Set:<br />
+								<com:TDropDownList ID="zoneSetList"
+									AutoPostBack="false"
+									DataTextField="name"
+									DataValueField="id"
+									ValidationGroup="Group1"
+									style="width:95%"
+									/>
+								<br />
+								<com:TListControlValidator
+									ControlToValidate="zoneSetList"
+									ErrorMessage="Zone Set Needed!"
+									MinSelection="1"
+									Display="Dynamic"
+									ValidationGroup="Group1"
+									/>
+
+								<br />
+								<br />
+								Courier Control:<br />
+								<span style='font-size:9px;font-weight:bold;'>The courier control to link courier's system. Contact technology if you don't know what to do!</span><br />
+								<com:TDropDownList ID="courierControlList"
+									AutoPostBack="false"
+									DataTextField="Courier"
+									DataValueField="id"
+									ValidationGroup="Group1"
+									promptText="Please Select ..."
+									promptValue=" "
+									style="width:95%"
+									/>
+								<br /><br />
+
+								Service Company:<br />
+								<span style='font-size:9px;font-weight:bold;'>Contractor / Agent's company</span><br />
+								<com:TDropDownList ID="serviceCompanyList"
+									AutoPostBack="false"
+									DataTextField="name"
+									DataValueField="id"
+									ValidationGroup="Group1"
+									promptText="Please Select ..."
+									promptValue=" "
+									style="width:95%"
+									/>
+								<br /><br />
+							</td>
+							<td  colspan='2' width="60%">
+								Issuing Warehouse:<br />
+								<b><com:TLabel ID="facilityWarehouseLabel" /><br /><br /></b>
+								<com:Application.controls.HYAutoComplete ID="facilityWarehouse"
+										AutoPostBack="false"
+										PageOnSuggestMethod="suggestIssuingWarehouses"
+										Suggestions.DataKeyField="0"
+										ResultPanel.ScrollBars="Auto"
+										ResultPanel.CssClass="hydraautocomplete"
+										Width="90%" >
+										<prop:Suggestions.ItemTemplate>
+								            <li><%# $this->Data["1"] %></li>
+										</prop:Suggestions.ItemTemplate>
+								</com:Application.controls.HYAutoComplete>
+								<com:THiddenField ID="facilityWarehouseId" Value=""/>
+								<span style='font-size:9px;font-weight:bold;'>(The warehouse facility request will be created against!)</span><br />
+
+                        <br /><br />
+
+								Recipient Warhouse:<br />
+								<b><com:TLabel ID="partToWarehouseLabel" /><br /><br /></b>
+
+								<com:Application.controls.HYAutoComplete ID="partToWarehouse"
+										AutoPostBack="false"
+										PageOnSuggestMethod="suggestEditRecipientWarehouses"
+										Suggestions.DataKeyField="0"
+										ResultPanel.ScrollBars="Auto"
+										ResultPanel.CssClass="hydraautocomplete"
+										Width="90%" >
+										<prop:Suggestions.ItemTemplate>
+								            <li><%# $this->Data["1"] %></li>
+										</prop:Suggestions.ItemTemplate>
+								</com:Application.controls.HYAutoComplete>
+								<com:THiddenField ID="partToWarehouseId" Value=""/>
+								<span style='font-size:9px;font-weight:bold;'>(The contractor's / agent's warehouse)</span><br />
+
+							</td>
+						</tr>
+						<tr>
+							<td colspan="3">
+								<table width = "100%">
+									<tr>
+									   <td class="footer" width="70%">
+											Created on <b><com:TLabel ID="Created" /></b> by <b><com:TLabel ID="CreatedById"  /></b><br /><br />
+											Updated on <b><com:TLabel ID="Updated" /></b> by <b><com:TLabel ID="UpdatedById"  /></b>
+
+									   </td>
+									   <td class="footer" width="30%">
+											<com:Application.controls.HYLock Feature="pages_all,feature_partdeliverylookup_save">
+												 <com:TButton ID="EditButton" Text="Save" OnClick="Page.update" ValidationGroup="Group1" Attributes.OnClick="mb.showLoading('saving');" />
+											</com:Application.controls.HYLock>
+											<com:TButton ID="CancelEditButton" Text="Cancel" CommandName="cancel" Attributes.OnClick="mb.showLoading('loading');"/>
+
+									   </td>
+									</tr>
+								</table>
+
+							</td>
+						</tr>
+					</table>
+				</prop:EditItemTemplate>
+
+			    <prop:FooterTemplate>
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="6">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Parent->VirtualItemCount %> Part Delivery Lookup Records
+								</div>
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>
+			</com:TDataList>
+		</com:TPanel>
+
+		<com:TPanel ID="PaginationPanel">
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="2" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="1" align="right">
+						<com:Application.controls.ResultsPerPageList.ResultsPerPageList ID="resultsPerPageList" onPageResultsChanged="resultsPerPageChanged"   defaultPerPage="20" AutoPostBack="true" />
+					</th>
+
+				</tr>
+			</table>
+		</com:TPanel>
+	</div>
+</com:TContent>

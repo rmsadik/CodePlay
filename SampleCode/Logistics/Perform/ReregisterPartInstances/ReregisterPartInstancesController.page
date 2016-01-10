@@ -1,0 +1,50 @@
+<com:TContent ID="MainContent">
+    <com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+    
+     <com:TCallback ID="getPIBtn" OnCallback="Page.getPI" />
+     <com:TCallback ID="changePTBtn" OnCallback="Page.changePT" />
+     <com:TCallback ID="chkConflictBtn" OnCallback="Page.chkConflict" />
+     <com:TCallback ID="savePIBtn" OnCallback="Page.savePI" />
+    <com:TActiveLabel ID="activeErrorLabel" ForeColor="red" style="font-weight:bold;"/>
+    <div id="editPIWrapper" class="editPIWrapper">
+        <div ID="searchpanel" class="row searchpane">
+            <span class="title inlineblock">Serial / Tracking No: </span>
+            <span class="content inlineblock">
+                 <input type="text" id="searchbarcode" class="clearonreset roundcnr txt fullwidth " placeholder="Serial Number to Search" 
+                     searchpane="barcode" 
+                     onclick="$(this).select();"
+                     onkeydown="return pageJs.keydown(event, function(){$('searchBtn').click()}, function(){$(pageJs.searchPiIdTxtboxID).value = ''; })"/>
+                 <input type="hidden" id="searchid" searchpane="piId" />
+            </span>
+            <span class="info inlineblock">
+                 <input type="button" id="searchBtn" class="btn" value="Search" onclick="pageJs.getPI(this); return false;"/>
+            </span>
+        </div>
+        <div class="editPIDetails hidden">
+            <div class="row">
+                <span class="title inlineblock">Search Part Type:</span> 
+                <span class="content inlineblock">
+                     <com:Application.controls.EntityAutoComplete.HYPartTypeComplete ID="partType" ResultPanel.CssClass="hydraautocomplete clearonreset" DisplayHotMessage="true"
+                        Attributes.onkeydown="return pageJs.keydown(event, function() {$('<%= $this->partType->ResultPanel->getClientId()%>').getElementsBySelector('li').first().click();});"
+                        ResultPanel.Attributes.OnClick="pageJs.changePT(this);"
+                        width="94%" Attributes.editpane="parttype" CssClass="clearonreset roundcnr"/>
+                     <com:TActiveLabel ID="jsLblHotMessage" />
+                </span>
+            </div>
+            <div ID="editPIInfo" class="resetWhenChangePT"></div>
+            <div ID="editPIA" class="resetWhenChangePT"></div>
+        </div>
+    </div>
+    
+    <com:TClientScript>
+       var pageJs = new EditPIJS('<%= UserAccountService::isSystemAdmin() ? 1 : 0 %>', 
+           '<%= PartInstanceAliasType::ID_SERIAL_NO %>', 
+           'editPIInfo', 
+           'editPIA', 
+           'searchbarcode',
+           'searchid',
+           'searchBtn'
+           );
+       pageJs.setCallbackIds('<%= $this->getPIBtn->getUniqueID() %>', '<%= $this->changePTBtn->getUniqueID() %>', '<%= $this->chkConflictBtn->getUniqueID() %>', '<%= $this->savePIBtn->getUniqueID() %>');
+    </com:TClientScript>
+</com:TContent>

@@ -1,0 +1,171 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<div>
+		<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel">
+			<table width="100%">
+				<tr>
+					<td width="80%">
+						<com:TTextBox ID="SearchText" AutoPostBack="false" Columns="45" Visible="false"/>
+						<com:TButton ID="SearchButton" Text=" Search " OnClick="search" Visible="false"/>
+						<com:THiddenField ID="SearchString" />
+						<com:THiddenField ID="focusObject" />	
+						<com:THiddenField ID="focusObjectArgument" />							
+					</td>
+					<td width="20%">
+						<com:TButton ID="AddButton" Text="Add Warehouse Alias" OnClick="add" width="85%"/>	
+						<com:TImageButton ImageUrl="../../../themes/images/back.gif" OnClick="Page.redirectToStorageLocation" ToolTip="Back" />					
+					</td>
+				</tr>
+			</table>
+			<br /><hr /><br />
+		</com:TPanel>
+		
+<!---   ---------------- Adding Panel ---------------- --->	
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" >
+			<table width="100%">
+				<tr valign="top">
+					<td >
+						<table width="100%">
+							<tr>
+								<td width="25%" style="font-weight:bold;">Alias Name:</td>
+								<td><com:TTextBox ID="newWarehouseAliasTypeName" width="90%" AutoPostBack="false" ValidationGroup="Group1" />
+								<td><com:TRequiredFieldValidator ControlToValidate="newWarehouseAliasTypeName" ErrorMessage="Alias Name Required" ValidationGroup="Group1" EnableClientScript="true" /></td>
+							</tr>
+							<tr>
+								<td width="25%" style="font-weight:bold;">Edit Mode (Editable By):</td>
+								<td><com:TActiveDropDownList ID="accessModeList" DataValueField="0" DataTextField="1" Width="92%" /></td>
+							</tr>
+							<tr>
+								<td width="25%" style="font-weight:bold;">Allow Multiple:</td>
+								<td>
+									<com:TDropDownList ID="allowMultipleList">
+										<com:TListItem Text="Yes" Value="1" />
+									    <com:TListItem Text="No" Value="0" />
+									</com:TDropDownList>
+								</td>
+							</tr>						
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="3">
+						<com:TButton ID="EditButton" Text="Save" Onclick="save" ValidationGroup="Group1" />						
+	    				<com:TButton ID="CancelEditButton" Text="Cancel" Onclick="cancel" />
+	    			</td>				
+				</tr>
+			</table>	
+		</com:TPanel>
+<!---   ---------------- Editing Panel Ends Here---------------- --->					
+		<com:TPanel>
+			<table width="100%" class="DataListTitle">
+				<tr>
+					<th>
+						<com:TLabel Text="Warehouse Aliases" 
+						<com:TLabel ID="WarehouseAliasTypeLabel" />
+					</th>
+				</tr>
+			</table>
+			
+			<br />
+			
+			<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem" 
+					     OnEditCommand="edit"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     OnDeleteCommand="deleteWarehouseAliasType"
+					     CssClass="DataList" 
+					     ItemStyle.CssClass="DataListItem" 
+					     AlternatingItemStyle.CssClass="DataListAlterItem" 
+					     EditItemStyle.CssClass="DataListEditItem" 
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="true" PageSize="30" EnableViewState="true">
+				
+			    <prop:HeaderTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<th width="50%">Alias Name</th>
+							<th width="30%">Access Mode (Editable By)</th>
+							<th width="15%">Allow Multiple?</th>
+							<th width="5%" >&nbsp;</th>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<td width="50%"><%# $this->DataItem->getName() %></td>
+							<td width="30%"><%# $this->DataItem->getLu_entityAccessOption()->getName() %></td>
+							<td width="15%"><%# ($this->DataItem->getAllowMultiple()==1?'Yes':'No') %></td>
+							<td width="5%" style="text-align:right">
+								<com:TImageButton ImageUrl="../../../themes/images/delete.png" Text="Delete" CommandName="delete" Visible="false" ToolTip="Delete Record" Attributes.OnClick="if(!confirm('WARNING!  Are you sure you want to delete?')) return false;"/>
+								<com:TImageButton ImageUrl="../../../themes/images/edit.png" Text="Edit" CommandName="edit" ToolTip="Edit Record" />
+							</td>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+				
+				<prop:EditItemTemplate>
+					<table width="100%">
+						<tr valign="top">
+							<td >
+								<table width="100%">
+									<tr>
+										<td width="25%" style="font-weight:bold;">Alias Name:</td>
+										<td><com:TTextBox ID="newWarehouseAliasTypeName" width="90%" AutoPostBack="false" ValidationGroup="Group1" />
+										<td><com:TRequiredFieldValidator ControlToValidate="newWarehouseAliasTypeName" ErrorMessage="Alias Name Required" ValidationGroup="Group1" EnableClientScript="true" /></td>
+									</tr>
+									<tr>
+										<td width="25%" style="font-weight:bold;">Edit Mode (Editable By):</td>
+										<td><com:TActiveDropDownList ID="accessModeList" DataValueField="0" DataTextField="1" Width="92%" /></td>
+									</tr>
+									<tr>
+										<td width="25%" style="font-weight:bold;">Allow Multiple:</td>
+										<td>
+											<com:TDropDownList ID="allowMultipleList">
+												<com:TListItem Text="Yes" Value="1" />
+											    <com:TListItem Text="No" Value="0" />
+											</com:TDropDownList>
+										</td>
+									</tr>						
+								</table>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="3">
+								<com:TButton ID="EditButton" Text="Save" CommandName="update" ValidationGroup="Group1" />						
+			    				<com:TButton ID="CancelEditButton" Text="Cancel" CommandName="cancel" />
+			    			</td>				
+						</tr>
+					</table>									
+				</prop:EditItemTemplate>
+								
+			    <prop:FooterTemplate>
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="3">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Parent->VirtualItemCount %> Alias Types
+								</div>
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>				
+			</com:TDataList>
+		</com:TPanel>		
+
+		<com:TPanel ID="PaginationPanel">		
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>			
+	</div>
+</com:TContent>

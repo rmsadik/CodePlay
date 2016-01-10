@@ -1,0 +1,230 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<com:THiddenField ID="SearchString" />
+	<com:THiddenField ID="focusObject" />
+	<com:THiddenField ID="focusObjectArgument" />
+	<com:TLabel ID="footNote" Text="" Visible="false" />
+	<com:TButton ID="completeBtn" Attributes.OnClick="" Visible="false" />
+	<br />
+	<br />
+	<script>
+		function toggleTree()
+		{
+			var row = document.getElementById('warehousetree');
+			var label = document.getElementById('showhide');
+			var display = '';
+			var text = 'Hide Tree';
+			if(row.style.display == '')
+			{
+				display = 'none';
+				text = 'Show Tree';
+			}
+			row.style.display = display;
+			label.innerHTML = text;
+			
+							
+		}
+
+		function doEnterBehavior(event,buttonName)
+		{
+			if(!((event.which && event.which == 13) || (event.keyCode && event.keyCode == 13)))
+			{
+				return true;
+			} else {
+				var button = document.getElementById(buttonName);
+				button.click();
+				return false;
+			}
+		}		
+		
+	</script>
+	
+	<table width="100%">
+		<tr>
+			<td colspan="3">
+				<table width="100%">
+					<tr>
+						<td width="50%">
+							<com:TActiveTextBox id="Barcode" AutoPostBack="true" width="80%" />
+						</td>
+						<td width="40%">
+							<com:TActiveButton id="addBarcode"text="Add" onclick="Page.addBarcode" ButtonType="Button">
+								<prop:ClientSide OnLoading="document.getElementById('loading').style.display = '';" OnComplete="document.getElementById('loading').style.display = 'none';" />
+				  			</com:TActiveButton>
+				  			<span id="loading" style="display: none;"><com:TImage ImageUrl="../../../themes/images/ajax-loader.gif" /></span>						
+
+							<com:TActiveButton text="Remove" onclick="Page.removeBarcode" ButtonType="Button" />
+
+							<com:TButton text="Update" onclick="Page.updateBarcode" ButtonType="Button"/>			
+						</td>
+						<td width="*" align="right">
+							<a id="showhide" href="javascript:toggleTree()">Hide Tree</span>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="3">
+							<com:TActiveListBox id="UpdateList" DataValueField="0" DataTextField="1" width="100%" />
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td width="40%" valign="top">
+				<com:TDataList ID="StocktakeDataList" DataKeyField="0" RepeatLayout="Raw" OnSelectedIndexChanged="selectItem" OnEditCommand="edit" OnDeleteCommand="deletePartType" OnUpdateCommand="save" OnCancelCommand="cancel"CssClass="DataList"  ItemStyle.CssClass="DataListItem" AlternatingItemStyle.CssClass="DataListAlterItem" EditItemStyle.CssClass="DataListEditItem"  width="100%" AllowPaging="true" AllowCustomPaging="true" PageSize="30" EnableViewState="true">
+				    <prop:HeaderTemplate>
+						<table width="100%" height="25" class="DataList">
+						<thead>
+							<tr>
+								<th width="5%" align="center"><com:TImageButton ImageUrl="../../../themes/images/big_yes.gif" onclick="Page.addStocktake" /></th>
+								<th width="*"><%[ PartType.name ]%></th>
+								<th width="5%"><%[ PartInstance.quantity ]%></th>
+								<th width="10%"><%[ PartInstance.alias ]%></th>
+								<th width="10%"><%[ PartInstance.alias ]%></th>
+							</tr>
+						</thead>
+						<tbody>
+					</prop:HeaderTemplate>
+					<prop:ItemTemplate>
+						<tr class="<%# $this->Page->getStyle($this->getItemIndex()) %>">
+							<td align="center"><com:TCheckBox Id="stock" /></td>
+							<td><%# $this->DataItem[2] %></td>
+							<td><com:TTextBox Id="quantity"  Columns="2" text="<%# $this->DataItem[1] %>" Enabled="<%# !$this->Page->hasSerialNumber($this->DataItem[0]) %>"/></td>
+							<td><%# $this->DataItem[3] %></td>
+							<td><%# $this->DataItem[4] %></td>
+						</tr>
+					</prop:ItemTemplate>
+				    <prop:FooterTemplate>
+				    		</tbody>
+				    		<tfoot>
+							<tr>
+								<th colspan="5">
+									<div style="font-weight: bold; text-align: center;">
+										Total <%# $this->Parent->VirtualItemCount %> Parts
+									</div>
+								</th>
+							</tr>
+							</tfoot>
+						</table>					
+					</prop:FooterTemplate>													
+				</com:TDataList>
+				<com:TPanel ID="StockTakePaginationPanel">		
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="3" align="left">
+								Select Page :
+								<com:TPager ID="StockTakePagerList" ControlToPaginate="StocktakeDataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="stockPageChanged" />
+							</th>
+							<th colspan="3" align="right">
+								Go To Page :
+								<com:TPager ID="StockTakePagerGoTo" ControlToPaginate="StocktakeDataList" Mode="DropDownList" OnPageIndexChanged="stockPageChanged" />
+							</th>
+						</tr>
+					</table>
+				</com:TPanel>		
+			</td>
+			<td width="40%" valign="top">
+				<com:TDataList ID="DataList" DataKeyField="0" RepeatLayout="Raw" OnSelectedIndexChanged="selectItem" OnEditCommand="edit" OnDeleteCommand="deletePartType" OnUpdateCommand="save" OnCancelCommand="cancel"CssClass="DataList"  ItemStyle.CssClass="DataListItem" AlternatingItemStyle.CssClass="DataListAlterItem" EditItemStyle.CssClass="DataListEditItem"  width="100%" AllowPaging="true" AllowCustomPaging="true" PageSize="30" EnableViewState="true">
+				    <prop:HeaderTemplate>
+						<table width="100%" height="25" class="DataList">
+						<thead>
+							<tr>
+								<th width="60%"><%[ PartType.name ]%></th>
+								<th width="5%"><%[ PartInstance.quantity ]%></th>
+								<th width="10%"><%[ PartInstance.alias ]%></th>
+								<th width="10%"><%[ PartInstance.alias ]%></th>
+								<th width="*"></th>
+							</tr>
+						</thead>
+						<tbody>
+					</prop:HeaderTemplate>
+					<prop:ItemTemplate>
+						<tr class="<%# $this->Page->getStyle($this->getItemIndex()) %>">
+							<td><%# $this->DataItem[2] %></td>
+							<td><com:TTextBox Id="quantity"  Columns="2" text="<%# $this->DataItem[1] %>" Enabled="<%# !$this->Page->hasSerialNumber($this->DataItem[0]) %>"/></td>
+							<td><%# $this->DataItem[3] %></td>
+							<td><%# $this->DataItem[4] %></td>
+							<td><%# $this->Page->getWarehouseName($this->DataItem[5]) %></td>
+							<td><com:TImageButton CommandName="id" CommandParameter="<%# $this->DataItem[0] %>" ImageUrl="../../../themes/images/big_yes.gif" oncommand="Page.updateStock" /></td>
+						</tr>
+					</prop:ItemTemplate>
+				    <prop:FooterTemplate>
+				    		</tbody>
+				    		<tfoot>
+							<tr>
+								<th colspan="5">
+									<div style="font-weight: bold; text-align: center;">
+										Total <%# $this->Parent->VirtualItemCount %> Parts
+									</div>
+								</th>
+							</tr>
+							</tfoot>
+						</table>					
+					</prop:FooterTemplate>													
+				</com:TDataList>
+				<com:TDataList ID="FinalDataList" Visible="False" DataKeyField="0" RepeatLayout="Raw" OnSelectedIndexChanged="selectItem" OnEditCommand="edit" OnDeleteCommand="deletePartType" OnUpdateCommand="save" OnCancelCommand="cancel"CssClass="DataList"  ItemStyle.CssClass="DataListItem" AlternatingItemStyle.CssClass="DataListAlterItem" EditItemStyle.CssClass="DataListEditItem"  width="100%" AllowPaging="true" AllowCustomPaging="true" PageSize="30" EnableViewState="true">
+					<prop:HeaderTemplate>
+						<table width="100%" height="25" class="DataList">
+						<tr>
+							<b>Parts Recorded at this Location</b><br />
+						</tr>
+					<thead>
+						<tr>
+							<th width="*"><%[ PartType.name ]%></th>
+							<th>Status</th>
+							<th width="5%"><%[ PartInstance.quantity ]%></th>
+							<th width="10%">Barcode</th>
+							<th width="10%">Part Code</th>
+						</tr>
+					</thead>
+					<tbody>
+					</prop:HeaderTemplate>
+					<prop:ItemTemplate>
+						<tr class="<%# $this->Page->getStyle($this->getItemIndex()) %>">
+							<td><%# $this->DataItem[2] %></td>
+							<td><%# $this->DataItem[7] %></td>
+							<td><com:TTextBox Id="quantity"  Columns="2" text="<%# $this->DataItem[1] %>" AutoPostBack="false"  Enabled="<%# !$this->Page->hasSerialNumber($this->DataItem[0]) %>"/></td>
+							<td><%# $this->DataItem[3] %></td>
+							<td><%# $this->DataItem[4] %></td>
+						</tr>
+					</prop:ItemTemplate>
+				    <prop:FooterTemplate>
+				    		</tbody>
+				    		<tfoot>
+							<tr>
+								<th colspan="6">
+									<div style="font-weight: bold; text-align: center;">
+										Total <%# $this->Parent->VirtualItemCount %> Records
+									</div>
+								</th>
+							</tr>
+							</tfoot>
+						</table>					
+					</prop:FooterTemplate>
+				</com:TDataList>
+				<com:TPanel ID="PaginationPanel">		
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="3" align="left">
+								Select Page :
+								<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+							</th>
+							<th colspan="3" align="right">
+								Go To Page :
+								<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+							</th>
+						</tr>
+					</table>
+				</com:TPanel>			
+			</td>
+			<td width="20%" Id="warehousetree" valign="top">
+				<com:Application.controls.HYWHTree ID="warehouse" hidden="warehouseid" />
+				<com:THiddenField ID="warehouseid" VALUE="" />		
+			</td>
+		</tr>
+		<tr>
+			<td colspan="3" align="right"><com:TButton text="Complete" onclick="Page.mergeStockTake" ButtonType="Button"/></td>
+		</tr>		
+	</table>
+
+</com:TContent>

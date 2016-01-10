@@ -1,0 +1,327 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<br />
+	<br />
+	<div>
+		<b><%[PartInstance.ManagePart]%></b>
+		<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel" DefaultButton="SearchButton">
+			<table width="100%">
+				<tr>
+					<td width="80%">
+						<%[PartInstance.SearchLabel]%>:
+						<com:TDropDownList ID="aliasType" DataTextField="name" DataValueField="id" />
+						<com:TTextBox ID="SearchText" AutoPostBack="false" Columns="45" />
+						<com:TButton ID="SearchButton" Text=" Search " OnClick="search"/>
+						<com:THiddenField ID="SearchString" />
+						<com:THiddenField ID="focusObject" />
+						<com:THiddenField ID="focusObjectArgument" />
+					</td>
+					<td width="20%" style="text-align:right">
+						<input Type="Button" Value="Register Part Instance" OnClick="window.open('/registerparts/');return false;"/>
+					</td>
+				</tr>
+			</table>
+			<br /><hr /><br />
+		</com:TPanel>
+<!---   ---------------- Adding Panel ---------------- --->	
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" Visible="false">
+			<table width="100%" class="DataListEditItem">
+					 <tr>
+					  <td style="vertical-align:top" width="15%"><%[ PartInstance.partType ]%></td>
+					  <td style="vertical-align:top" width="55%">
+						<com:Application.controls.HYAutoComplete 
+							ID="suggestPartName" 
+							type="PartType" 
+							ResultPanel.CssClass="hydraautocomplete" 
+							PageOnSuggestMethod="suggestPartName" 
+							PageMethod="populateSharedContracts"
+							Suggestions.DataKeyField="0" width="60%" >
+								<prop:Suggestions.ItemTemplate>
+						            <li><%# $this->Data[1] %></li>
+								</prop:Suggestions.ItemTemplate>      
+						</com:Application.controls.HYAutoComplete>
+						<com:TRequiredFieldValidator ControlToValidate="suggestPartName" InitialValue=""
+							   ErrorMessage="Part Type required" ValidationGroup="Group1" EnableClientScript="true" />						
+					  </td>
+					  <td rowspan="7" style="vertical-align:top" width="30%">
+					  	<%[ PartInstance.Location ]%><br/>
+				  	  	<com:Application.controls.HYWHTree ID="newLocation" hidden="warehouseid" height="200"/>
+					  	<com:THiddenField ID="warehouseid" value="" />
+					  </td>
+					 </tr>
+					 <tr>
+					  <td><%[ PartInstance.user ]%></td>
+					  <td><com:TActiveListBox id="sharedContracts" width="40%" /><com:TActiveButton ID="removeContract" Text="Remove Contract" onClick="removeContract" />
+						  <com:TRequiredFieldValidator ControlToValidate="sharedContracts" InitialValue=""
+							   ErrorMessage="User Contract required" ValidationGroup="Group1" EnableClientScript="true" />								  
+					  </td>
+					 </tr>	
+					 <tr>
+					  <td><%[ PartInstance.shared ]%></td>
+					  <td>
+						<com:Application.controls.HYAutoComplete ID="contract" type="Contract" ResultPanel.CssClass="hydraautocomplete" width="40%">
+									<prop:Suggestions.ItemTemplate>
+										<li><%# $this->Data->__toString() %></li>
+								    </prop:Suggestions.ItemTemplate>											  			
+					  			</com:Application.controls.HYAutoComplete>
+			  			<com:TActiveButton ID="addContract" Text="Add Contract" onClick="addContract" />
+					  </td>
+					 </tr>					 
+					 <tr>
+					  <td style="vertical-align:top"><%[ PartInstance.SerialNo ]%></td>
+					  <td style="vertical-align:top"><com:TLabel ID="serialno"/>
+					  	<com:TActiveTextBox ID="newSerialNo" AutoPostBack="false" Columns="11" />
+					  	<com:TActiveButton Text="Check" OnCallBack="ajaxCheckSerialNo" />
+					  	<com:TActiveLabel ID="resultCheckSerialNo" Text="" /> 
+					  </td>
+					 </tr>
+					 <tr>
+					  <td style="vertical-align:top"><%[ PartInstance.quantity ]%></td>
+					  <td style="vertical-align:top"><com:TActiveTextBox ID="newQuantity" AutoPostBack="false" Columns="3"/></td>
+					 </tr>
+					 <tr>
+					  <td style="vertical-align:top"><%[ PartInstance.Status ]%></td>
+					  <td style="vertical-align:top"><com:TDropDownList 
+							   ID="newStatus" 
+							   DataTextField="name"
+							   DataValueField="id"
+							   PromptText="Please select..."/>
+						  <com:TRequiredFieldValidator ControlToValidate="newStatus" InitialValue="Please select..."
+							   ErrorMessage="Status required" ValidationGroup="Group1" EnableClientScript="true" /></td>
+					  </td>
+					 </tr>
+					 <tr>
+					  <td style="vertical-align:top">Kit Type</td>
+					  <td style="vertical-align:top">
+					  	<com:TDropDownList 
+							   ID="newKitType" 
+							   DataTextField="name"
+							   DataValueField="id"
+							   PromptText="Please select..."/>
+						  <com:TRequiredFieldValidator ControlToValidate="newKitType" InitialValue="Please select..."
+							   ErrorMessage="Kit Type required" ValidationGroup="Group1" EnableClientScript="true" /></td>
+					  </td>
+					 </tr>
+					 <tr>
+					  <td>&nbsp;</td>
+					  <td colspan="2" style="vertical-align:top">
+					  	<com:Application.controls.HYActiveSpan ID="SubmitPanel">
+							<com:TButton ID="AddButton" Text="Add" CommandName="update" OnClick="save" ValidationGroup="Group1" />
+					  	</com:Application.controls.HYActiveSpan>	
+					  	<com:TButton ID="CancelEditButton" Text="Cancel" CommandName="cancel" />
+					  </td>				
+					 </tr>
+			</table>
+		</com:TPanel>
+<!---   ---------------- Adding Panel Ends Here---------------- --->
+
+<!---   ---------------- Listing Panel Starts---------------- --->					
+		<com:TPanel>
+			<table width="100%" class="DataListTitle">
+				<tr>
+					<th>
+						<com:TLabel ID="listPartInstancesLabel" /> 
+					</th>
+				</tr>
+			</table>
+			
+			<br />
+			
+			<com:TDataList ID="DataList" DataKeyField="0" OnSelectedIndexChanged="selectItem" 
+					     OnEditCommand="edit"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList" 
+					     ItemStyle.CssClass="DataListItem" 
+					     AlternatingItemStyle.CssClass="DataListAlterItem" 
+					     EditItemStyle.CssClass="DataListEditItem" 
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="true" PageSize="30" EnableViewState="true">
+				
+			    <prop:HeaderTemplate>
+					<table width="100%" height="25">
+						<tr>
+    						<th width="8%"><%[ PartInstance.PartCode ]%></th>
+							<th width="*"><%[ PartInstance.CategoryName ]%></th>
+							<th width="11%"><%[ PartInstance.SerialNo ]%></th>
+							<th width="11%">Owner Client</th>
+							<th width="3%" style="text-align:right"><%[ PartInstance.quantity ]%></th>
+							<th width="9%" style="text-align:center"><%[ PartInstance.Status ]%></th>
+							<th width="25%"><%[ PartInstance.Location ]%></th>
+							<th width="7%">&nbsp;</td>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<td width="8%"><%# $this->DataItem[1] %></td>
+							<td width="*"><%# $this->DataItem[2] %></td>
+							<td width="11%"><%# $this->DataItem[3] %></td>
+							<td width="11%"><%% print $this->Page->getOwnerClientName($this->DataItem[9]); %></td>
+							<td width="3%" style="text-align:right"><%# $this->DataItem[4] %></td>
+							<td width="9%" style="text-align:center"><%# $this->DataItem[5] %></td>
+							<td width="25%"><%% 
+								$w = $this->Page->getWarehouseService()->getWarehouse($this->DataItem[6]);
+								if (!empty($w))
+								{
+									print $this->Page->getWarehouseService()->getWarehouseBreadCrumbs($w);
+								}
+							 %></td>
+							<td width="7%" style="text-align:right;">
+								<input Type="Image" src="/themes/images/edit.png" OnClick="window.open('/reregisterparts/<%# $this->DataItem[0] %>');return false;"/>
+								<!-- <com:TImageButton ImageUrl="../../../themes/images/toalias.gif" ID="PartInstanceAliases" Text="Aliases" OnClick="Page.redirectPartInstanceAlias" ValidationGroup="redirect" ToolTip="To Alias"/>-->
+								<com:THyperLink 
+							 		ImageUrl="/themes/images/toalias.gif"
+							 		ToolTip="To Part Instance Alias"
+							 		NavigateUrl = "/partinstancealias/Serial/<%# $this->DataItem[0] %>/"
+							 		Target="_blank"
+		                 			/>
+								<com:THyperLink 
+							 		ImageUrl="/themes/images/tobom.gif"
+							 		ToolTip="To Part History"
+							 		NavigateUrl = "/parthistory/searchparttext/<%# $this->DataItem[0] %>/"
+							 		Target="_blank"
+		                 			/>
+							</td>							
+							
+							</td>
+							
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+
+	<!---   ---------------- Editing Panel Starts ---------------- --->			
+				<prop:EditItemTemplate>
+					<table width="100%" class="DataListEditItem">
+					 <tr>
+					  <td style="vertical-align:top" width="12%"><%[ PartInstance.partType ]%></td>
+					  <td style="vertical-align:top" width="35%">
+						<com:Application.controls.HYAutoComplete 
+							ID="suggestPartName" 
+							type="PartType" 
+							ResultPanel.CssClass="hydraautocomplete" 
+							PageOnSuggestMethod="suggestPartName" 
+							PageMethod="populateSharedContracts"
+							Suggestions.DataKeyField="0" width="97%" >
+								<prop:Suggestions.ItemTemplate>
+						            <li><%# $this->Data[1] %></li>
+								</prop:Suggestions.ItemTemplate>      
+						</com:Application.controls.HYAutoComplete>
+						<com:TRequiredFieldValidator ControlToValidate="suggestPartName" InitialValue=""
+							   ErrorMessage="Part Type required" ValidationGroup="Group1" EnableClientScript="true" />
+					  </td>
+					 </tr>
+					 <tr>
+<!--					<td style="vertical-align:top"><%[ PartInstance.Location ]%></td>
+					  	<td><com:Application.controls.HYWHTree ID="newLocation" hidden="warehouseid" height="200"/>
+					  	<com:THiddenField ID="warehouseid" value="" />
+					  	</td>
+-->						</tr>
+					 <tr>
+					  <td style="vertical-align:top"><%[ PartInstance.user ]%></td>
+					  <td>
+					  <com:TActiveListBox id="sharedContracts" width="99%" />
+					  </td>
+					  <td><com:TActiveButton ID="removeContract" Text="Remove Contract" onClick="removeContract" />
+					  </td>
+					 </tr>	
+					 <tr>
+					  <td style="vertical-align:top"><%[ PartInstance.shared ]%></td>
+					  <td>
+						<com:Application.controls.HYAutoComplete ID="contract" type="Contract" ResultPanel.CssClass="hydraautocomplete" width="97%">
+									<prop:Suggestions.ItemTemplate>
+										<li><%# $this->Data->__toString() %></li>
+								    </prop:Suggestions.ItemTemplate>											  			
+			  			</com:Application.controls.HYAutoComplete>
+			  			</td>
+			  			<td><com:TActiveButton ID="addContract" Text="Add Contract" onClick="Page.addContract" />					  
+					  </td>
+					 </tr>					 					 
+					 <tr>
+					  <td style="vertical-align:top"><%[ PartInstance.SerialNo ]%></td>
+					  <td style="vertical-align:top"><com:TLabel ID="serialno"/>
+					  	<com:TImageButton ImageUrl="../../../themes/images/toalias.gif" ID="PartInstanceAliases" Text="Aliases" OnClick="Page.redirectPartInstanceAlias" ValidationGroup="redirect" ToolTip="To Alias"/>
+					  </td>
+					 </tr>
+					 <tr>
+					  <td style="vertical-align:top"><%[ PartInstance.Location ]%></td>
+					  <td><%% 
+						$w = $this->Page->getWarehouseService()->getWarehouse($this->DataItem[6]);
+						if (!empty($w))
+						{
+							print $this->Page->getWarehouseService()->getWarehouseBreadCrumbs($w);
+						}
+					  %>
+					  </td>
+					</tr>
+					<tr>
+					  <td style="vertical-align:top"><%[ PartInstance.quantity ]%></td>
+					  <td style="vertical-align:top"><com:TActiveTextBox ID="newQuantity" AutoPostBack="false" Columns="3"/></td>
+					 </tr>
+					 <tr>
+					  <td style="vertical-align:top"><%[ PartInstance.Status ]%></td>
+					  <td style="vertical-align:top"><com:TDropDownList 
+							   ID="newStatus" 
+							   DataTextField="name"
+							   DataValueField="id"
+							   PromptText="Please select..."/>
+						  <com:TRequiredFieldValidator ControlToValidate="newStatus" InitialValue="Please select..."
+							   ErrorMessage="Status required" ValidationGroup="Group1" EnableClientScript="true" /></td>
+					  </td>
+					 </tr>
+					 <tr>
+					 
+					 <tr>
+					  <td style="vertical-align:top">Kit Type</td>
+					  <td style="vertical-align:top">
+					  	<com:TDropDownList 
+							   ID="newKitType" 
+							   DataTextField="name"
+							   DataValueField="id"
+							   PromptText="Please select..."/>
+						  <com:TRequiredFieldValidator ControlToValidate="newKitType" InitialValue="Please select..."
+							   ErrorMessage="Kit Type required" ValidationGroup="Group1" EnableClientScript="true" /></td>
+					  </td>
+					 </tr>
+					 <tr>
+					  <td>&nbsp;</td>
+					  <td colspan="2" style="vertical-align:top">
+						<com:TButton ID="EditButton" Text="Save" CommandName="update" ValidationGroup="Group1" />&nbsp;
+						<com:TButton ID="CancelEditButton" Text="Cancel" CommandName="cancel" />
+					  </td>				
+					 </tr>
+					</table>
+				</prop:EditItemTemplate>
+	<!---   ---------------- Editing Panel Ends Here---------------- --->
+							
+			    <prop:FooterTemplate>
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="3">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Page->totalCount %> Part Instances
+								</div>
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>				
+			</com:TDataList>
+		</com:TPanel>		
+
+		<com:TPanel ID="PaginationPanel">		
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>			
+	</div>
+</com:TContent>

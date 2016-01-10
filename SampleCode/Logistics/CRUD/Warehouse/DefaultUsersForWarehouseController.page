@@ -1,0 +1,107 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+
+<script type="text/javascript">
+	function gotoPage(id)
+	{
+		window.open('/useraccountrole/person/' + id);
+		return false;
+	}
+</script>
+	<div>
+		<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel">
+			<table width="100%">
+				<tr>
+					<td width="80%">
+						<com:TTextBox ID="SearchText" AutoPostBack="false" Columns="45" Visible="false"/>
+						<com:TButton ID="SearchButton" Text=" Search " OnClick="search" Visible="false"/>
+						<com:THiddenField ID="SearchString" />
+						<com:THiddenField ID="focusObject" />
+						<com:THiddenField ID="focusObjectArgument" />
+					</td>
+				</tr>
+			</table>
+			<br /><hr /><br />
+		</com:TPanel>
+
+<!---   ---------------- Adding Panel ---------------- --->
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" >
+
+		</com:TPanel>
+<!---   ---------------- Editing Panel Ends Here---------------- --->
+		<com:TPanel>
+			<table width="100%" class="DataListTitle">
+				<tr>
+					<th>
+						<com:TLabel Text="Users With: " /><com:TDropDownList ID="optionList" Width="300px" AutoPostBack="true" />
+						<br /><br />
+						<com:TLabel ID="warehouseLabel" Style="color:red;"/>
+					</th>
+				</tr>
+			</table>
+
+			<br />
+
+			<com:TDataList ID="DataList" DataKeyField="0" OnSelectedIndexChanged="selectItem"
+					     CssClass="DataList"
+					     ItemStyle.CssClass="DataListItem"
+					     AlternatingItemStyle.CssClass="DataListAlterItem"
+					     EditItemStyle.CssClass="DataListEditItem"
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="false" PageSize="100" EnableViewState="true">
+
+			    <prop:HeaderTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<th width="50%">Name</th>
+							<th width="50%">Warehouse</th>
+							<th>&nbsp;</th>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<td width="50%"><%# $this->DataItem[1] %></td>
+							<td width="50%"><%# $this->DataItem[2] %></td>
+							<td style="text-align:right">
+								<com:TImageButton ImageUrl="../../../themes/images/edit.png" Attributes.onclick="return gotoPage(<%# $this->DataItem[0] %>);" ToolTip="Go To Personnel Page" />
+							</td>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+
+				<prop:EditItemTemplate>
+				</prop:EditItemTemplate>
+
+			    <prop:FooterTemplate>
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="3">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Page->totalUsers %> Users
+								</div>
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>
+			</com:TDataList>
+		</com:TPanel>
+
+		<com:TPanel ID="PaginationPanel">
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>
+	</div>
+</com:TContent>

@@ -1,0 +1,956 @@
+<com:TContent ID="MainContent">
+	<script type="text/javascript">
+		function noenter()
+		{
+			return !(window.event && window.event.keyCode == 13);
+		}
+	</script>
+	<com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+	<style>
+		.task, .selecttask, .buttonpanel
+		{
+			margin-top:10px;
+			margin-left:10px;
+			float:left;
+			clear:both;
+			width:97%;
+		}
+		.selecttask label ,.selecttask input, .buttonpanel input
+		{
+			float:left;
+			margin-left:10px;
+		}
+		.hide
+		{
+			display:none;
+		}
+
+		.PushToTransitPanel
+		{
+		  position: fixed;
+		  top: 10px;
+		  z-index:99;left: 10%;
+		  width: 80%;
+		  height: 80%;
+		  background-color: #FFFFFF;
+		  border: 2px solid black;
+		  padding: 8px;
+		  text-align: left;
+		}
+	</style>
+
+	<script type="text/javascript">
+		function toggleFromWarehouseTree(textval)
+		{
+			// our assumption:
+			// partcode is 7 characters long, all digits
+			// nonserialised barcode is either BCP followed by 8 digits or BP followed by eight digits and a checksum character
+			// either of the two condition has to be true for fromWarehouse tree to be displayed
+            $('<%= $this->fromWarehousePanel->getClientId(); %>').style.display = 'none';
+            $('<%= $this->fromWarehouseCaption->getClientId(); %>').style.display = 'none';
+            if (checkIfNonSerialised(textval))
+			{
+				// we assume it's a nonserialised part, so show the tree
+				$('<%= $this->fromWarehousePanel->getClientId(); %>').style.display = '';
+				$('<%= $this->fromWarehouseCaption->getClientId(); %>').style.display = '';
+					alert("This is a NON-SERIALISED part. Please select the source location.");
+				}
+			}
+
+        function checkIfNonSerialised(textval)
+        {
+            if ( (textval.length > 0 && /^\s*\d{7}\s*$/.test(textval)) ||
+                     (textval.length > 0 && /^\s*BCP\d{8}\s*$/i.test(textval)) ||
+                     (textval.length > 0 && /^\s*BP\d{8}\w\s*$/i.test(textval)) )
+			{
+               return true;
+			}
+            return false;
+		}
+
+		function validate(action)
+		{
+			if ($('<%= $this->deliveryMethod->getClientId(); %>').value == 'Please select...') return true;
+			if ($('<%= $this->TotalPackages->getClientId(); %>').value == '') return true;
+			if ($('<%= $this->CourierJobNo->getClientId(); %>').value == '') return true;
+			if ($('<%= $this->TotalPackages->getClientId(); %>').value == '') return true;
+
+			var totalPackages = $('<%= $this->TotalPackages->getClientId(); %>').value;
+			if (totalPackages != '')
+			{
+				if (totalPackages.search(/^[1-9]+[0-9]*$/) == -1)
+				{
+					alert('Please enter a numeric value greater than zero, in Total Packages');
+					$('<%= $this->TotalPackages->getClientId(); %>').select();
+					return false;
+				}
+			}
+
+			if ($('<%= $this->etaTime->getClientId(); %>').value == 'HH:MM' ||
+				$('<%= $this->etaDate->getClientId(); %>').value == '' ||
+				/^((([0][1-9])|([1-2][0-9])|([3][0-1]))-(([0][1-9])|([1][0-2]))-(\d{4}))$/.test($('<%= $this->etaDate->getClientId(); %>').value) == false)
+			{
+				alert('Please select an ETA...');
+				return false;
+			}
+			var etaDate = $('<%= $this->etaDate->getClientId(); %>').value.split('-');
+			var etaTime = $('<%= $this->etaTime->getClientId(); %>').value.split(':');
+
+			if (new Date() > new Date(etaDate[2], etaDate[1]-1, etaDate[0], etaTime[0], etaTime[1]))
+			{
+			    alert('ETA must be later than now...');
+			    return false;
+			}
+			$('<%= $this->formattedEta->getClientId(); %>').value = etaDate[2] + '-' + etaDate[1] + '-' + etaDate[0] + ' ' + etaTime[0] + ':' + etaTime[1] + ':00';
+
+			if (action == 'dispatch')
+			{
+				if (!confirm('WARNING! \n\nOnce you dispatch the <%=$this->Page->alertMessageType->Value %> Note, you can NOT change the details any more!\nDo you want to continue?'))
+				{
+					return false;
+				}
+				else
+				{
+					Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, title: 'sending <%=$this->Page->alertMessageType->Value %> Note, please be patient...'});
+				}
+			}
+			else
+			{
+				Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, title: 'saving <%=$this->Page->alertMessageType->Value %> Note, please be patient...'});
+			}
+		}
+
+		function checkPart()
+		{
+            if ($('<%= $this->searchPart->getClientId(); %>').value == '')
+                return false;
+
+            mb.showLoading('loading');
+			$('<%= $this->activePart->getClientId(); %>').value = $('<%= $this->searchPart->getClientId(); %>').value;
+			$('<%= $this->checkPart->getClientId(); %>').click();
+			return false;
+		}
+
+		function confirmPart(str)
+		{
+			if(confirm(str))
+			{
+				$('<%= $this->addPart->getClientId(); %>').click();
+			}
+		}
+
+		function movePart()
+		{
+			$('<%= $this->addPart->getClientId(); %>').click();
+		}
+
+		function closeDispatchNote()
+		{
+			$('<%= $this->ajaxProcessor->startAjaxProcessor->getClientId(); %>').click();
+		}
+
+		function pushNoteToTransit()
+		{
+			$('<%= $this->pushNoteToTransit->getClientId(); %>').click();
+		}
+
+		function finishProcessingNote()
+		{
+			Modalbox.hide();
+			$('<%= $this->finishProcessingNote->getClientId(); %>').click();
+		}
+
+		/* -----------For Pagination Only -------------- */
+
+		function finishProcessingNotePagination()
+		{
+			Modalbox.hide();
+			$('<%= $this->finishProcessingNotePagination->getClientId(); %>').click();
+		}
+
+		/* --------------------------------------------- */
+		function hideModalbox()
+		{
+					Modalbox.hide();
+		}
+
+		function hideConfirmPushToTransitPanel()
+		{
+			$('<%= $this->confirmPushToTransitPanel->getClientId(); %>').className = 'hide';
+		}
+
+		function showConfirmPushToTransitPanel()
+		{
+			Modalbox.hide();
+			$('<%= $this->confirmPushToTransitPanel->getClientId(); %>').className = 'PushToTransitPanel';
+
+		}
+
+		function setTasksToBePushedToTransit(ftIds)
+		{
+			$('<%= $this->pushFieldTasksToTransit->getClientId(); %>').value = ftIds; //comma separated
+		}
+
+		function pushToTransitAfterConfirm()
+		{
+			var selectedFieldTasks = document.getElementsByName("selectedFieldTasks");
+			for(var i=0; i < selectedFieldTasks.length; i++)
+			{
+				if(selectedFieldTasks[i].checked)
+				{
+					if($('<%= $this->pushFieldTasksToTransit->getClientId(); %>').value !="")
+					{
+						$('<%= $this->pushFieldTasksToTransit->getClientId(); %>').value += ("," + selectedFieldTasks[i].value);
+					}
+					else
+					{
+						$('<%= $this->pushFieldTasksToTransit->getClientId(); %>').value = selectedFieldTasks[i].value;
+					}
+				}
+			}
+			pushNoteToTransit();
+		}
+
+		/* ------Ajax to print parts in pagination (If more than 200 parts)-------- */
+
+		function startPrint()
+		{
+			$('<%= $this->ajaxProcessortoPrint->startAjaxProcessor->getClientId(); %>').click();
+			Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, title: 'Generating List for Printing, Please be patient...'});
+		}
+
+
+		function finishProcessingPrint()
+		{
+			Modalbox.hide();
+			$('<%= $this->finishPrinting->getClientId(); %>').click();
+		}
+
+		/* ----------------------------------------------------------------------- */
+
+	</script>
+	<style>
+		@media print
+		{
+			#header{display:none;}
+		    #topmenu{display:none;}
+		    #transit_note_logo{display:inline;}
+		    #transit_note_border{display:inline;}
+		    #footer{display:none;}
+		    .MenuLayout{display:none;}
+		    .printhide{display:none;}
+		    .formattedHeaderLabel{font-size: 15px;text-transform:uppercase;}
+		}
+	</style>
+
+
+	<com:TActiveButton ID="noEnter" Text="" Style="display:none;" />
+
+
+	<com:TActiveButton ID="checkPart" Text="" OnClick="Page.checkParts" Style="display:none;" />
+	<com:TButton ID="addPart" Text="" OnClick="Page.searchParts" Style="display:none;" />
+	<com:TActiveHiddenField ID="activePart" Value=""/>
+
+	<com:TActiveHiddenField ID="exceptionMessage" Value=""/>
+	<com:TActiveHiddenField ID="errorMessage" Value=""/>
+	<com:TActiveHiddenField ID="successMessage" Value=""/>
+
+	<com:TActiveHiddenField ID="formattedEta" Value=""/>
+
+	<com:TActiveHiddenField ID="raId" Value=""/>
+
+	<com:TButton ID="finishProcessingNote" Text="" OnClick="Page.finishProcessingNote" Style="display:none;" />
+	<com:Application.pages.Bulkload.CustomisedControls.AjaxProcessor.AjaxProcessor ID="ajaxProcessor" ProcessingFunc_page="processDispatchNote" AfterLoadCompleteFunc_page="finishProcessDispatchNote" MaxCycles="0"/>
+
+	<!-- For Pagination purpose -->
+	<com:TActiveButton ID="finishProcessingNotePagination" Text="" OnClick="Page.finishProcessingNotePagination" Style="display:none;" />
+	<com:Application.pages.Bulkload.CustomisedControls.AjaxProcessor.AjaxProcessor ID="ajaxProcessortoPrint" ProcessingFunc_page="processPrint" AfterLoadCompleteFunc_page="finishProcessingPrint" MaxCycles="0"/>
+	<com:TButton ID="finishPrinting" Text="" OnClick="Page.finishPrinting" Style="display:none;" />
+	<com:TActiveHiddenField ID="partsArray" Value="" />
+	<com:TActiveHiddenField ID="pageNumber" Value="" />
+	<com:TActiveHiddenField ID="processNote" Value=""/>
+	<com:THiddenField ID="isPaginated" Value="" />
+	<!---------------------------->
+
+	<com:TActiveLabel ID="jsLbl" Style="display:none;" />
+	<com:TActiveLabel ID="reloadLbl" Style="display:none;" />
+
+	<com:THiddenField ID="alertMessageType" Value="Transit" />
+
+	<com:TActivePanel ID="LocationWrapper">
+	</com:TActivePanel>
+
+
+
+	<com:TActiveButton ID="pushNoteToTransit" Text="" OnClick="pushNoteToTransit" Style="display:none;" Attributes.OnClick="Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, title: 'sending <%=$this->Page->alertMessageType->Value %> Note, please be patient...'}); return true;"/>
+
+	<com:TActivePanel ID="confirmPushToTransitPanel"  ScrollBars="Auto" CssClass="hide" Style="">
+		<center><h2>Please review these Facility Requests.</h2></center>
+		<br />
+		<h2 style="color:red">Check the Field Tasks you want to progress to <i><com:TActiveLabel id="progressToStatusLbl" /></i></h2>
+		<com:TActiveLabel id="transitNoteConfirmLabel" CssClass="task" />
+		<br />
+		<div class='buttonpanel'>
+			<com:TButton Text="Continue" Attributes.OnClick="pushToTransitAfterConfirm();return false;"/>
+			<com:TButton Text="Cancel" Attributes.OnClick="hideConfirmPushToTransitPanel();return false;"/>
+		</div>
+	</com:TActivePanel>
+
+	<com:TActiveHiddenField ID="pushFieldTasksToTransit" Value="" />
+
+	<com:TPanel ID="printPanel" Visible="false">
+		<script type="text/javascript">
+			window.print();
+		</script>
+	</com:TPanel>
+
+	<br clear="both" />
+
+	<table width="100%">
+		<tr>
+			<td align="right" id="transit_note_logo"><img src="/themes/images/letterhead_logo.jpg" /></td>
+			<td align="center" width="90%"><com:TLabel ID="TransitNoteNoLabel" Text="Transit Note #:"/><b><font size="4"><com:TLabel ID="TransitNoteNo" /></font></b></td>
+			<td align="right" width="10%">
+				<div class="printhide">
+					<com:THyperLink
+					ImageUrl="/themes/images/back.gif"
+					NavigateUrl = "/consignment/"
+					ToolTip="Back"/>
+				</div>
+			</td>
+		</tr>
+	</table>
+	<table width="100%" id="transit_note_border">
+		<tr>
+			<td><img src="/themes/images/letterhead_border.jpg" /></td>
+		</tr>
+	</table>
+	<hr />
+	<table width="100%" border="0">
+		<tr>
+			<td width="50%" valign="top">
+				<table width="100%">
+					<tr>
+						<td width="40%" style="vertical-align:top; font-weight:bold;">From:</td>
+						<td width="60%"><com:TLabel ID="TransitNoteFrom" /></td>
+					</tr>
+				</table>
+			</td>
+			<td width="50%" valign="top">
+				<table width="100%">
+					<tr>
+						<td width="40%" style="vertical-align:top; font-weight:bold;">To:</td>
+						<td width="60%"><com:TLabel ID="TransitNoteTo" /><b><font size="4"><com:TLabel ID="CourierBarcode" /></font></b></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+	<br />
+	<table width="100%">
+			<tr>
+				<td width="20%" style="vertical-align:top; font-weight:bold;">Special Delivery Instructions:</td>
+				<td width="80%">
+					<com:TTextBox ID="SpecialDeliveryInstructions" Rows="2" Width="95%" TextMode="MultiLine" TabIndex="1"/>
+					<com:TLabel ID="SpecialDeliveryInstructionsLabel" />
+				</td></tr>
+	</table>
+	<br />
+	<table width="100%" border="0">
+		<tr>
+			<td width="50%">
+				<table width="100%">
+					<tr>
+						<td width="40%" style="font-weight:bold;"><com:TLabel ID="TransitNoteStatusLabel" Text="Transit Note Status:" /></td>
+						<td width="70%"><com:TLabel ID="TransitNoteStatus" Text="open"/></td>
+					</tr>
+				</table>
+			</td>
+			<td width="50%">
+				<table width="100%">
+					<tr>
+						<td width="40%" style="font-weight:bold;">Dispatch Time:</td>
+						<td width="70%">
+							<com:TDatePicker ID="IssueDate" Width="150px" DateFormat="yyyy-MM-dd 00:00:00"/ style="display:none;" />
+							<com:TLabel ID="IssueDateLabel" />
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td width="50%">
+				<table width="100%">
+					<tr>
+						<td width="40%" style="font-weight:bold;">Total Items:</td>
+						<td width="70%"><com:TTextBox ID="TotalItems" TabIndex="2" /><com:TLabel ID="TotalItemsLabel" /></td>
+					</tr>
+				</table>
+			</td>
+			<td width="50%">
+				<table width="100%" border="0">
+					<tr>
+						<td width="40%" style="font-weight:bold;">Total Packages:</td>
+						<td width="60%">
+							<com:TTextBox ID="TotalPackages" Width="150px" TabIndex="3" />
+							<com:TLabel ID="TotalPackagesLabel" />
+							<com:TRequiredFieldValidator ID="TotalPackagesValidatorEmpty"
+							    ValidationGroup="Group1"
+							    ControlToValidate="TotalPackages"
+							    Text="* required"  />
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+            <td colspan="2">
+                <com:TPanel ID="signatureRow" style="border:1px solid black; margin-top:10px;">
+	                <table width="100%" border="0">
+	                    <tr style="height:100px;">
+	                        <td width="20%" style="font-weight:bold;">Signed for by:</td>
+	                        <td style="font-weight:bold;">Print Name: _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ </td>
+	                        <td style="font-weight:bold;">Signature: _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _</td>
+	                    </tr>
+	                </table>
+                </com:TPanel>
+            </td>
+        </tr>
+	</table>
+	<table width='100%'>
+		<tr>
+			<td width="120px">&nbsp;</td>
+			<td>
+				<div class="printhide" >
+					</br>
+					<com:TButton
+						ID="UpperSaveDraftButton"
+						Text="Save"
+						onClick="saveDraftTransitNote"
+						Attributes.onclick="Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, title: 'saving <%=$this->Page->alertMessageType->Value %> Note, please be patient...'}); return true;"
+						TabIndex="7" />
+				</div>
+
+			</td>
+			<com:Application.controls.HYLock Feature="pages_all, pages_logistics, feature_TNmovementReport">
+				<td style="text-align:right">
+					<div class="printhide" >
+						</br>
+						<com:TButton
+						  Text="Create parts movement report"
+						  ID="toExcelBtn"
+						  OnClick="sendResultToExcel"
+						  Attributes.onclick="Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, title: 'generating Parts Movement Report, please be patient...'}); return true;" />
+					</div>
+				</td>
+			</com:Application.controls.HYLock>
+		</tr>
+	</table>
+	<hr />
+	<com:TPanel ID="addPartPanel" Visible="<%# $this->Page->canEditTransitNote %>">
+		<br />
+		<h3><com:TLabel ID="AddingPartsLabel" Text="Adding Parts To Transit Note"/></h3>
+		<table width="100%">
+			<tr>
+				<td width="20%">Search Part: </td>
+                <td width="50%" align="left"><com:TActiveTextBox ID="searchPart" Width="95%" TabIndex="1" Attributes.onkeydown="if(event.keyCode=='13'){checkPart(); return false;}" Attributes.onchange="toggleFromWarehouseTree(this.value); return false;" /></td>
+                <td width="30%" align="left"><com:TActiveButton ID="searchPart_SearchButton" Text="Search" Attributes.OnClick="return checkPart();"/></td>
+			</tr>
+			<tr>
+				<td style="vertical-align:top;">
+                    <com:TActiveLabel ID="fromWarehouseCaption" Text="From Location :" />
+				</td>
+				<td>
+                    <com:TActivePanel ID="fromWarehousePanel">
+						<com:Application.controls.HYWHTree RootNode="<%= $this->Page->getDefaultWarehouseId() %>" ID="fromWarehouse" hidden="fromWarehouseid" Height="200" />
+						<com:THiddenField ID="fromWarehouseid" Value="" />
+                    </com:TActivePanel>
+				</td>
+				<td>&nbsp;</td>
+			</tr>
+		</table>
+	</com:TPanel>
+	<com:TLabel id="formPanel" Text=''></com:TLabel>
+	<br><br><br>
+	<com:TPanel ID="searchResult_multipleFound_Panel" Visible="false" GroupingText="Multiple Parts Found. Please select from the following:" DefaultButton="addFromPart_MultileFoundButton">
+		<table width="100%">
+			<tr>
+				<td width="8%"><b></>Select Part:</b></td>
+				<td width="85%" style="text-align:right;">
+						<com:TActiveDropDownList ID="partResultList"
+								AutoPostBack="false"
+							    DataTextField="name"
+							    DataValueField="id"
+							    width="100%"
+							    TabIndex="5" />
+				</td>
+			</tr>
+			<tr>
+				<td></td>
+				<td style="text-align:right;">
+					Qty:
+					<com:TTextBox ID="partResultList_qty" Text="1" width="10%" ValidationGroup="Group1" TabIndex="3" />
+					<com:TButton ID="addFromPart_MultileFoundButton" Text="Add To List" onClick="Page.addFromPart_MultileFound" ValidationGroup="Group1" EnableClientScript="false" TabIndex="4"/>
+				</td>
+			</tr>
+		</table>
+	</com:TPanel>
+	<table width="100%">
+		<tr>
+		    <td width=95% valign="top">
+
+<!-------------------- Transit Note Display Section ---------------------------->
+
+			    <com:TPanel ID="StocktakeLocationPanel">
+					<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem"
+							     OnEditCommand="edit"
+							     OnUpdateCommand="save" OnCancelCommand="cancel"
+							     CssClass="DataList"
+							     ItemStyle.CssClass="DataListItem"
+							     AlternatingItemStyle.CssClass="DataListAlterItem"
+							     EditItemStyle.CssClass="DataListEditItem"
+								 width="100%"
+								 AllowPaging="true" AllowCustomPaging="true" PageSize="200" EnableViewState="true">
+
+					    <prop:HeaderTemplate>
+						    <table width="100%" height="25">
+								<tr>
+									<th colspan="3">
+										<div style="font-weight: bold; text-align: center;">
+											Total <%# $this->Page->itemCount %> Part Instances
+										</div>
+									</th>
+								</tr>
+							</table>
+							<table width="100%" height="25">
+								<tr>
+									<th width="12%"><%[ PartInstance.serialNo ]%></th>
+									<th width="15%"><%[ PartInstance.manufSerialNo ]%></th>
+									<th width="10%">For Task #</th>
+									<th width="8%"><%[ PartInstance.status ]%></th>
+									<th width="45%">Partcode - Name</th>
+									<th width="5%" style="text-align:right;"><%[ PartInstance.quantity ]%></th>
+									<th width="5%" style="text-align:right;" class="printhide"><%# $this->Page->canEditTransitNote==true ? "" : "Recd" %></th>
+								</tr>
+							</table>
+						</prop:HeaderTemplate>
+
+						<prop:ItemTemplate>
+							<table width="100%" height="25">
+								<tr>
+									<td width="12%">
+										<com:THyperLink
+									 		Attributes.OnMouseOver = "if(document.getElementById('PartInstanceDetails_<%# $this->DataItem['id'] %>')!=null){document.getElementById('PartInstanceDetails_<%# $this->DataItem['id'] %>').style.display='block';};"
+				                 			Attributes.OnMouseOut = "if(document.getElementById('PartInstanceDetails_<%# $this->DataItem['id'] %>')!=null){document.getElementById('PartInstanceDetails_<%# $this->DataItem['id'] %>').style.display='none';};"
+				                 			ID="BytTransitNote">
+											<%# $this->Page->showBarcode($this->DataItem['serialNo'],$this->DataItem['id']) %>
+										</com:THyperLink>
+										<%# $this->Page->showPartInstanceDetail($this->DataItem['id']) %>
+									</td>
+									<td width="15%">
+										<%# $this->DataItem['manfSerialNo'] %>
+									</td>
+									<td width="10%">
+										<%# $this->DataItem['taskNo'] %>
+									</td>
+
+									<td width="8%"><%# $this->DataItem['partinstancestatus'] %></td>
+									<td width="45%">
+											<%# $this->DataItem['partcode'] %> - <%# $this->DataItem['partDescription'] %>
+									</td>
+									<td width="5%" style="text-align:right;">
+										<%# $this->DataItem['qty'] %>
+									</td>
+									<td width="5%" style="text-align:right;" class="printhide">
+										<com:TImageButton
+											ImageUrl="../../../themes/images/delete.png"
+											Text="Remove From Transit Note"
+											OnClick="Page.showRemovePartPanel"
+											ToolTip="Remove From Transit Note"
+											Visible="<%# $this->Page->canEditTransitNote %>"
+											/>
+										<com:TCheckBox
+											Checked="<%# $this->Page->checkReceived($this->DataItem['id']) %>"
+											Enabled="false"
+											Visible="<%# !$this->Page->canEditTransitNote %>"
+											/>
+									</td>
+								</tr>
+							</table>
+						</prop:ItemTemplate>
+
+						<prop:EditItemTemplate>
+							<table width="100%">
+								<tr valign="top">
+									<td width="30%">
+										<com:TLabel ID="removingPartInstance_SerialNo" />
+										<com:THiddenField ID="removingPartInstance_Id" />
+									</td>
+									<td width="60%">
+										<h3>Please choose from the list of locations, where you want to move this part to:</h3>
+										<com:TRequiredFieldValidator
+											ControlToValidate="targetWarehouseId"
+											ErrorMessage="Need to select a warehouse to move the part to!"
+											ValidationGroup="Group3" EnableClientScript="true" /><br />
+										<com:Application.controls.HYWHTree RootNode="<%= $this->Page->getDefaultWarehouseId() %>" ID="removingPartInstance_warehouse" hidden="targetWarehouseId" />
+										<com:TActiveHiddenField ID="targetWarehouseId" Value=""/>
+									</td>
+									<td><com:TButton ID="RemoveButton" Text="Remove" OnCommand="Page.removePart" ValidationGroup="Group3" /></td>
+									<td><com:TButton ID="CancelRemoveButton" Text="Cancel" OnCommand="Page.cancelRemovePart" /></td>
+								</tr>
+							</table>
+						</prop:EditItemTemplate>
+
+					    <prop:FooterTemplate>
+						    <table width="100%" height="25">
+								<tr>
+									<th colspan="3">
+										<div style="font-weight: bold; text-align: center;">
+											Total <%# $this->Page->itemCount %> Part Instances
+										</div>
+									</th>
+								</tr>
+							</table>
+						</prop:FooterTemplate>
+					</com:TDataList>
+
+		<com:TPanel ID="PaginationPanelTransitNote">
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						<com:TLabel ID="TransitNote_PagerList_label">Select Page :</com:TLabel>
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="PageChanged" />
+					</th>
+					<th colspan="3" align="middle">
+						<com:TLabel ID="TransitNote_PagerGoTo_label">Go To Page :</com:TLabel>
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="PageChanged" />
+					</th>
+					<th colspan="3" align="right">
+					<com:TActiveButton ID="printAllParts1" Text="Print View" Attributes.OnClick="document.getElementById('<%=$this->processNote->getClientId() %>').value='1';startPrint();return false;"/>
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>
+
+<!-------------------- Dispatch Note Display Section ---------------------------->
+
+					<com:TDataList ID="DispatchNoteDataList" DataKeyField="id" OnSelectedIndexChanged="selectItem"
+							     OnEditCommand="edit"
+							     OnUpdateCommand="save" OnCancelCommand="cancel"
+							     CssClass="DataList"
+							     ItemStyle.CssClass="DataListItem"
+							     AlternatingItemStyle.CssClass="DataListAlterItem"
+							     EditItemStyle.CssClass="DataListEditItem"
+								 width="100%"
+								 AllowPaging="true" AllowCustomPaging="true" PageSize="200" EnableViewState="true">
+
+					    <prop:HeaderTemplate>
+						    <table width="100%" height="25">
+								<tr>
+									<th colspan="4">
+										<div style="font-weight: bold; text-align: center;">
+											Total <%# $this->Page->itemCount %> Items
+										</div>
+									</th>
+								</tr>
+							</table>
+							<table width="100%" height="25">
+								<tr>
+									<th width="12%" style="font-weight:bold;"><%[ PartInstance.serialNo ]%></th>
+									<th width="25%" style="font-weight:bold;"><%[ PartInstance.manufSerialNo ]%></th>
+									<th style="font-weight:bold;">Partcode - Name</th>
+									<th width="15%" style="text-align:right;font-weight:bold;"><%[ PartInstance.quantity ]%></th>
+									<th width="2%" style="text-align:right;font-weight:bold;">&nbsp;</th>
+								</tr>
+							</table>
+						</prop:HeaderTemplate>
+
+						<prop:ItemTemplate>
+							<table width="100%" height="25">
+								<tr>
+									<td width="12%">
+										<com:THyperLink
+									 		Attributes.OnMouseOver = "if(document.getElementById('PartInstanceDetails_<%# $this->DataItem['id'] %>')!=null){document.getElementById('PartInstanceDetails_<%# $this->DataItem['id'] %>').style.display='block';};"
+				                 			Attributes.OnMouseOut = "if(document.getElementById('PartInstanceDetails_<%# $this->DataItem['id'] %>')!=null){document.getElementById('PartInstanceDetails_<%# $this->DataItem['id'] %>').style.display='none';};"
+				                 			ID="BytTransitNote">
+											<%# $this->Page->showBarcode($this->DataItem['serialNo'],$this->DataItem['id']) %>
+										</com:THyperLink>
+										<%# $this->Page->showPartInstanceDetail($this->DataItem['id']) %>
+									</td>
+									<td width="25%">
+										<%# $this->DataItem['manfSerialNo'] %>
+									</td>
+									<td>
+											<%# $this->DataItem['partcode'] %> - <%# $this->DataItem['partDescription'] %>
+									</td>
+									<td width="15%" style="text-align:right;">
+										<%# $this->DataItem['qty'] %>
+									</td>
+									<td width="2%" style="text-align:right;">
+										<div class="printhide">
+											<com:TImageButton
+												ImageUrl="../../../themes/images/delete.png"
+												Text="Remove From Dispatch Note"
+												OnClick="Page.showRemovePartPanel"
+												ToolTip="Remove From Dispatch Note"
+												Visible="<%# $this->Page->canEditTransitNote %>" />
+										</div>
+									</td>
+								</tr>
+							</table>
+						</prop:ItemTemplate>
+
+						<prop:EditItemTemplate>
+							<table width="100%">
+								<tr valign="top">
+									<td width="30%">
+										<com:TLabel ID="removingPartInstance_SerialNo" />
+										<com:THiddenField ID="removingPartInstance_Id" />
+									</td>
+									<td width="60%">
+										<h3>Please choose from the list of location, where you want to move this part to:</h3>
+										<com:TRequiredFieldValidator
+											ControlToValidate="targetWarehouseId"
+											ErrorMessage="Need to select a warehouse to move the part to!"
+											ValidationGroup="Group3" EnableClientScript="true" /><br />
+										<com:Application.controls.HYWHTree RootNode="<%= $this->Page->getDefaultWarehouseId() %>" ID="removingPartInstance_warehouse" hidden="targetWarehouseId" />
+										<com:TActiveHiddenField ID="targetWarehouseId" Value=""/>
+									</td>
+									<td><com:TButton ID="RemoveButton" Text="Remove" OnCommand="Page.removePart" ValidationGroup="Group3" /></td>
+									<td><com:TButton ID="CancelRemoveButton" Text="Cancel" OnCommand="Page.cancelRemovePart" /></td>
+								</tr>
+							</table>
+						</prop:EditItemTemplate>
+
+					    <prop:FooterTemplate>
+						    <table width="100%" height="25">
+								<tr>
+									<th width="15%">&nbsp;</th>
+									<th>&nbsp;</th>
+									<th width="15%">
+										<div style="font-weight: bold; text-align: right;">
+											Total Items: <%# $this->Page->itemCount %>
+										</div>
+									</th>
+									<th width="2%">&nbsp;</th>
+								</tr>
+							</table>
+						</prop:FooterTemplate>
+					</com:TDataList>
+
+			<com:TPanel ID="PaginationPanelDispatchNote">
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						<com:TLabel ID="DispatchNote_PagerList_label">Select Page :</com:TLabel>
+						<com:TPager ID="PagerList1" ControlToPaginate="DispatchNoteDataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="PageChanged" />
+					</th>
+					<th colspan="3" align="middle">
+						<com:TLabel ID="DispatchNote_PagerGoTo_label">Go To Page :</com:TLabel>
+						<com:TPager ID="PagerGoTo1" ControlToPaginate="DispatchNoteDataList" Mode="DropDownList" OnPageIndexChanged="PageChanged" />
+					</th>
+					<th colspan="3" align="right">
+					<com:TActiveButton ID="printAllParts2" Text="Print View" Attributes.OnClick="document.getElementById('<%=$this->processNote->getClientId() %>').value='1';startPrint();return false;" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>
+
+		<com:TLabel ID="SuccessfulStocktake" />
+		    </td>
+		 </tr>
+	</table>
+	<br />
+	<hr />
+	<br />
+	<table width="100%" border="0">
+		<tr>
+			<td width="120px" style="vertical-align:middle; font-weight:bold;">
+				<com:TActiveLabel ID="ExistingCommentsLabel" Text="Comments:" Visible="false" />
+			</td>
+			<td>
+				<com:TPanel ID="NotesWindow" ScrollBars="Horizontal" CssClass="notesPanel" width="95%" Visible="false">
+					<com:TLabel ID="ExistingComments" />
+				</com:TPanel>
+			</td>
+		</tr>
+		<tr>
+			<td style="vertical-align:middle;font-weight:bold;" class="printhide">Add Comments:</td>
+			<td class="printhide"><com:TTextBox ID="Comments" Rows="2" Width="96%" TextMode="MultiLine" Text="" TabIndex="4" /></td>
+		</tr>
+		<tr height="4"></tr>
+		<tr>
+			<td style="vertical-align:middle; font-weight:bold;">Client Ref #:</td>
+			<td>
+				<com:TTextBox ID="ClientJobNos" Rows="2" Width="96%" TextMode="MultiLine"  />
+				<com:TLabel ID="ClientJobNosLabel" />
+			</td>
+		</tr>
+		<tr height="4"></tr>
+		<tr>
+			<td width="120px" style="vertical-align:middle; font-weight:bold;">Delivery Method:</td>
+			<td>
+			     <com:TDropDownList
+								ID="deliveryMethod"
+								TabIndex="7"
+								AutoPostBack="false"
+							    DataTextField="name"
+							    DataValueField="id"
+							    ValidationGroup="Group1"
+							    EnableClientScript="true"
+							    PromptText="Please select..."/>
+							<com:TLabel ID="deliveryMethodLabel" />
+							<com:TRequiredFieldValidator ID="deliveryMethodValidator"
+							    ControlToValidate="deliveryMethod"
+							    ErrorMessage="* required"
+							    ValidationGroup="Group1"
+							    InitialValue="Please select..."
+							    EnableClientScript="true" />
+			</td>
+		</tr>
+		<tr height="4"></tr>
+		<tr>
+        <td width="120px" style="vertical-align:middle; font-weight:bold;">ETA:</td>
+		  <td>
+		      <com:TDatePicker ID="etaDate" DateFormat="dd-MM-yyyy" InputMode="TextBox" ValidationGroup="Group1"/>
+		      <com:TActiveDropDownList id="etaTime" DataValueField="id" DataTextField="name" AutoPostBack="false" PromptText="HH:MM"/>
+
+		      <com:TActiveLabel ID="etaLabel" />
+		      <com:TActiveLabel ID="etaTimezoneLabel" Style="font-weight:bold;font-size:10px;"/>
+			  <com:TDataTypeValidator
+				    ValidationGroup="Group1"
+				    ControlToValidate="etaDate"
+				    DataType="Date"
+				    DateFormat="dd-MM-yyyy"
+				    Text="* valid date (dd-MM-yyyy) required" />
+
+			 <com:TRequiredFieldValidator
+                       ControlToValidate="etaTime"
+                       ErrorMessage="* date/time required"
+                       ValidationGroup="Group1"
+                       InitialValue="HH:MM"
+                       EnableClientScript="true" />
+			</td>
+		</tr>
+		<tr height="4"></tr>
+		<tr>
+			<td width="120px" style="vertical-align:middle; font-weight:bold;">Courier Ref #:</td>
+			<td>
+				<com:TTextBox ID="CourierJobNo"  TabIndex="5" Width="86%" Attributes.onkeydown="if(event.keyCode=='13'){return noenter();}"/>
+				<com:TLabel ID="CourierJobNoLabel" />
+				<com:TRequiredFieldValidator ID="CourierJobNoValidator"
+									    ControlToValidate="CourierJobNo"
+									    ErrorMessage="* required"
+									    ValidationGroup="Group1"
+									    EnableClientScript="true" />
+			</td>
+		</tr>
+		<tr height="4"></tr>
+		<tr>
+			<td width="120px" style="vertical-align:middle; font-weight:bold;">Courier:</td>
+			<td><com:TDropDownList
+								ID="Courier"
+								TabIndex="6"
+								AutoPostBack="false"
+							    DataTextField="name"
+							    DataValueField="name"
+							    ValidationGroup="Group1"
+							    EnableClientScript="true" />
+							<com:TLabel ID="CourierLabel" />
+							<com:TRequiredFieldValidator ID="CourierNoValidator"
+							    ControlToValidate="Courier"
+							    ErrorMessage="* required"
+							    ValidationGroup="Group1"
+							    EnableClientScript="true" />
+			</td>
+		</tr>
+		<tr height="8">
+		  <td colspan="3"><hr /></td>
+		</tr>
+		<tr>
+			<td width="120px">&nbsp;</td>
+			<td>
+				<div class="printhide">
+					<com:TButton
+						ID="SaveDraftButton"
+						Text="Save"
+						onClick="saveDraftTransitNote"
+						Attributes.onclick="return validate('save');"
+						TabIndex="7" />
+					<com:TActiveButton
+						ID="SaveButton"
+						Text="Save, Print and Dispatch (TN)"
+						onClick="checkBeforePushNoteToTransit"
+						TabIndex="8"
+						Attributes.OnClick="return validate('dispatch');"
+						ValidationGroup="Group1" />
+					<com:TActiveButton
+						ID="reviewRaButton"
+						Text="Review Return Authority (RA)"
+						Attributes.onclick="Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, title: 'reviewing Return Authority (RA), submit as reviewed to return...'}); return true;"
+						onClick="reviewRA"
+						TabIndex="9"
+						Style="display:none;"/>
+					<com:TActiveButton
+						ID="generateRaButton"
+						Text="Generate Return Authority (RA)"
+						onClick="generateRA"
+						TabIndex="9"
+						Attributes.onclick="Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, title: 'generating Return Authority (RA), please be patient...'}); return true;"
+						Style="display:none;"/>
+					<com:TActiveButton
+						ID="viewRaButton"
+						Text="View Return Authority (RA)"
+						onClick="viewRA"
+						TabIndex="9"
+						Attributes.onclick="Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, title: 'loading Return Authority (RA), please be patient...'}); return true;"
+						Style="display:none;"/>
+					<com:TButton
+						ID="RecievePartsButton"
+						Text="Receive Parts"
+						onClick="Page.redirectToRecieveParts"
+						Visible="false"
+						TabIndex="9" />
+					<com:TButton
+						ID="ReprintButton"
+						Text="Reprint"
+						onClick="Page.reprintTransitNote"
+						Attributes.OnClick="
+						if(document.getElementById('<%=$this->isPaginated->getClientId() %>').value==1){document.getElementById('<%=$this->processNote->getClientId() %>').value='1';startPrint();return false;}"
+						Visible="false"
+						TabIndex="11" />
+					<com:TButton
+						ID="CloseButton"
+						Text="Close TransitNote"
+						onClick="Page.closeTransitNote"
+						Attributes.OnClick="if(!confirm('WARNING! \n\nYou are about to close this <%=$this->Page->alertMessageType->Value %> Note!\nDo you want to continue?')) return false;"
+						Visible="false"
+						TabIndex="12" />
+				</div>
+			</td>
+			<td width="30px">
+				<com:TActiveButton
+					ID="toExcel"
+					Text="To Excel"
+					onClick="Page.toExcel"
+					Visible="<%# !$this->Page->canEditTransitNote %>">
+					<prop:ClientSide
+						OnLoading="document.getElementById('<%=$this->Page->toExcel->getClientId() %>').value='Printing...';
+								document.getElementById('<%=$this->Page->toExcel->getClientId() %>').disabled = true;
+								document.getElementById('<%=$this->Page->assetId->getClientId() %>').value='';
+								Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, title: 'generating Excel, please be patient...'}); return true;"
+						OnComplete="document.getElementById('<%=$this->Page->toExcel->getClientId() %>').value='To Excel';
+								document.getElementById('<%=$this->Page->toExcel->getClientId() %>').disabled = false;
+								var assetId = document.getElementById('<%=$this->Page->assetId->getClientId() %>').value;
+								if(assetId!='') {window.open('/report/download/'+assetId);}" />
+				</com:TActiveButton>
+				<com:TActiveHiddenField ID="assetId" />
+			</td>
+		</tr>
+		<tr>
+			<td width="120px">&nbsp;</td>
+			<td colspan="2"><com:TLabel ID="errorLabel" style="color:red;font-weight:bold;" /></td>
+		</tr>
+	</table>
+</com:TPanel>
+</com:TContent>

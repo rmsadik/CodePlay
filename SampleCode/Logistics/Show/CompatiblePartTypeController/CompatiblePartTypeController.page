@@ -1,0 +1,342 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<script type="text/javascript">
+		function toggleDirections(checkBoxId,imgBtnId)
+		{
+			check = $(checkBoxId).checked;
+			if(check==false)
+			{
+				$(checkBoxId).checked = 'true';
+				$(imgBtnId).src='/themes/images/bio-arrow.png';
+			}
+			else
+			{
+				$(checkBoxId).checked='';
+				$(imgBtnId).src='/themes/images/arrow.png';
+			}
+		}
+		function validateInput()
+		{
+			 var sourceParttype = $('<%= $this->sourcePartType->getClientId() %>').value;
+			 var targetPartType = $('<%= $this->targetPartType->getClientId() %>').value;
+			 if(sourceParttype === null || sourceParttype == '')
+			 {
+				 alert('Please provide a Valid Source PartType');
+				 return false;
+			 }
+			 else if(targetPartType === null || targetPartType == '')
+			 {
+				 alert('Please provide a Valid Compatible PartType');
+				 return false;
+			 }
+			 else
+				 return true;
+		}
+	</script>
+
+	<br />
+	<br />
+	<div>
+		<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel" DefaultButton="SearchButton">
+			<table width="100%">
+				<tr>
+					<td width="33%">
+						<b>Search By:</b>
+						<com:TDropDownList Id="searchAliasType"
+							DataTextField="name"
+							DataValueField="id" />
+                    </td>
+					<td width="12%">
+						<b>Search For :</b>
+                    </td>
+					<td width="45%">
+						<com:TTextBox ID="SearchText" AutoPostBack="false" Columns="45"  Attributes.placeholder=" Source PartType    "/>
+						<com:TButton ID="SearchButton" Text=" Search " OnClick="search" />
+						<com:THiddenField ID="SearchString" />
+						<com:THiddenField ID="focusObject" />
+						<com:THiddenField ID="focusObjectArgument" />
+					</td>
+					<td width="10%">
+					 <com:Application.controls.HYLock Feature="pages_all,feature_parttype_compatibility_add">
+    						<com:TButton ID="AddButton" Text="Add Compatiblity" OnClick="add" Visible="<%= $this->ableToEditItem %>"/>
+                      </com:Application.controls.HYLock>
+					</td>
+				</tr>
+			</table>
+			<br />
+			<hr />
+			<br />
+		</com:TPanel>
+
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" >
+			<table width="100%" class='form'>
+                 <tr>
+                     <td colspan="3" class="header">Add PartType Compatibility</th>
+                 </tr>
+				<tr>
+					<td colspan="3">
+						Search Alias Type:
+						<com:TDropDownList Id="aliasType"
+								DataTextField="name"
+								DataValueField="id"
+								/>
+					</td>
+				</tr>
+				<tr>
+					<td width="45%"><b>Source Part Type:</b>
+						<com:Application.controls.HYAutoComplete Id="sourcePartType"
+							ResultPanel.CssClass="hydraautocomplete"
+							ValidationGroup="Group1"
+							PageOnSuggestMethod="searchPartType"
+							width="90%"
+							Suggestions.DataKeyField="0">
+								<prop:Suggestions.ItemTemplate>
+						            <li><%# $this->Data["1"] %></li>
+								</prop:Suggestions.ItemTemplate>
+						</com:Application.controls.HYAutoComplete>
+					</td>
+					<td width="7%">
+						<com:TImageButton
+							ID="directionBtn"
+							Attributes.OnClick="toggleDirections('<%= $this->boiDirections->getClientId() %>','<%= $this->directionBtn->getClientId() %>');return false;"
+							ImageUrl="/themes/images/arrow.png"
+							height="25px"
+							ToolTip="Click here to change the compatible direction"
+							Style="outline:none;"
+							/>
+					</td>
+					<td width="45%"><b>Compatible Part Type:</b>
+						<com:Application.controls.HYAutoComplete Id="targetPartType"
+							ResultPanel.CssClass="hydraautocomplete"
+							ValidationGroup="Group1"
+							PageOnSuggestMethod="searchPartType"
+							width="90%"
+							Suggestions.DataKeyField="0">
+								<prop:Suggestions.ItemTemplate>
+						            <li><%# $this->Data["1"] %></li>
+								</prop:Suggestions.ItemTemplate>
+						</com:Application.controls.HYAutoComplete>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="3" class="footer">
+						<com:TCheckBox Id="boiDirections" style="display:none;"/>
+						<com:TButton ID="AddNewButton" Text="Save" Attributes.onclick = 'return validateInput( );' OnClick="save" ValidationGroup="Group1" />
+	    				<com:TButton ID="CancelNewButton" Text="Cancel" OnClick="cancel" />
+	    			</td>
+				</tr>
+			</table>
+		</com:TPanel>
+
+		<com:TPanel>
+			<table width="100%"  class="DataListTitle">
+				<tr>
+					<th>
+						<com:TLabel ID="ListCountryLabel" Text="List of PartType Compatibilities" />
+					</th>
+				</tr>
+			</table>
+
+			<br />
+
+			<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem"
+					     OnEditCommand="edit"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList"
+					     ItemStyle.CssClass="DataListItem"
+					     AlternatingItemStyle.CssClass="DataListAlterItem"
+					     EditItemStyle.CssClass="DataListEditItem"
+						 width="100%"
+ 						 AllowPaging="true" AllowCustomPaging="true" PageSize="10" EnableViewState="true">
+
+			    <prop:HeaderTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<th width="42%"><b>Source Part Type</b></th>
+							<th width="6%"><b>Direction</b>&nbsp;&nbsp;&nbsp;</th>
+							<th width="42%"><b>&nbsp;&nbsp;&nbsp;Compatible Part Types</b></th>
+							<th width="10%"></th>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" >
+						<tr>
+							<td width="42%" align="left">
+							     <table width="100%">
+								     <tr>
+								         <td width="20%"><%# $this->DataItem->getSourcePart()->getAlias() %> :</td>
+								         <td> <%# trim($this->DataItem->getSourcePart()) %></td>
+								     </tr>
+								     <tr>
+								         <td colspan=2>
+			                                <div ID='itemDetails_<%# $this->DataItem->getId() %>' style='display:none;'>
+		                                        <%# $this->Page->getAliasTable($this->DataItem->getSourcePart()) %>
+			                                </div>
+								         </td>
+								     </tr>
+							     </table>
+							</td>
+
+							<td width="6%" valign="middle">
+							     <%# ($this->DataItem->getBiDirectional() ==1 ?'<img src="/themes/images/bio-arrow.png" height="22" width="45"/>':'<img src="/themes/images/arrow.png" height="22" width="22"/>') %>
+							</td>
+
+							<td width="42%" >
+							     <table width="100%">
+								     <tr>
+								         <td width="20%"><%# $this->DataItem->getCompatiblePart()->getAlias() %> :</td>
+								         <td> <%# trim($this->DataItem->getCompatiblePart()) %></td>
+								     </tr>
+								     <tr>
+								         <td colspan=2>
+			                                <div ID='itemDetails2_<%# $this->DataItem->getId() %>' style='display:none;'>
+		                                        <%# $this->Page->getAliasTable($this->DataItem->getCompatiblePart()) %>
+			                                </div>
+								         </td>
+								     </tr>
+							     </table>
+							</td>
+							<td width="10%">
+                                <a href='#' id="showLink_<%# $this->DataItem->getId() %>"
+                                    OnClick="
+                                            Effect.BlindDown('itemDetails_<%# $this->DataItem->getId() %>');
+                                            Effect.BlindDown('itemDetails2_<%# $this->DataItem->getId() %>');
+                                            $('hideLink_<%# $this->DataItem->getId() %>').appear();
+                                            $('showLink_<%# $this->DataItem->getId() %>').hide();
+                                            return false;">
+                                            <img src='/themes/images/arrow-down.gif' alt='Show Details' title='Show Details' />
+                                            </a>
+
+                                <a href='#' id="hideLink_<%# $this->DataItem->getId() %>" style='display:none;'
+                                    OnClick="
+                                            Effect.BlindUp('itemDetails_<%# $this->DataItem->getId() %>');
+                                            Effect.BlindUp('itemDetails2_<%# $this->DataItem->getId() %>');
+                                            $('showLink_<%# $this->DataItem->getId() %>').appear();
+                                            $('hideLink_<%# $this->DataItem->getId() %>').hide();
+                                            return false;">
+                                    <img src='/themes/images/arrow-up.gif' alt='Hide Details' title='Hide Details' />
+                                </a>
+
+                                &nbsp;&nbsp;
+								<com:Application.controls.HYLock Feature="pages_all,feature_parttype_compatibility_edit">
+									<com:TImageButton ImageUrl="../../../themes/images/edit.png" Text="Edit" CommandName="edit"
+													ToolTip="Edit Record" Visible="<%= $this->Page->ableToEditItem %>"/>
+								</com:Application.controls.HYLock>
+                                &nbsp;&nbsp;
+								<com:Application.controls.HYLock Feature="pages_all,feature_parttype_compatibility_delete">
+									<com:TImageButton ImageUrl="../../../themes/images/delete.png" Text="Delete"
+												Attributes.OnClick="if(!confirm('Are you sure to delete this item?')){return false;}"
+												OnCommand="Page.delete" CommandParameter="<%# $this->DataItem->getId()%>"
+													ToolTip="Delete Record" Visible="<%= $this->Page->ableToEditItem %>"/>
+								</com:Application.controls.HYLock>
+							</td>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+
+				<prop:EditItemTemplate>
+					<table class="form" width="100%">
+					    <tr>
+                            <td colspan="3" class="header">Edit PartType Compatibility</th>
+                        </tr>
+
+						<tr valign="top">
+							<td colspan="3">
+								Search Alias Type:
+								<com:TDropDownList Id="aliasType"
+										DataTextField="name"
+										DataValueField="id"
+										Enabled="false"
+										/>
+							</td>
+						</tr>
+						<tr valign="top">
+							<td width="45%">Source Part Type:
+								<com:Application.controls.HYAutoComplete Id="sourcePartType"
+									ResultPanel.CssClass="hydraautocomplete"
+									ValidationGroup="Group1"
+									PageOnSuggestMethod="searchPartType"
+									width="95%"
+									Suggestions.DataKeyField="0">
+										<prop:Suggestions.ItemTemplate>
+								            <li><%# $this->Data["1"] %></li>
+										</prop:Suggestions.ItemTemplate>
+								</com:Application.controls.HYAutoComplete>
+							</td>
+							<td width="7%"><br>
+									<com:TImageButton
+										ID="directionBtn"
+										Attributes.OnClick="toggleDirections('<%= $this->boiDirections->getClientId() %>','<%= $this->directionBtn->getClientId() %>');return false;"
+										ImageUrl="/themes/images/arrow.png"
+										height="25px"
+										ToolTip="Click here to change the compatible direction"
+										Style="outline:none;"
+										/>
+							</td>
+							<td width="45%">Compatible Part Type:
+								<com:Application.controls.HYAutoComplete Id="targetPartType"
+									ResultPanel.CssClass="hydraautocomplete"
+									ValidationGroup="Group1"
+									PageOnSuggestMethod="searchPartType"
+									width="95%"
+									Suggestions.DataKeyField="0">
+										<prop:Suggestions.ItemTemplate>
+								            <li><%# $this->Data["1"] %></li>
+										</prop:Suggestions.ItemTemplate>
+								</com:Application.controls.HYAutoComplete>
+							</td>
+						</tr>
+                        <tr><td class="footer" colspan="3">
+                            <table width="100%" >
+                                <tr><td style="background:none;border:0;color:#ffffff">
+                                        Last Updated on <b><com:TLabel ID="Updated" /></b> by <b><com:TLabel ID="UpdatedById"  /></b>
+                                    </td>
+                                    <td style="background:none;border:0;text-align:centre;" colspan="2" >
+                                        <com:TCheckBox Id="boiDirections" style="display:none;"/>
+                                        <com:Application.controls.HYLock Feature="pages_all,feature_parttype_compatibility_save">
+                                            <com:TButton ID="EditButton" Text="Save" CommandName="update" ValidationGroup="Group1"/>
+                                        </com:Application.controls.HYLock>
+                                        <com:TButton ID="CancelEditButton" Text="Cancel" CommandName="cancel" />
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                        </tr>
+
+					</table>
+				</prop:EditItemTemplate>
+
+			    <prop:FooterTemplate>
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan=5>
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Parent->VirtualItemCount %> Compatibilities
+								</div>
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>
+			</com:TDataList>
+		</com:TPanel>
+
+		<com:TPanel ID="PaginationPanel">
+		    <table width="100%" height="25">
+				<tr>
+					<td width='1%'></td>
+					<td align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</td>
+					<td align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</td>
+					<td width='1%'></td>
+				</tr>
+			</table>
+		</com:TPanel>
+	</div>
+</com:TContent>

@@ -1,0 +1,916 @@
+<com:TContent ID="MainContent">
+<script type="text/javascript">
+
+		function qtyReceived(e,partcode)
+		{
+			var actualQty = $('actualQty_'+partcode).getAttribute("actualQty")*1;
+			if($('<%= $this->nonSerializedQty->getClientId(); %>').value > '')
+			    var tmp = JSON.parse($('<%= $this->nonSerializedQty->getClientId(); %>').value);
+			else
+		       var tmp = {};
+
+		    $('<%= $this->ReceivePartsButton->getClientId(); %>').disabled = false;
+		    if(isNaN(e.value) || e.value == 'undefined')
+		    {
+		    	alert('Quantity provided is not a number. Please provide a valid quantity.');
+				$('actualQty_'+partcode).value="";
+				$('actualQty_'+partcode).style.backgroundColor='pink';
+		    }
+		    else if(e.value >'' && (e.value*1) >0 && e.value <= actualQty)
+			{
+				tmp[partcode] = e.value;
+			    $('<%= $this->nonSerializedQty->getClientId(); %>').value = JSON.stringify(tmp);
+				$('actualQty_'+partcode).style.backgroundColor='white';
+			}
+			else if((e.value != '' && (e.value*1) > actualQty) || e.value === 0)
+			{
+			    alert('Please enter valid Quantity. Acutal Quantity is :'+actualQty);
+				$('actualQty_'+partcode).value="";
+				$('actualQty_'+partcode).style.backgroundColor='pink';
+				delete tmp[partcode];
+			    $('<%= $this->nonSerializedQty->getClientId(); %>').value = JSON.stringify(tmp);
+			    $('<%= $this->ReceivePartsButton->getClientId(); %>').disabled = true;
+			}
+			return false;
+		}
+
+		function receiveParts()
+		{
+
+	       $('<%= $this->ajaxProcessor->startAjaxProcessor->getClientId(); %>').click();
+	       Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, 'title': 'receiving parts, please be patient...'});
+	    }
+
+		function finishProcessParts()
+		{
+			Modalbox.hide();
+			$('<%= $this->finishProcessParts->getClientId(); %>').click();
+		}
+
+    	function checkDestinationWarehouse(warehousepathId,targetwarehouseId,partsOnTransitId)
+    	{
+	        if($('<%= $this->ReceivePartsButton->getClientId() %>').value != "Receive Parts")
+	        {
+	            Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, 'title': 'receiving parts, please be patient...'});
+	            return true;
+	        }
+
+        var sw = $(warehousepathId).value;
+        var tw = $(targetwarehouseId).value;
+
+        var swArr = sw.split('/');
+        var twArr = tw.split('/');
+
+        var msg = false;
+
+        //is agent or not a bytecraft root person
+        if (swArr[1] != 1)
+        {
+            if (swArr[1] != twArr[twArr.length-1]) msg = true;
+        }
+        else
+        {
+            if (sw.indexOf(tw) == -1) msg = true;
+        }
+
+        if (swArr[1] == '48538') //hack for NAB temporarily!
+        {
+            if (twArr[twArr.length-1] != swArr[swArr.length-1])
+                msg = true;
+            else
+                msg = false;
+        }
+
+        if (msg)
+        {
+            var rText="";
+            while (rText != "OK")
+            {
+                rText = prompt('WARNING! Selected Warehouse is different to Target Warehouse of the Transit Note! Please Type \'OK\' to continue?',"");
+                if (rText==null) return false;
+                rText = rText.toUpperCase();
+            }
+        }
+
+        var partsOnTransit = $(partsOnTransitId);
+        if(!partsOnTransit)
+        {
+            if(!confirm('There will be no parts left, this transit note will be CLOSED!\n\n Do you want to continue?'))
+                return false;
+        }
+        Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, 'title': 'validating, please be patient...'});
+        return true;
+    }
+
+    function checkBTs(checkingValue)
+    {
+        if ($('<%= $this->agent->getClientId(); %>').value == 'true') return true;
+
+        checkingValue = checkingValue.toUpperCase();
+        if(checkingValue.indexOf("BT")==0)
+        {
+            new_win_url = '/reregisterparts/' + checkingValue;
+            window.open(new_win_url);
+            return false;
+        }
+        return true;
+    }
+
+    function toggleFromWarehouseTree(textval)
+    {
+        var prevState = $('<%= $this->fromWarehousePanel->getClientId(); %>').style.display;
+        if (textval.length == 0)
+        {
+            if ($('<%= $this->partcode->getClientId(); %>').value.length == 0 &&
+                ($('<%= $this->barcode->getClientId(); %>').value.length == 0 ||
+                 !containsNonSerialisedBarcode($('<%= $this->barcode->getClientId(); %>').value)
+                )
+               ) // no partcode on partcode field, and no BCP/BP code on barcode field, so hide the tree
+            {
+                $('<%= $this->fromWarehousePanel->getClientId(); %>').style.display='none';
+            }
+            // else do nothing
+        }
+        else
+        {
+            $('<%= $this->fromWarehousePanel->getClientId(); %>').style.display='';
+            if (prevState == 'none')
+            {
+                alert("This is a NON-SERIALISED part. Please select the source location.");
+            }
+        }
+    }
+
+    function checkBcpToggleFromWarehouseTree(textval)
+    {
+        if (textval.length > 0 && containsNonSerialisedBarcode(textval))
+        {
+            toggleFromWarehouseTree(textval);
+        }
+        else if (!containsNonSerialisedBarcode(textval))
+        {
+        }
+    }
+
+    function containsNonSerialisedBarcode(textval)
+    {
+        if ( /^\s*BCP\d{8}\s*$/i.test(textval)) return true;
+        if ( /^\s*BP\d{8}\w\s*$/i.test(textval)) return true;
+        return false;
+    }
+
+    function openEditPartWindow(partInstanceid,errorMsg)
+    {
+        new_win_url = '/reregisterparts/' + partInstanceid + '/' + errorMsg;
+        window.open(new_win_url);
+    }
+
+    function togglependingpanel()
+    {
+        if(!$('<%= $this->hasfieldTaskLbl->getClientId() %>').checked){
+            $('<%= $this->fieldTaskLbl->getClientId() %>').style.display = 'none';
+        }else{
+            $('<%= $this->fieldTaskLbl->getClientId() %>').style.display = 'block';
+        }
+    }
+
+    function printPendingInfo()
+    {
+        $('<%= $this->printPanel->getClientId() %>').style.display = 'none';
+        window.print();
+        $('<%= $this->printPanel->getClientId() %>').style.display = 'block';
+    }
+
+
+
+
+    function checkPartsForFieldTask(partInstanceId,barcodeText,fieldTaskId,clientFieldTaskId){
+
+        var msg= "Part " + barcodeText + " is reserved for \n";
+
+        var splitFieldTaskIds = fieldTaskId.split(",");
+
+        for(i = 0; i < splitFieldTaskIds.length; i++){
+            msg += "Field task : " + splitFieldTaskIds[i] + ".\n";
+        }
+
+        var splitClientFieldTaskIds = clientFieldTaskId.split(",");
+
+        for(i = 0; i < splitClientFieldTaskIds.length; i++){
+            msg += "Client field task : " + splitClientFieldTaskIds[i] + ".\n";
+        }
+        msg += "To confirm press OK, else Cancel.\n\n";
+
+
+        var response = confirm(msg);
+        if(response){
+            window.onload=function(){
+                $("<%= $this->dontCheckIfRetrievedAndAwaitingReturnForFieldTask->getClientId() %>").value = "True";
+                $("<%= $this->PartInstanceIdAuto->getClientId() %>").value = partInstanceId;
+                $("<%= $this->AddPartsAuto->getClientId() %>").click();
+            }
+        }
+
+
+        /*
+        msg += "To confirm enter in the correct field task number.\n";
+        var found = false;
+        var response = prompt(msg,"");
+        if (response!=null && response!="")
+        {
+
+            for(i = 0; i < splitFieldTaskIds.length; i++){
+                if(splitFieldTaskIds[i]==response){
+                    found = true;
+                }
+            }
+            for(i = 0; i < splitClientFieldTaskIds.length; i++){
+                if(splitClientFieldTaskIds[i]==response){
+                    found = true;
+                }
+            }
+            if(!found){
+                alert("The field task number entered is incorrect!");
+            }else{
+                window.onload=function(){
+
+                    $("<%= $this->dontCheckIfRetrievedAndAwaitingReturnForFieldTask->getClientId() %>").value = "True";
+                    $("<%= $this->PartInstanceIdAuto->getClientId() %>").value = partInstanceId;
+                    $("<%= $this->AddPartsAuto->getClientId() %>").click();
+                }
+            }
+        }
+        */
+    }
+
+
+    function checkMultiplePartsForFieldTask(partInstances){
+        var partInstanceIds = "";
+        var ok = false;
+        var partInstanceSplit = partInstances.split(":");
+        for(i = 0; i < partInstanceSplit.length; i++){
+
+            var partInstancesPartsSplit = partInstanceSplit[i].split(";");
+            var partInstanceIdText = partInstancesPartsSplit[0];
+            var barcodeText = partInstancesPartsSplit[1];
+            var fieldTaskId = partInstancesPartsSplit[2];
+            var clientFieldTaskId = partInstancesPartsSplit[3];
+            if(barcodeText!=""){
+
+                var msg = "Part " + barcodeText + " is reserved for \n";
+                var splitFieldTaskIds = fieldTaskId.split(",");
+
+                for(i2 = 0; i2 < splitFieldTaskIds.length; i2++){
+                    msg += "Field task : " + splitFieldTaskIds[i2] + ".\n";
+                }
+
+                var splitClientFieldTaskIds = clientFieldTaskId.split(",");
+
+                for(i3 = 0; i3 < splitClientFieldTaskIds.length; i3++){
+                    msg += "Client field task : " + splitClientFieldTaskIds[i3] + ".\n";
+                }
+
+                msg += "To confirm press OK, else Cancel.\n\n";
+
+
+                var response = confirm(msg);
+                if(response){
+                    partInstanceIds += partInstanceIdText + ",";
+                    ok = true;
+                }
+
+
+                /*
+                msg += "To confirm enter in the correct field task number.\n";
+                var found = false;
+
+                var response = prompt(msg,"");
+                if (response!=null && response!="")
+                {
+
+                    for(i4 = 0; i4 < splitFieldTaskIds.length; i4++){
+                        if(splitFieldTaskIds[i4]==response){
+                            found = true;
+                        }
+                    }
+                    for(i5 = 0; i5 < splitClientFieldTaskIds.length; i5++){
+                        if(splitClientFieldTaskIds[i5]==response){
+                            found = true;
+                        }
+                    }
+                    if(!found){
+                        alert("The field task number entered is incorrect!");
+                    }else{
+                        partInstanceIds += partInstanceIdText + ",";
+                        ok = true;
+                    }
+                }
+                */
+            }else{
+                if(partInstanceIdText!=""){
+                    partInstanceIds += partInstanceIdText + ",";
+                    ok = true;
+                }
+            }
+        }
+
+        if(ok){
+            window.onload=function(){
+                $("<%= $this->dontCheckIfRetrievedAndAwaitingReturnForFieldTask->getClientId() %>").value = "True";
+                $("<%= $this->PartInstanceIdAuto->getClientId() %>").value = partInstanceIds;
+                $("<%= $this->AddMultiplePartsAuto->getClientId() %>").click();
+            }
+        }
+    }
+
+    function onTreeLoadError()
+    {
+        var els = $$('.functionBtn');
+        for (var i=0; i<els.length; i++)
+        {
+        	els[i].disabled = true;
+        }
+    }
+</script>
+
+    <com:TActivePanel ID="MovePartTechnicianWrapper" />
+    <com:TRadioButton ID="MovePartTechnician" style='display:none;'/>
+    <com:TRadioButton ID="MovePartLocation" style='display:none;'/>
+    <com:THiddenField ID="checkBOMIsCorrectForNonAgent" Value=""/>
+
+    <com:THiddenField ID="PartInstanceIdAuto" Value=""/>
+    <com:TButton ID="AddMultiplePartsAuto" onClick="Page.addAllPartsFromTransitNote" style='display:none;' />
+    <com:TButton ID="AddPartsAuto" onClick="Page.addPartsFromTransitNote" style='display:none;' />
+    <com:TButton ID="SearchButtonAuto" onClick="Page.searchPartInstance" style='display:none;'/>
+    <com:THiddenField ID="dontCheckIfRetrievedAndAwaitingReturnForFieldTask" Value=""/>
+    <com:THiddenField ID="dontCheckIfReservedForFieldTask" Value=""/>
+    <com:THiddenField ID="agent" Value=""/>
+    <com:THiddenField ID="noteType" Value=""/>
+    <com:TActiveHiddenField ID="movingPartInstanceArray" />
+    <com:THiddenField ID="selectedPartInstanceIds" />
+    <com:TLabel Id="openNewWindow" />
+    <com:TActiveHiddenField ID="nonSerializedQty" value="" />
+    <com:TButton ID="TransferPartsButton" Text="Move" style="display:none;" />
+
+    <com:TActiveHiddenField ID="checkedFieldTaskPending" Value="false" />
+    <com:TActiveLabel Text="" ID="fieldTaskLbl" />
+    <com:TActiveLabel Text="" ID="jsLbl" />
+
+    <com:TActivePanel ID="printPanel">
+
+    <!-- Ajax Controller -->
+    <com:TButton ID="finishProcessParts" Text="" OnClick="Page.finishProcessParts" Style="display:none;" />
+    <com:Application.pages.Bulkload.CustomisedControls.AjaxProcessor.AjaxProcessor ID="ajaxProcessor" ProcessingFunc_page="processReceiveParts" AfterLoadCompleteFunc_page="finishProcessReceiveParts" MaxCycles="0"/>
+	<com:TActiveHiddenField ID="exceptionMessage" Value=""/>
+	<!-------------------->
+
+    <com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+
+    <com:TPanel ID="AddPartPanel" DefaultButton="search">
+        <table width="100%">
+            <tr>
+                <td width="25%" align="left">
+                    Barcode:
+                    <com:TTextBox ID="barcode" TabIndex="1" Width="120px" Attributes.onchange="checkBcpToggleFromWarehouseTree(this.value); return false;" />
+                </td>
+                <td width="25%" >
+                    Part Code:
+                    <com:TTextBox ID="partcode" TabIndex="2" Width="120px" Attributes.onchange="toggleFromWarehouseTree(this.value); return false;" />
+                </td>
+                <td align="left">
+                    <com:TButton ID="search"
+                            Text="Search"
+                            OnClick="searchPartInstance"
+                            Attributes.onClick="return checkBTs($('<%= $this->Page->barcode->getClientId() %>').value);"
+                            TabIndex="3"  />
+                </td>
+                </td>
+                <td align="right">
+                    <com:TCheckBox ID="MakeTransitNote" AutoPostBack="true" Text="Transit Note" OnCheckedChanged="Page.activeTranferPartPanel"/>
+                </td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td colspan="2">
+                    <com:TPanel ID="fromWarehousePanel"></com:TPanel>
+                </td>
+                <td>&nbsp;</td>
+            </tr>
+        </table>
+    </com:TPanel>
+
+    <!-----------------------------------------------------------------------------------------------------------------------------------
+        The original list of parts in the TN is shown below
+        ----------------------------------------------------------------------------------------------------------------------------------->
+        <br />
+        <table width="100%">
+            <tr width="100%">
+                <td width="50%" colspan=2>
+                    <com:TLabel ID="partsInTransitNoteLabel" style="font-size:13px;background:#cccccc;" />
+                </td>
+            </tr>
+        </table><br /><br />
+
+        <com:TPanel ID="partsInTransitNotePanel" Visible="false">
+            <com:TCheckBox Attributes.OnClick="showHideControl('transitNoteDetails');" Text=" Show TransitNote Details" />
+            <div ID="transitNoteDetails" style="width:100%; display:none;">
+                <table width="100%" cellspace="0" style="border:1px solid #888888;" border="0">
+                    <tr>
+                        <td width="50%" valign="top">
+                            <table width="100%">
+                                <tr>
+                                    <td width="30%" style="vertical-align:top;font-weight:bold;">From:</td>
+                                    <td width="70%"><com:TLabel ID="TransitNoteFrom" /></td>
+                                </tr>
+                            </table>
+                        </td>
+                        <td width="50%" valign="top">
+                            <table width="100%">
+                                <tr>
+                                    <td width="30%" style="vertical-align:top;font-weight:bold;">To:</td>
+                                    <td width="70%"><com:TLabel ID="TransitNoteTo" /></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <table width="100%" cellspace="0">
+                                <tr>
+                                    <td width="15%" style="vertical-align:top;font-weight:bold;">Special Delivery Instructions:</td>
+                                    <td width="85%">
+                                        <com:TLabel ID="SpecialDeliveryInstructionsLabel" />
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="50%">
+                            <table width="100%"><tr><td width="30%" style="font-weight:bold;">Transit Note Status:</td><td width="70%"><com:TLabel ID="TransitNoteStatus" Text="open"/></td></tr></table>
+                        </td>
+                        <td width="50%">
+                            <table width="100%"><tr><td width="30%" style="font-weight:bold;">Issue Date:</td><td width="70%"><com:TLabel ID="IssueDateLabel" /></td></tr></table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="50%">
+                            <table width="100%"><tr><td width="30%" style="font-weight:bold;">Total Items:</td><td width="70%"><com:TLabel ID="TotalItemsLabel" /></td></tr></table>
+                        </td>
+                        <td width="50%">
+                            <table width="100%"><tr><td width="30%" style="font-weight:bold;">Total Packages:</td><td width="70%"><com:TLabel ID="TotalPackagesLabel" /></td></tr></table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <table width="100%" cellspace="0">
+                                <tr>
+                                    <td width="15%" style="vertical-align:top;font-weight:bold;">Comments:</td>
+                                    <td width="85%">
+                                        <com:TLabel ID="ExistingComments" />
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <table width="100%" cellspace="0">
+                                <tr>
+                                    <td width="15%" style="vertical-align:top;font-weight:bold;">Client Ref #:</td>
+                                    <td width="85%">
+                                        <com:TLabel ID="ClientJobNosLabel" />
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <table width="100%" cellspace="0">
+                                <tr>
+                                    <td width="15%" style="vertical-align:top;font-weight:bold;">Courier Ref #:</td>
+                                    <td width="85%">
+                                        <com:TLabel ID="CourierJobNoLabel" />
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <table width="100%" cellspace="0">
+                                <tr>
+                                    <td width="15%" style="vertical-align:top;font-weight:bold;">Courier:</td>
+                                    <td width="85%">
+                                        <com:TLabel ID="CourierLabel" />
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <com:Application.controls.HYLock Feature="pages_all, pages_logistics,feature_displayPending">
+                <com:TPanel ID="displayPendingPartsPanel" style="font-weight:bold;text-align:right;margin-right:5px;">
+                    <com:TCheckBox ID="hasfieldTaskLbl" Checked="true" Attributes.onClick="togglependingpanel();"/> <com:TLabel Text="Display PENDING Parts Information"
+                         ForControl="hasfieldTaskLbl" />
+                </com:TPanel>
+            </com:Application.controls.HYLock>
+    <com:TLabel id="formPanel" Text=''></com:TLabel>
+    <br/><br/>
+
+    <!-----------------------------------------------------------------------------------------------------------------------------------
+        The scanned (receiving) list of parts in the TN is shown below
+        ----------------------------------------------------------------------------------------------------------------------------------->
+            <com:TPanel ID="scanPanelFromTransitNotePanel" GroupingText="Parts received on Transit Note" DefaultButton="searchFromTransitNote">
+                <table width="100%">
+                    <tr>
+                        <td width="85%">
+                            <table width="100%">
+                                <tr>
+                                    <td width="30%" align="left">
+                                        Barcode:
+                                        <com:TTextBox ID="barcodeFromTransitNote" />
+                                    </td>
+                                    <td align="left">
+                                        <com:TButton
+                                            ID="searchFromTransitNote"
+                                            Text="Search"
+                                            CssClass="functionBtn"
+                                            onClick="Page.searchPartInstanceFromTransitNote" Attributes.onclick="Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, 'title': 'searching, please be patient...'});"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                        <td align="right">
+                            &nbsp;
+                        </td>
+                    </tr>
+                </table>
+            </com:TPanel>
+            <br />
+            <table border="0" width="100%">
+                <tr>
+                    <td style="vertical-align:top;">
+                        <com:TDataList ID="partsInTransitNote" OnSelectedIndexChanged="selectItem"
+                                 CssClass="DataList"
+                                 ItemStyle.CssClass="DataListItem"
+                                 AlternatingItemStyle.CssClass="DataListAlterItem"
+                                 EditItemStyle.CssClass="DataListEditItem"
+                                 width="100%"
+                                 AllowPaging="true" AllowCustomPaging="true" PageSize="200" EnableViewState="true">
+
+                                <prop:HeaderTemplate>
+                                    <table>
+                                        <tr>
+                                            <th width="8%"><com:TButton CssClass="functionBtn" Text="Select All" OnClick="Page.addAllPartsFromTransitNote" Attributes.onclick="Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, 'title': 'adding all parts to receiving list, please be patient...'});"/></th>
+                                            <th width="12%"><%[ PartInstance.serialNo ]%></th>
+                                            <th width="2%"></th>
+                                            <th width="2%"></th>
+                                            <th width="15%"><%[ PartInstance.manufSerialNo ]%></th>
+                                            <th width="15%"><%[ PartInstance.forFieldTask ]%></th>
+                                            <th width="10%"><%[ PartInstance.status ]%></th>
+                                            <th width="40%"><%[ PartType.partCode ]%></th>
+                                            <th ><%[ PartInstance.quantity ]%></th>
+                                        </tr>
+                                    </table>
+                                </prop:HeaderTemplate>
+
+                                <prop:ItemTemplate>
+                                    <table width="100%" height="25">
+                                        <tr>
+                                            <th width="8%">
+                                                <com:TButton Text="select"
+                                                    onCommand="Page.addPartsFromTransitNote"
+                                                    CommandParameter="<%# $this->DataItem['id']%>"
+                                                    CssClass="functionBtn"
+                                                    Attributes.onClick="if(!checkBTs('<%# $this->DataItem['serialNo']%>')) return false; Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, 'title': 'adding part to receiving list, please be patient...'});"
+                                                    />
+                                            </th>
+
+                                            <th width="12%">
+                                                <%# $this->DataItem['serialNo']%>
+                                            </th>
+                                            <th width="2%">
+                                                <com:TImageButton ID="hmBtnPI" Visible="<%% echo true; %>" ImageUrl="../../../themes/images/blue_flag_16.png"
+                                                Attributes.OnMouseOver = "document.getElementById('HotMessage<%# $this->DataItem['serialNo']%>').style.display='block';"
+                                                Attributes.OnMouseOut = "document.getElementById('HotMessage<%# $this->DataItem['serialNo']%>').style.display='none';"
+                                                Attributes.onClick="return false;" />
+                                                <%% if($this->DataItem["hotmessagePI"] != null) {echo PartTypeLogic::showHotMessageDetail($this->DataItem["hotmessagePI"],$this->DataItem['serialNo'],true);$this->hmBtnPI->Visible = true;} else {$this->hmBtnPI->Visible = false;}%>
+                                            </th>
+                                            <th width="2%">
+                                                <com:TImageButton ID="hmBtnPT" Visible="<%% echo true; %>" ImageUrl="../../../themes/images/red_flag_16.png"
+                                                Attributes.OnMouseOver = "document.getElementById('HotMessage<%# $this->DataItem['partCode']%><%# $this->DataItem['serialNo']%>').style.display='block';"
+                                                Attributes.OnMouseOut = "document.getElementById('HotMessage<%# $this->DataItem['partCode']%><%# $this->DataItem['serialNo']%>').style.display='none';"
+                                                Attributes.onClick="return false;" />
+                                                <%% if($this->DataItem["hotmessagePT"] != null) {echo PartTypeLogic::showHotMessageDetail($this->DataItem["hotmessagePT"],$this->DataItem['partCode'].$this->DataItem['serialNo']);$this->hmBtnPT->Visible = true;} else {$this->hmBtnPT->Visible = false;}%>
+                                            </th>
+
+                                            <th width="15%"><%# $this->DataItem['manfSerialNo']%></th>
+                                            <th width="15%"><%# $this->DataItem['taskNo']%></th>
+                                            <th width="10%"><%# $this->DataItem['status']%></th>
+                                            <th width="40%"><%# $this->DataItem['partCode']%> - <%# $this->DataItem['partDescription']%></th>
+                                            <th ><%# $this->DataItem['qty']%></th>
+                                        </tr>
+                                    </table>
+                                </prop:ItemTemplate>
+
+                       </com:TDataList>
+
+          <com:TPanel ID="PaginationPanel">
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="partsInTransitNote" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="PageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="partsInTransitNote" Mode="DropDownList" OnPageIndexChanged="PageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>
+
+                    </td>
+                </tr>
+            </table>
+        </com:TPanel>
+
+    <!-- ---------------------------------------------------------------------------------------------------------------------------------
+        Recieving Parts From Transit Note Panel END --------------------------------------------------------------------------------------
+        ---------------------------------------------------------------------------------------------------------------------------------- -->
+
+        <com:TActivePanel ID="searchResultPanel" Visible="false" GroupingText="Multiple Parts Found!" DefaultButton="addPartFromMultileFoundButton">
+            <table width="100%">
+                <tr>
+                    <td width="8%">Select Part:</td>
+                    <td width="75%">
+                            <com:TActiveDropDownList ID="partResultList"
+                                    AutoPostBack="false"
+                                    DataTextField="name"
+                                    DataValueField="id"
+                                    width="100%"
+                                    TabIndex="5" />
+                    </td>
+                    <td style="text-align:right">Qty:
+                            <com:TTextBox ID="partResultList_qty" Text="1" width="25px" ValidationGroup="Group1" TabIndex="6" />
+                            <com:TButton ID="addPartFromMultileFoundButton" Text="Add To List" onClick="addPartFromMultileFound" TabIndex="7"/>
+                    </td>
+                </tr>
+            </table>
+        </com:TActivePanel>
+        <hr />
+        <com:TPanel>
+            <table width="100%" border="0">
+                <tr>
+                    <td valign="top">
+                        <com:TActivePanel ID="PartsPanel">
+                            <table width="100%">
+                                <tr><td align="left"><b>Receiving Parts List: <com:TLabel ID="listLabel" /></b></td></tr>
+                            </table>
+                            <com:TDataList ID="DataList" OnSelectedIndexChanged="selectItem"
+                                             CssClass="DataList"
+                                             ItemStyle.CssClass="DataListItem"
+                                             AlternatingItemStyle.CssClass="DataListAlterItem"
+                                             EditItemStyle.CssClass="DataListEditItem"
+                                             width="100%"
+                                              AllowPaging="true" AllowCustomPaging="true" PageSize="200" EnableViewState="true">
+
+                                    <prop:HeaderTemplate>
+                                        <table width="100%" height="25">
+                                            <tr>
+                                                <th width="50%">Part Instance</th>
+                                                <th>Part Type</th>
+                                                <th width="5%" align="center"><%[PartInstance.quantity]%></th>
+                                                <th width="5%">&nbsp;</th>
+                                            </tr>
+                                        </table>
+                                    </prop:HeaderTemplate>
+
+                                    <prop:ItemTemplate>
+                                        <table width="100%" height="25" style="margin: 5px 0 5px 0;">
+                                            <tr>
+                                                <td width="50%"  valign="top">
+                                                    <b><%# $this->DataItem['barcode'] %></b>
+
+                                                    <com:TImageButton ID="hmBtnPI" Visible="<%% echo true; %>" ImageUrl="../../../themes/images/blue_flag_16.png"
+                                                    Attributes.OnMouseOver = "document.getElementById('HotMessage<%# $this->DataItem['barcode'] %>').style.display='block';"
+                                                    Attributes.OnMouseOut = "document.getElementById('HotMessage<%# $this->DataItem['barcode'] %>').style.display='none';"
+                                                    Attributes.onClick="return false;" />
+                                                    <%% if($this->DataItem["hotmessagePI"] != null) {echo PartTypeLogic::showHotMessageDetail($this->DataItem["hotmessagePI"],$this->DataItem['barcode'],true);$this->hmBtnPI->Visible = true;} else {$this->hmBtnPI->Visible = false;}%>
+
+
+                                                    <com:TImageButton ID="hmBtnPT" Visible="<%% echo true; %>" ImageUrl="../../../themes/images/red_flag_16.png"
+                                                    Attributes.OnMouseOver = "document.getElementById('HotMessage<%# $this->DataItem['partcode'] %><%# $this->DataItem['partInstance']->getId() %>').style.display='block';"
+                                                    Attributes.OnMouseOut = "document.getElementById('HotMessage<%# $this->DataItem['partcode'] %><%# $this->DataItem['partInstance']->getId() %>').style.display='none';"
+                                                    Attributes.onClick="return false;" />
+                                                    <%% if($this->DataItem["hotmessagePT"] != null) {echo PartTypeLogic::showHotMessageDetail($this->DataItem["hotmessagePT"],$this->DataItem['partcode'] .$this->DataItem['partInstance']->getId());$this->hmBtnPT->Visible = true;} else {$this->hmBtnPT->Visible = false;}%>
+
+                                                    <span style="font-size:10px;marging:0px;padding:0px;">
+                                                        <a href='#' id="showLink_<%# $this->DataItem['partInstance']->getId()%>" style='float:right;'
+                                                                OnClick="
+                                                                        Effect.BlindDown('PartInstanceDetails_<%# $this->DataItem['partInstance']->getId()%>');
+                                                                        $('hideLink_<%# $this->DataItem['partInstance']->getId()%>').appear();
+                                                                        $('showLink_<%# $this->DataItem['partInstance']->getId()%>').hide();
+                                                                        return false;">
+                                                                Show Details &nbsp;&nbsp;
+                                                            </a>
+                                                            <a href='#' id="hideLink_<%# $this->DataItem['partInstance']->getId()%>" style='display:none;float:right;'
+                                                                OnClick="
+                                                                        Effect.BlindUp('PartInstanceDetails_<%# $this->DataItem['partInstance']->getId()%>');
+                                                                        $('showLink_<%# $this->DataItem['partInstance']->getId()%>').appear();
+                                                                        $('hideLink_<%# $this->DataItem['partInstance']->getId()%>').hide();
+                                                                        return false;">
+                                                                Hide Details &nbsp;&nbsp;
+                                                            </a>
+                                                            <hr />
+                                                        <%# $this->Page->showPartInstanceDetail($this->DataItem['partInstance'],'') %>
+                                                        <b>Status:</b>
+                                                        <select id="newStatus_<%# $this->DataItem['partInstance']->getId() %>"
+                                                                name="newStatus_<%# $this->DataItem['partInstance']->getId() %>">
+                                                            <%# $this->DataItem['newStatusHtml'] %>
+                                                        </select><br />
+                                                        <b>Location:</b>
+                                                            <com:THyperLink
+                                                            Attributes.OnMouseOver = "document.getElementById('LocationComments_<%# $this->DataItem['partInstance']->getId() %>').style.display='block';"
+                                                            Attributes.OnMouseOut = "document.getElementById('LocationComments_<%# $this->DataItem['partInstance']->getId() %>').style.display='none';"
+                                                            ID="BytComments">
+                                                            <%# $this->DataItem['partInstance']->getWarehouse() %>
+                                                        </com:THyperLink>
+                                                        <%# $this->Page->showCommentsDiv($this->DataItem['partInstance']) %><br />
+
+                                                    </span>
+                                                </td>
+                                                <td valign="top">
+                                                    <b><%# $this->DataItem['partcode'] %></b>
+                                                    <span style="font-size:10px;marging:0px;padding:0px;">
+                                                        <a href='#' id="showPartTypeLink_<%# $this->DataItem['partInstance']->getId()%>" style='float:right;'
+                                                                OnClick="
+                                                                        Effect.BlindDown('PartTypeDetails_<%# $this->DataItem['partInstance']->getId()%>');
+                                                                        $('hidePartTypeLink_<%# $this->DataItem['partInstance']->getId()%>').appear();
+                                                                        $('showPartTypeLink_<%# $this->DataItem['partInstance']->getId()%>').hide();
+                                                                        return false;">
+                                                                Show Details &nbsp;&nbsp;
+                                                            </a>
+                                                            <a href='#' id="hidePartTypeLink_<%# $this->DataItem['partInstance']->getId()%>" style='display:none;float:right;'
+                                                                OnClick="
+                                                                        Effect.BlindUp('PartTypeDetails_<%# $this->DataItem['partInstance']->getId()%>');
+                                                                        $('showPartTypeLink_<%# $this->DataItem['partInstance']->getId()%>').appear();
+                                                                        $('hidePartTypeLink_<%# $this->DataItem['partInstance']->getId()%>').hide();
+                                                                        return false;">
+                                                                Hide Details &nbsp;&nbsp;
+                                                            </a>
+                                                            <hr />
+                                                            <b>Name: </b><%# $this->DataItem['partInstance']->getPartType()->getName() %><br />
+                                                            <%# $this->Page->getParTypeDetails($this->DataItem['partInstance']->getPartType(),$this->DataItem['partInstance']->getId()) %>
+                                                    </span>
+                                                </td>
+                                                <td width="5%" align="center">
+                                                    <input id="actualQty_<%# $this->DataItem['partInstance']->getId()%>" actualQty ="<%# $this->DataItem['qty'] %>" Value="<%# $this->DataItem['qty'] %>" onkeyup="qtyReceived(this,<%# $this->DataItem['partInstance']->getId()%>);"  <%% if($this->DataItem['partInstance']->getPartType()->getSerialised() == 1){echo "Disabled";}else{}  %> />
+
+                                               </td>
+                                                <td width="5%"><com:TImageButton ImageUrl="../../../themes/images/delete.png" Text="Delete" OnCommand="Page.removeFromMovingList" CommandParameter="<%# $this->DataItem['partInstance']->getId() %>" ToolTip="Delete Record" /></td>
+                                            </tr>
+                                        </table>
+                                    </prop:ItemTemplate>
+
+                                    <prop:FooterTemplate>
+                                        <table width="100%" height="25">
+                                            <tr>
+                                                <th colspan="3">
+                                                    <div style="font-weight: bold; text-align: center;">
+                                                        Total <%# $this->Page->itemCount %> Parts
+                                                    </div>
+                                                </th>
+                                            </tr>
+                                        </table>
+                                    </prop:FooterTemplate>
+                                </com:TDataList>
+
+		         <com:TPanel ID="PaginationPanelParts">
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="3" align="left">
+								Select Page :
+								<com:TPager ID="PagerList1" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="ReceivedPartPageChanged" />
+							</th>
+							<th colspan="3" align="right">
+								Go To Page :
+								<com:TPager ID="PagerGoTo1" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="ReceivedPartPageChanged" />
+							</th>
+						</tr>
+					</table>
+				</com:TPanel>
+
+
+                            </com:TActivePanel>
+
+                            <!-- transfer part confirmation panel - start -->
+                            <com:TActivePanel ID="TransferPartPanel" Visible="false">
+                                <table width="100%">
+                                    <tr>
+                                        <td width="10%">
+                                            <com:TActiveLabel ID="NotesLabel" Text="Comments:" />
+                                        </td>
+                                        <td width="90%">
+                                            <com:TTextBox ID="Comments" Rows="2" Width="90%" TextMode="MultiLine" Text="" TabIndex="6"/>
+
+                                            <com:TActiveButton ID="ReceivePartsButton"
+                                                        Text="Receive Parts"
+                                                        onClick="Page.checkParts"
+                                                        ValidationGroup="Group1"
+                                                        EnableClientScript="false"
+                                                        TabIndex="7"
+                                                        Visible="false"
+                                                        Attributes.OnClick="return checkDestinationWarehouse('<%= $this->whTree->whIdPath->getClientId()%>','<%= $this->targetWarehouseId->getClientId()%>','<%= $this->partsInTransitNote->getClientId()%>');"
+                                                        />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </com:TActivePanel>
+
+    <!--  START - This is all so the extended class does not cause anything to break, not a very good solution... -->
+                            <com:TActivePanel ID="TransitNotePanel" Visible="false">
+                                <table width="100%">
+                                    <tr>
+                                        <td width="5%">
+                                            <com:TActiveLabel ID="FacilityLabel" Text="From:" />
+                                        </td>
+                                        <td width="40%">
+                                            <com:TLabel ID="TransitNoteFromList"  width="85%" />
+                                        </td>
+                                        <td width="5%">
+                                            <com:TActiveLabel Text="To:" />
+                                        </td>
+                                        <td width="10%">
+                                            <input type="radio" name="group1" Checked="true" onClick="Element.hide('moveToSitePanel');Element.show('makeTransitNotePanel');">Facilities<br>
+                                            <input type="radio" name="group1" onClick="Element.hide('makeTransitNotePanel');Element.show('moveToSitePanel');">Sites
+                                        </td>
+                                        <td>
+                                            <div ID="makeTransitNotePanel">
+                                                <com:TDropDownList ID="TransitNoteToList"
+                                                                    AutoPostBack="false"
+                                                                    PromptText="Please Select..."
+                                                                    DataTextField="name"
+                                                                    DataValueField="id"
+                                                                    width="85%"
+                                                                    />
+                                                <com:TButton ID="MakeTransitNoteButton" Text="Make Transit Note" onClick="Page.movePartsOntoTransitNote" width="120px" />
+                                            </div>
+                                            <div ID="moveToSitePanel" style="display:none;">
+                                                <com:TAutoComplete  ID="SiteList"
+                                                        AutoPostBack="true"
+                                                        OnSuggest="Page.suggestSiteSearch"
+                                                        OnSuggestionSelected="Page.handleSelectedSite"
+                                                        Suggestions.DataKeyField="id"
+                                                        ResultPanel.ScrollBars="Auto"
+                                                        ResultPanel.CssClass="hydraautocomplete"
+                                                        width="90%"
+                                                        >
+
+                                                    <prop:Suggestions.ItemTemplate>
+                                                        <li><%# $this->Data['name'] %></li>
+                                                    </prop:Suggestions.ItemTemplate>
+
+                                                    <prop:ClientSide OnLoading="document.getElementById('siteloading').style.display = '';" OnComplete="document.getElementById('siteloading').style.display = 'none';" />
+                                                </com:TAutoComplete>
+                                                <span id="siteloading" style="display: none;">
+                                                    <com:TImage ImageUrl="../../../themes/images/ajax-loader.gif" />
+                                                </span>
+                                                <com:TActiveHiddenField ID="moveToSiteId" />
+                                                <com:TButton ID="movePartsToSiteButton" Text="Move To Site" onClick="Page.movePartsToSite" width="120px" />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td width="5%"></td>
+                                        <td width="40%"></td>
+                                        <td width="5%"></td>
+                                        <td><font color="red"><com:TLabel ID="TransitNoteToListValidator" Text="Destination Required." visible="false"/></font></td>
+                                    </tr>
+                                </table>
+                            </com:TActivePanel>
+                        </td>
+    <!--  END - This is all so the extended class does not cause anything to break, not a very good solution... -->
+                        <td width="240px" valign="top">
+                            <com:TActivePanel ID="LocationWrapper">
+                                <table width="100%">
+                                    <tr>
+                                       <td width="280px">
+                                           <b>To Location:</b>
+                                           <br />
+                                           <com:Application.controls.HYWHTree.HYWHTree ID="whTree" RootMode="DefaultWarehouseNonByteOnly" />
+                                           <com:THiddenField ID="targetWarehouseId" VALUE=""/>
+                                       </td>
+                                    </tr>
+                                </table>
+                            </com:TActivePanel>
+                        </td>
+                    </tr>
+                </table>
+            </com:TPanel>
+        </com:TActivePanel>
+</com:TContent>

@@ -1,0 +1,48 @@
+<%@ MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+<table width="100%">
+<tr>	
+	<td align="right"><com:TButton Text="Set Preferences" onCommand="setFacilityRequestPreferences" CausesValidation="false" /></td>
+</tr>
+<tr>
+	<td width="100%">
+		<com:TPanel ID="AreaPreferencePannel" GroupingText="Select Areas">
+                  <table width="100%">
+                        <tr>
+                              <td width="98%" align="left">
+                                    <com:TCheckBoxList ID="AreaCheckBoxList"
+				                                        AutoPostBack="false"
+				                                        DataTextField="name"
+				                                        DataValueField="id" 
+				                                        RepeatLayout="Table"
+    													RepeatDirection="Horizontal"
+    													RepeatColumns="6" 
+				                                        />
+                              </td>
+                   		</tr>
+                  </table>
+         </com:TPanel>
+	</td>
+</tr>
+<tr>
+	<td width="100%">
+		 <com:TPanel ID="WorkTypePreferencePannel" GroupingText="Select Contracts">
+                  <table width="100%">
+                        <tr>
+                              <td width="98%" align="left">
+                                    <com:TCheckBoxList ID="ContractCheckBoxList"
+				                                        AutoPostBack="false"
+				                                        DataTextField="name"
+				                                        DataValueField="id" 
+				                                        RepeatLayout="Table"
+    													RepeatDirection="Horizontal"
+    													RepeatColumns="4" 
+				                                       />
+                              </td>
+                   		</tr>
+                  </table>
+         </com:TPanel>
+	</td>
+</tr>
+</table>	
+</com:TContent>

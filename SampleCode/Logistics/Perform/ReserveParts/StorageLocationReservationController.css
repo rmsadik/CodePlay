@@ -1,0 +1,82 @@
+.updatedContent{color: red;}
+
+table#resultList {table-layout: fixed;}
+table#resultList th:hover, div#floatHead th:hover{cursor: pointer;}
+tr.resultRow td{padding:5px 0 5px 2px}
+
+tr.updatedRow td{background: lightblue;}
+tr.resultRow [resultrow=partcode],
+tr.resultRow [resultrow=fieldtaskid]{font-weight:bold}
+
+tr.resultRow [resultrow=partname],
+tr.resultRow [resultrow=worktype],
+tr.resultRow [resultrow=zoneset],
+tr.resultRow [resultrow=site]{font-size:10px; font-style:italic; word-wrap: break-word;}
+
+tr.resultRow [resultrow=requestedQty],
+tr.resultRow [resultrow=taskstatus]{color:green;font-weight:bold}
+
+tr.resultRow [resultrow=btns] input[type=image]{height:16px; width:16px}
+
+input.getMoreBtn{border:0;width:99%;padding:5px 0 5px 0;margin:8px 0 8px 0;background:#eee}
+
+table.ResultDataList{width:99%}
+table.ResultDataList thead tr,table.ResultDataList tfoot tr{background:black;color:white;height:32px}
+
+table.ResultDataList tr td{padding: 4px 0 4px 0;}
+table.ResultDataList tr.ResultDataListAlterItem{background:white}
+
+span#btnPane{float:right;}
+
+option.fieldtaskoptons{padding: 0 0 0 7px;}
+
+.form-item {
+    -moz-border-bottom-colors: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    background-attachment: scroll;
+    background-clip: border-box;
+    background-color: #F9F9F9;
+    background-image: none;
+    background-origin: padding-box;
+    background-position: 0 0;
+    background-repeat: repeat;
+    background-size: auto auto;
+    border-bottom-color: #D4D4D4;
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    border-image-outset: 0 0 0 0;
+    border-image-repeat: stretch stretch;
+    border-image-slice: 100% 100% 100% 100%;
+    border-image-source: none;
+    border-image-width: 1 1 1 1;
+    border-left-color-ltr-source: physical;
+    border-left-color-rtl-source: physical;
+    border-left-color-value: #D4D4D4;
+    border-left-style-ltr-source: physical;
+    border-left-style-rtl-source: physical;
+    border-left-style-value: solid;
+    border-left-width-ltr-source: physical;
+    border-left-width-rtl-source: physical;
+    border-left-width-value: 1px;
+    border-right-color-ltr-source: physical;
+    border-right-color-rtl-source: physical;
+    border-right-color-value: #D4D4D4;
+    border-right-style-ltr-source: physical;
+    border-right-style-rtl-source: physical;
+    border-right-style-value: solid;
+    border-right-width-ltr-source: physical;
+    border-right-width-rtl-source: physical;
+    border-right-width-value: 1px;
+    border-top-color: #D4D4D4;
+    border-top-style: solid;
+    border-top-width: 1px;
+    box-shadow: -1px 1px #F2F2F2;
+ /*   color: #888888; */
+    padding-bottom: 9px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 7px;
+}
+

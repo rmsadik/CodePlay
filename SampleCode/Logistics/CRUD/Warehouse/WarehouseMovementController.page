@@ -1,0 +1,38 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<com:THiddenField ID="previousParentId" />
+	<table width="100%">
+		<tr>
+			<td align="right"><com:TImageButton ImageUrl="/themes/images/back.gif" OnClick="Page.redirectToStorageLocation" ToolTip="Back" /></td>
+		</tr>
+	</table>	
+	<com:TPanel ID="MoveLocationPanel" CssClass="AddPanel" visible="true">
+			<table width="100%">
+				<tr>
+					<td width="1%"></td>
+					<td width="99%" align="left"><b><com:TLabel Text="Move Location" /></b></td>
+				</tr>
+			</table>
+			<hr />
+			<table width="100%"> 	
+				<tr valign="top">
+					<td width="1%"></td>
+					<td align="left">
+						<b>Source Location :</b>
+						<br />
+						<com:TLabel ID="SourceLocation" />
+					</td>
+					<td width="45%" align="left">
+						<b>Target Location : </b>
+						<br />
+						<com:Application.controls.HYWHTree ID="warehouse" hidden="warehouseid" />
+						<com:THiddenField ID="warehouseid" VALUE="" />
+					</td>
+					<td width="10%" style="text-align:right; vertical-align:top">
+						<com:TButton ID="SaveButton" Text="Save" Onclick="moveLocation" ValidationGroup="Group1" />
+					</td>
+				</tr>
+			</table>
+	</com:TPanel>
+</com:TContent>
+	

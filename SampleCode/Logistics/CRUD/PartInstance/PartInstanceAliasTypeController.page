@@ -1,0 +1,234 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<div>
+		<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel">
+			<table width="100%">
+				<tr>
+					<td width="75%">
+						<com:THiddenField ID="SearchString" />
+						<com:THiddenField ID="focusObject" />
+						<com:THiddenField ID="focusObjectArgument" />												
+					</td>
+				</tr>
+			</table>
+		</com:TPanel>
+		<script>
+		  function checkActive(ob)
+		  {
+			  if(!ob.checked)
+			  {
+				   alert('Saving this will deactivate this alias type');  
+		      }
+		  }
+		</script>
+<!---   ---------------- Adding Panel ---------------- --->	
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" >
+			<table width="100%">
+				<tr valign="top">
+					<td >
+						<table width="100%">
+							<tr>
+								<td width="17%">
+									<%[PartInstanceAliasType.name]%> :
+								</td>
+								<td>
+									<com:TTextBox ID="newPartInstanceAliasTypeName" width="60%" AutoPostBack="false" ValidationGroup="Group1" />
+									<com:TRequiredFieldValidator ControlToValidate="newPartInstanceAliasTypeName" ErrorMessage="Part Name Required" ValidationGroup="Group1" EnableClientScript="true" />
+								</td>
+							</tr>
+							<tr>
+								<td width = "17%"> Access Mode : </td>
+								<td>
+									<com:TDropDownList id = "accessOptionList" DataValueField = "0" DataTextField = "1" Width="90%" />
+								</td>
+							</tr>							
+							<tr>
+								<td width = "17%"> 
+									Allow Multiple :
+								</td>
+								<td>
+									<com:TDropDownList id = "allowMultipleList" DataValueField="0" DataTextField="1" Width="20%">
+										<com:TListItem value = "1" Text = "Yes" />
+										<com:TListItem value = "0" Text = "No" />
+									</com:TDropDownList>
+								</td>
+							</tr>
+							<tr>
+								<td width = "17%"> 
+									Value Type:
+								</td>
+								<td align="left">
+									<com:TDropDownList id = "valueTypeList" DataValueField="string" DataTextField="string" Width="20%">
+										<com:TListItem Text="String" Value="string" />
+								    	<com:TListItem Text="Boolean" Value="boolean" />
+									</com:TDropDownList>
+								</td>
+							</tr>
+						</table>
+					</td>
+					<td >
+						<table>
+							<tr>
+								<td>
+									<com:TButton ID="EditButton" Text="Save" Onclick="save" ValidationGroup="Group1" />
+								</td>						
+								<td >
+	    							<com:TButton ID="CancelEditButton" Text="Cancel" Onclick="cancel" />
+								</td>
+							</tr>
+						</table>
+					</td>					
+				</tr>
+			</table>	
+		</com:TPanel>
+<!---   ---------------- Editing Panel Ends Here---------------- --->					
+		<com:TPanel>
+			<table width="100%" class="DataListTitle">
+				<tr>
+					<th>
+						<td align="left">
+							<com:TLabel Text="<%[ PartInstanceAliasType.list1 ]%>" /> 
+						</td>
+					</th>
+					<td width="25%" align="right">
+						<com:TButton ID="AddButton" Text="<%[PartInstanceAliasType.addButton1]%>" OnClick="add" width="80%"/>	
+						<com:TImageButton ImageUrl="../../../themes/images/back.gif" OnClick="Page.redirectToPartInstance" ToolTip="Back" />					
+					</td>
+				</tr>
+			</table>
+			
+			<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem" 
+					     OnEditCommand="edit"
+					     OnDeleteCommand="deletePartInstanceAliasType"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList" 
+					     ItemStyle.CssClass="DataListItem" 
+					     AlternatingItemStyle.CssClass="DataListAlterItem" 
+					     EditItemStyle.CssClass="DataListEditItem" 
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="true" PageSize="30" EnableViewState="true">
+				
+			    <prop:HeaderTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<th width="30%"><%[ PartInstanceAliasType.name ]%></th>
+							<th width="40%"> Access Mode (Editable By) </th>
+							<th width="15%"> Allow Multiple? </th>
+							<th width="10%"> Value Type </th>
+							<th>&nbsp;</th>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" height="25">
+						<tr <%#  !$this->DataItem->getActive() ? "style='text-decoration:line-through'": "" %> >
+							<td width="30%"><%# $this->DataItem->getName() %></td>
+							<td width="40%"><%# $this->DataItem->getLu_entityAccessOption()->getName() %></td>
+							<td width="15%"><%# $this->Page->showAllowMultipleInDataList($this->DataItem->getAllowMultiple()) %></td>
+							<td width="10%"><%# $this->Page->showValueTypeInDatalist($this->DataItem->getValueType()) %></td>
+							<td>
+								<com:TImageButton ImageUrl="../../../themes/images/delete.png" Text="Delete" CommandName="delete" Visible="false" ToolTip="Delete Record" Attributes.OnClick="if(!confirm('WARNING!  Are you sure you want to delete this alias type?')) return false;"/>
+								<com:TImageButton ImageUrl="../../../themes/images/edit.png" Text="Edit" CommandName="edit" 
+												ToolTip="Edit Record" />
+							</td>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+				
+				<prop:EditItemTemplate>
+					<table width="100%">
+						<tr valign="top">
+							<td >
+								<table width="100%">
+									<tr>
+										<td width="17%"><%[PartInstanceAliasType.name]%> : </td>
+										<td>
+											<com:TTextBox ID="newPartInstanceAliasTypeName" width="60%" Text="<%# $this->DataItem->getName() %>" AutoPostBack="false" ValidationGroup="Group1" />
+											<com:TRequiredFieldValidator ControlToValidate="newPartInstanceAliasTypeName" ErrorMessage="Part Type Alias Type Name Required" ValidationGroup="Group1" EnableClientScript="true" />
+										</td>
+									</tr>
+									<tr>
+										<td width="17%"> Access Option : </td>
+										<td>
+											<com:TDropDownList id = "accessOptionList" DataValueField = "0" DataTextField = "1" width = "90%" />
+										</td>
+									</tr>							
+									<tr>
+										<td width="17%"> Allow Multiple : </td>
+										<td>
+											<com:TDropDownList id = "allowMultipleList" DataValueField = "0" DataTextField = "1" width = "20%">
+												<com:TListItem value = "1" text = "Yes" />
+												<com:TListItem value = "0" text = "No" />
+											</com:TDropDownList>
+										</td>
+									</tr>
+									<tr>
+										<td width = "17%"> 
+											Value Type:
+										</td>
+										<td align="left">
+											<com:TDropDownList id = "valueTypeList" DataValueField="string" DataTextField="string" Width="20%">
+												<com:TListItem Text="String" Value="string" />
+										    	<com:TListItem Text="Boolean" Value="boolean" />
+											</com:TDropDownList>
+										</td>
+									</tr>
+									
+									<tr>
+                                        <td width = "17%"> 
+                                           Active:
+                                        </td>
+                                        <td align="left">
+                                            <com:TCheckBox ID="active" Attributes.onclick="checkActive(this)"/>
+                                            (System admin only)
+                                        </td>
+                                    </tr>
+								</table>
+							</td>
+							<td >
+								<table>
+									<tr>
+										<td>
+											<com:TButton ID="EditButton" Text="Save" CommandName="update" ValidationGroup="Group1" />
+										</td>						
+										<td >
+			    							<com:TButton ID="CancelEditButton" Text="Cancel" CommandName="cancel" />
+										</td>
+									</tr>
+								</table>
+							</td>					
+						</tr>
+					</table>									
+				</prop:EditItemTemplate>
+								
+			    <prop:FooterTemplate>
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="3">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Parent->VirtualItemCount %> Part Alias Types
+								</div>
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>				
+			</com:TDataList>
+		</com:TPanel>		
+
+		<com:TPanel ID="PaginationPanel">		
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>			
+	</div>
+</com:TContent>

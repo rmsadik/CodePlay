@@ -1,0 +1,137 @@
+<%@MasterClass="Application.layouts.PlainEditLayout"%>
+<com:TContent ID="MainContent">
+
+    <script type="text/javascript">
+    function togglePartsWithin(el, parentId)
+    {
+        if (el.innerHTML.indexOf('View') === 0)
+        {
+            $('childParts_' + parentId).show();
+            el.innerHTML = el.innerHTML.replace('View', 'Hide');
+        }
+        else
+        {
+            $('childParts_' + parentId).hide();
+            el.innerHTML = el.innerHTML.replace('Hide', 'View');
+        }
+    }
+    </script>
+
+	<br />
+	<br />
+	<div>
+		<com:THiddenField ID="SearchString" />
+		<com:THiddenField ID="focusObject" />
+		<com:THiddenField ID="focusObjectArgument" />
+
+		<b><com:TLabel ID="UserLabel" Style="color:#ffffff"/></b>
+
+		<com:TPanel>
+			<table width="100%" class="DataListTitle">
+				<tr>
+					<th>
+						<com:TLabel ID="listLabel" Text="" />
+						<com:TLabel ID="partInstanceLabel" Text="" />
+					</th>
+				</tr>
+			</table>
+
+			<br />
+			<com:THiddenField ID="totalParts" />
+
+			<com:TDataList ID="DataList" DataKeyField="id"
+			     CssClass="DataList"
+			     ItemStyle.CssClass="DataListItem"
+			     AlternatingItemStyle.CssClass="DataListAlterItem"
+			     EditItemStyle.CssClass="DataListEditItem"
+				 width="100%"
+				 EnableViewState="true">
+
+				<prop:HeaderTemplate>
+					<table width="100%">
+						<tr>
+							<td width="15%">Serial Number</td>
+							<td width="15%">Part Code</td>
+							<td width="25%">Part Description</td>
+							<td width="5%">Qty</td>
+							<td width="*">Location</td>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%">
+						<tr>
+							<td width="15%"><%# $this->DataItem['barcode'] %></td>
+							<td width="15%"><%# $this->DataItem['partcode'] %></td>
+							<td width="25%"><%# $this->DataItem['partDescription'] %></td>
+							<td width="5%"><%# $this->DataItem['qty'] %></td>
+							<td width="*"><%# $this->DataItem['warehouse'] %></td>
+							<%# $this->Page->getChildPartsHtml($this->DataItem['id']) %>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+				 <prop:FooterTemplate>
+		    		<table width="100%">
+		    			<tr><td width="100%" style="text-align:center"><%# $this->Page->totalParts->Value %> entries.</td></tr>
+		    		</table>
+				</prop:FooterTemplate>
+			</com:TDataList>
+			<br/>
+			<br/>
+
+			<table width="100%" class="DataListTitle">
+				<tr>
+					<th>
+						<com:TLabel ID="bomLabel" Visible="false" />
+					</th>
+				</tr>
+			</table>
+			<br/>
+			<com:TDataList ID="BomDataList" DataKeyField="id"
+			     CssClass="DataList"
+			     ItemStyle.CssClass="DataListItem"
+			     AlternatingItemStyle.CssClass="DataListAlterItem"
+			     EditItemStyle.CssClass="DataListEditItem"
+				 width="100%"
+				 Visible = "false"
+				 EnableViewState="true">
+
+				<prop:HeaderTemplate>
+					<table width='100%' height='25'>
+						<tr>
+							<th width="5%" style="text-align:right; padding-right: 20px">Qty</th>
+							<th width="50%">Partcode: Part Description / Part Group</th>
+							<th width="40%">Comments</th>
+							<th width="5%">&nbsp;</th>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" height="25" border=0>
+						<tr>
+							<td width="5%" style="text-align:right; padding-right: 20px"><%# $this->DataItem['qty'] %></td>
+							<td width="50%"><%# $this->DataItem['requiredPartName'] %></td>
+							<td width="40%" style="text-align:left"><%# $this->DataItem['comments'] %></td>
+							<td width="5%" style="text-align:right">
+								<com:TImage ID="htbtn" Visible="true" ImageUrl="../../../themes/images/online.gif" ToolTip="Part in Kit"/>
+								<%%if($this->DataItem['check'] == 1) {$this->htbtn->Visible = true;} else{$this->htbtn->Visible = false; }   %>
+								<com:TImage ID="htbtn1" Visible="true" ImageUrl="../../../themes/images/red.PNG" ToolTip="Part not in Kit"/>
+								<%%if($this->DataItem['check'] == 0) {$this->htbtn1->Visible = true;} else{$this->htbtn1->Visible = false; }   %>
+								<com:TImage ID="htbtn2" Visible="true" ImageUrl="../../../themes/images/orange.JPG" ToolTip="Not all quantity of this part in Kit" />
+								<%%if($this->DataItem['check'] == 2) {$this->htbtn2->Visible = true;} else{$this->htbtn2->Visible = false; }   %>
+							</td>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+				 <prop:FooterTemplate>
+		    		<table width="100%">
+		    			<tr><td width="100%" style="text-align:center"><%# $this->Page->bomPartsCount %> entries.</td></tr>
+		    		</table>
+				</prop:FooterTemplate>
+			</com:TDataList>
+
+		</com:TPanel>
+	</div>
+</com:TContent>

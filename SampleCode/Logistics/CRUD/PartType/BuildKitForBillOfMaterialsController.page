@@ -1,0 +1,775 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+	<script type="text/javascript">
+
+		function confirmInstall(showContractsBtnId)
+		{
+			if (confirm('Kit incomplete - Parts Missing from BOM . Do you wish to install selected Parts?'))
+				return true;
+
+			return false;
+		}
+
+
+		function showLocationTree(show)
+		{
+			var toLocTreePanel = $('<%= $this->ToLocationPanel->getClientId()%>');
+			var locationLabel = $('<%= $this->partLocationLabel->getClientId()%>');
+			var warehouseId = $('<%= $this->warehouseid->getClientId()%>');
+
+			if(show == 1)
+			{
+				toLocTreePanel.style.display = 'block';
+				locationLabel.style.display = 'block';
+			}
+			else
+			{
+				toLocTreePanel.style.display = 'none';
+				locationLabel.style.display = 'none';
+				warehouseId.value = '';
+			}
+		}
+
+		function installParts()
+		{
+			mb.showLoading('building kit');
+			$('<%= $this->ajaxProcessor->startAjaxProcessor->getClientId(); %>').click();
+		}
+
+		function finishProcessingBuildKits(message, error)
+		{
+			$('<%= $this->BuildKitsPartsError->getClientId(); %>').value = error;
+			$('<%= $this->BuildKitsPartsMessage->getClientId(); %>').value = message;
+			$('<%= $this->finishProcessingBuildKits->getClientId(); %>').click();
+		}
+		function searchExistingKit()
+		{
+			var serialNo = $('<%= $this->partBCS->getClientId(); %>').value;
+			if(serialNo.length >10)
+			{
+				$('<%= $this->LookupButton1->getClientId(); %>').click();
+				return false;
+			}
+		}
+		function togglePartsWithin(el, parentId)
+		{
+			if (el.innerHTML.indexOf('View') === 0)
+			{
+				$('childParts_' + parentId).show();
+				el.innerHTML = el.innerHTML.replace('View', 'Hide');
+			}
+			else
+			{
+				$('childParts_' + parentId).hide();
+				el.innerHTML = el.innerHTML.replace('Hide', 'View');
+			}
+		}
+		// writes a content to a new open widow
+	    function writeConsole (title, content)
+		{
+	        var tmp = {};
+	        tmp.newWind = window.open('', '', 'width=750, menubar=0, toolbar=0, status=0, scrollbars=1, resizable=1');
+            if (tmp.newWind) {
+		        tmp.newWind.document.writeln('<html><head><title>' + title + '</title></head>' + '<body>' + content + '</body></html>');
+		        tmp.newWind.document.close();
+		        if(tmp.newWind.focus) {
+		        	tmp.newWind.focus();
+		        	if(tmp.newWind.print)
+			        	tmp.newWind.print();
+		        }
+            }
+	    }
+		function getPickListRow(isTitle, partType, warehouse, qtyAvail, qtyNeed)
+		{
+			var tmp = {};
+			tmp.isTitle = (isTitle || false);
+			tmp.tag = ((tmp.isTitle  === true) ? 'th' : 'td');
+			tmp.newRow = new Element('tr')
+			  .insert({'bottom': new Element(tmp.tag).setStyle('width: 30%').update(tmp.isTitle  === true ? partType : tmp.partTypeCell = new Element('div').update(partType.partCode) )})
+			  .insert({'bottom': new Element(tmp.tag).setStyle('width: 10%').update(tmp.isTitle  === true ? qtyNeed : new Element('div').update(qtyNeed) )})
+			  .insert({'bottom': new Element(tmp.tag).update(tmp.isTitle  === true ? warehouse : new Element('div').update(warehouse ? warehouse.breadCrumbs : '') )})
+			  .insert({'bottom': new Element(tmp.tag).setStyle('width: 10%').update(tmp.isTitle  === true ? qtyAvail : new Element('div').update(qtyAvail) )});
+			if(tmp.partTypeCell && partType.id) {
+				if(partType.BP && partType.isSerialised === false)
+				    tmp.partTypeCell.insert({'bottom': new Element('div').update(new Element('img', {'src': '/ajax/?method=renderBarcode&text=' + partType.BP}).setStyle('margin: 15px 15px 0 15px;') ) });
+				if(partType.name)
+				    tmp.partTypeCell.insert({'bottom': new Element('div').update(new Element('i').setStyle('font-size: 9px').update(partType.name) ) });
+			}
+			return tmp.newRow;
+		}
+		function openPrintPickListPage(data)
+		{
+			var tmp = {};
+			tmp.newDiv = new Element('div')
+			  .insert({'bottom': new Element('div').insert({'bottom': new Element('img', {'src': '/themes/images/print.png', 'onclick': 'window.print();', 'title': 'Print'}).setStyle('float:right;margin: 0 0 0 10px;cursor: pointer;') }) })
+			  .insert({'bottom': new Element('div').insert({'bottom': new Element('b').update('The list of selected parts you are picking under: ' + data.warehouse.breadCrumbs)}) })
+			  .insert({'bottom': new Element('div').insert({'bottom': new Element('font').setStyle('font-style:italic; font-size: 9px;').update('Printed by ' + data.creator.name + '@' + data.created.value + '(' + data.created.timeZone + ')')}) })
+			  .insert({'bottom': new Element('div').setStyle('margin-top: 20px;').insert({'bottom': new Element('b').update('BOM for Kit: ' + data.BOMPartType.name + ' (' + data.BOMPartType.partCode + ')')}) })
+			  .insert({'bottom': new Element('table', {'cellspacing': 0, 'border': 1}).setStyle('width:100%;').insert({'bottom': new Element('thead').update(getPickListRow(true, 'Part Type', 'Location', 'Avail. Qty', 'Need Qty')) }).insert({'bottom': tmp.tbody = new Element('tbody')}) })
+			  ;
+			if(data.items && data.items.size() >0) {
+				data.items.each(function(item){ tmp.tbody.insert({'bottom': getPickListRow(false, item.partType, item.warehouse, item.qty.avail, item.qty.need)});	});
+			}
+			writeConsole('Pick List for BOM:' + data.BOMPartType.partCode + ': ' + data.BOMPartType.name, tmp.newDiv.wrap(new Element('div')).innerHTML);
+		}
+	</script>
+
+	<com:THiddenField ID="fromWarehouseid" Value="" />
+
+	<com:TButton ID="finishProcessingBuildKits" Text=""  OnClick="Page.finishProcessingBuildKits" Style="display:none;" />
+
+	<com:Application.pages.Bulkload.CustomisedControls.AjaxProcessor.AjaxProcessor ID="ajaxProcessor"
+	ProcessingFunc_page="processBuildKits" AfterLoadCompleteFunc_page="finishProcessing" MaxCycles="0"/>
+
+
+	<com:TActiveHiddenField ID="BuildKitsPartsMessage" />
+	<com:TActiveHiddenField ID="BuildKitsPartsError" />
+	<com:TActiveHiddenField ID="BuildKitsPartInstanceErrList" />
+	<com:TActiveHiddenField ID="BuildKitsErrList" />
+
+
+	<com:TActiveLabel ID="jsLbl" Style="display:none;" />
+
+
+	<com:TActiveHiddenField ID="toBeInstalledPartInstances" />
+	<com:THiddenField ID="toBeInstalledPartInstances_parent" />
+	<com:THiddenField ID="toBeInstalledPartInstances_parentId" />
+	<com:THiddenField ID="toBeInstalledPartInstances_parentPartTypeId" />
+	<com:THiddenField ID="parentBcs" />
+	<com:THiddenField ID="withinParts" />
+	<com:THiddenField ID="partsInKit" />
+	<com:THiddenField ID="kitCheck" />
+	<com:THiddenField ID="kitId" />
+	<com:THiddenField ID="partGroupsInBom" />
+	<com:THiddenField ID="bomPartsQuantity" />
+	<com:THiddenField ID="kitPartsQuantity" />
+	<com:THiddenField ID="partGroupQuantity" />
+	<com:THiddenField ID="installPartList" />
+	<com:THiddenField ID="totalErrorsWhileInstalling" />
+	<com:THiddenField ID="errorsWhileInstalling" />
+
+	<br/>
+	<div>
+		<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel">
+			<table width="100%">
+				<tr>
+					<td>
+						<com:TLabel ID="pageLabel" Attributes.style='font-weight:bold' Text='Build Kits' />
+						<com:THiddenField ID="SearchString" />
+						<com:THiddenField ID="focusObject" />
+						<com:THiddenField ID="focusObjectArgument" />
+
+					</td>
+				</tr>
+				<tr>
+					<td>&nbsp;</td>
+				</tr>
+				<tr>
+					<td width="5%">
+						Kit Selection:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+						<com:TRadioButton ID="newKit" GroupName="kitSelection" Text=" New Kit"
+								AutoPostBack="true" onCheckedChanged="kitSelection"
+								/>
+						&nbsp; &nbsp; &nbsp; &nbsp;
+						&nbsp;
+						<com:TRadioButton ID="oldKit" GroupName="kitSelection" Text=" Existing Kit"
+								AutoPostBack="true" onCheckedChanged="kitSelection"
+						 />
+					</td>
+				</tr>
+			</table>
+		</com:TPanel>
+		<br/>
+		<com:TPanel ID="newPartPanel">
+			<table>
+				<tr>
+					<td width="8%">Part Type:
+					</td>
+					<td width="10%">
+						<com:Application.controls.EntityAutoComplete.HYPartTypeComplete ID="selectedPartType"
+						type="PartType" ResultPanel.CssClass="hydraautocomplete" searchOnlyForKits="true" Width="300px"
+						/>
+					</td>
+				</tr>
+				<tr>
+					<td>&nbsp;</td>
+					<td width="40%">
+						<com:TButton ID="LookupButton" Text="Lookup" OnClick="searchPartType" />
+					</td>
+				</tr>
+			</table>
+		</com:TPanel>
+		<com:TPanel ID="existingPartPanel">
+			<table width="100%">
+				<tr>
+					<td width="8%">Serial No.:
+					</td>
+					<td width="15%">
+						<com:TTextBox ID="partBCS" TabIndex="20" AutoPostBack="false" Attributes.OnKeyPress="return searchExistingKit();"/>
+					</td>
+				</tr>
+				<tr>
+					<td>&nbsp;</td>
+					<td width="50%" align="left">
+						<com:TButton ID="LookupButton1" Text="Lookup" OnClick="searchPartType" />
+					</td>
+				</tr>
+			</table>
+		</com:TPanel>
+		<br/>
+		<br/>
+		<com:TPanel ID="mainPanel" CssClass="SearchPanel" GroupingText="" Visible="false">
+		<br/>
+		<br/>
+
+<!---  ---------------- Editing Panel Ends Here---------------- --->
+		<com:TPanel ID="bomPanel">
+			<table width="100%" class="DataListTitle">
+				<tr>
+					<th>
+					<td width="80%" align="left">
+					<com:TPanel ID="ListBOMPanel" Visible="false">
+					</com:TPanel>
+					</th>
+					<td width="20%" align="right">
+
+					</td>
+				</tr>
+			</table>
+
+			<b><u><com:TLabel ID="BillOfMaterialsLabel" /></u></b>
+			<br/><br/>
+
+			<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem"
+					     OnEditCommand="edit"
+					     OnDeleteCommand="delete"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList"
+					     ItemStyle.CssClass="DataListItem"
+					     AlternatingItemStyle.CssClass="DataListAlterItem"
+					     EditItemStyle.CssClass="DataListEditItem"
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="true" PageSize="30" EnableViewState="true">
+
+			    <prop:HeaderTemplate>
+					<table width='100%' height='25'>
+						<tr>
+							<th width="5%" style="text-align:right; padding-right: 20px">Qty</th>
+							<th width="50%">Partcode: Part Description / Part Group</th>
+							<th width="40%">Comments</th>
+							<th width="5%">
+							     <com:TActiveButton Text="PickList" OnCallback="Page.generatePickList">
+							         <prop:ClientSide
+								         onUninitialized = "sender.Enabled=true;"
+								         onLoading="mb.showLoading();"
+							             onPreDispatch="var tmp = {}; if(!$('bomPartTypeId')){ sender.Enabled=false; return;} tmp.bomPartTypeId=$F('bomPartTypeId'); if($('kitPartInstanceId')){tmp.kitPartInstanceId=$F('kitPartInstanceId');} sender.setCallbackParameter(tmp);"
+							             onSuccess=" var tmp = {}; try { tmp.result = bsuiteJs.getResp(parameter, false, true); if(!tmp.result || !tmp.result.data){return;} openPrintPickListPage(tmp.result.data);} catch(e){alert(e);}"
+								         onComplete="Modalbox.hide();"
+							         />
+							     </com:TActiveButton>
+							</th>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" height="25" border=0>
+						<tr>
+							<td width="5%" style="text-align:right; padding-right: 20px"><%# $this->DataItem['qty'] %></td>
+							<td width="50%"><%# $this->DataItem['requiredPartName'] %></td>
+							<td width="40%" style="text-align:left"><%# $this->DataItem['comments'] %></td>
+							<td width="5%" style="text-align:right">
+								<com:TImage ID="htbtn" Visible="true" ImageUrl="../../../themes/images/online.gif" ToolTip="Part in Kit"/>
+								<%%if($this->DataItem['check'] == 1) {$this->htbtn->Visible = true;} else{$this->htbtn->Visible = false; }   %>
+								<com:TImage ID="htbtn1" Visible="true" ImageUrl="../../../themes/images/red.PNG" ToolTip="Part not in Kit"/>
+								<%%if($this->DataItem['check'] == 0) {$this->htbtn1->Visible = true;} else{$this->htbtn1->Visible = false; }   %>
+								<com:TImage ID="htbtn2" Visible="true" ImageUrl="../../../themes/images/orange.JPG" ToolTip="Not all quantity of this part in Kit" />
+								<%%if($this->DataItem['check'] == 2) {$this->htbtn2->Visible = true;} else{$this->htbtn2->Visible = false; }   %>
+							</td>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+
+				<prop:EditItemTemplate>
+					<table width="100%" border=0>
+						<tr>
+							<td width='90%' style='padding-left:20px; text-align:left'>
+							<b>Qty:  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Materials: </b><br />
+							<com:TTextBox ID="newBOMQty" Text="Quantity" AutoPostBack="false" ValidationGroup="Group1" Attributes.style='width:50px; text-align:right' />
+							<com:Application.controls.EntityAutoComplete.HYPartTypeComplete ID="newBOMPartType" ResultPanel.CssClass="hydraautocomplete" width="300" /></td>
+
+							<td rowspan='2' valign='top' style='padding-left:20px; text-align:right' width='10%'>
+								<com:TButton ID="EditButton" Text="Save" CommandName="update" ValidationGroup="Group1" /><br /><br />
+    							<com:TButton ID="CancelEditButton" Text="Cancel" CommandName="cancel" />
+							</td>
+						</tr>
+						<tr>
+						<td width='10%' style='padding-left:20px; text-align:left'>
+							<br /><b>Comments: </b><br /><com:TTextBox ID="newComment" AutoPostBack="false" ValidationGroup="Group1" width="500px" />
+							</td>
+						</tr>
+
+
+					</table>
+				</prop:EditItemTemplate>
+
+			    <prop:FooterTemplate>
+				    <table width="100%" height="25">
+							<tr><td width="100%" style="text-align:center">Total <%# $this->Page->bomPartsCount %> Items</td></tr>
+					</table>
+				</prop:FooterTemplate>
+			</com:TDataList>
+		</com:TPanel>
+
+		<br/>
+		<br/>
+		<br/>
+
+		<com:TPanel ID="kitPanel" Visible="false">
+			<b><u><com:TLabel ID="kitHeaderLabel" /></u></b>
+			<br/>
+			<com:TDataList ID="kitDataList" DataKeyField="id" OnSelectedIndexChanged="selectItem"
+						     CssClass="DataList"
+						     ItemStyle.CssClass="DataListItem"
+						     AlternatingItemStyle.CssClass="DataListAlterItem"
+						     EditItemStyle.CssClass="DataListEditItem"
+							 width="100%"
+							 EnableViewState="true">
+				<prop:HeaderTemplate>
+					<table width="100%">
+						<tr>
+							<td width="15%">Serial Number</td>
+							<td width="15%">Part Code</td>
+							<td width="25%">Part Description</td>
+							<td width="5%">Qty</td>
+							<td width="*">Location</td>
+							<td width="5%">&nbsp;</td>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%">
+						<tr>
+							<td width="15%"><%# $this->DataItem['barcode'] . ' ' . $this->DataItem['piActiveFlag'] %></td>
+							<td width="15%"><%# $this->DataItem['partcode'] . ' ' . $this->DataItem['ptActiveFlag'] %></td>
+							<td width="25%"><%# $this->DataItem['partInstance']->getPartType()->getName() %></td>
+							<td width="5%"><%# $this->DataItem['qty'] %></td>
+							<td width="*"><%# $this->DataItem['partInstance']->getRootWarehouse() %></td>
+							<td width="5%">
+								<com:TImageButton ImageUrl="../../../themes/images/delete.png" Text="Remove From this Part" OnClick="Page.showRemovePartPanel" ToolTip="Remove From this Part" />
+							</td>
+							<%# $this->Page->getChildPartsHtml($this->DataItem['partInstance']->getId()) %>
+						</tr>
+
+					</table>
+				</prop:ItemTemplate>
+
+				<prop:EditItemTemplate>
+					<table width="100%">
+						<tr valign="top">
+							<td width="30%">
+								<com:TLabel ID="removingPartInstance_SerialNo" />
+								<com:THiddenField ID="removingPartInstance_Id" />
+							</td>
+							<td width="60%">
+								<h3>Please choose from the list of location,where you want to move this part to:</h3>
+								<com:TRequiredFieldValidator
+									ControlToValidate="targetWarehouseId"
+									ErrorMessage="Need to select a warehouse to move the part to!"
+									ValidationGroup="Group3" EnableClientScript="true" /><br />
+								<com:Application.controls.HYWHTree ID="removingPartInstance_warehouse" hidden="targetWarehouseId" />
+								<com:TActiveHiddenField ID="targetWarehouseId" Value=""/>
+							</td>
+							<td><com:TButton ID="RemoveButton" Text="Remove" OnCommand="Page.removePart" ValidationGroup="Group3" /></td>
+							<td><com:TButton ID="CancelRemoveButton" Text="Cancel" OnCommand="Page.cancelRemovePart" /></td>
+						</tr>
+					</table>
+				</prop:EditItemTemplate>
+			    <prop:FooterTemplate>
+				    <table width="100%">
+				    	<tr><td width="100%" style="text-align:center">Total <%# $this->Page->totalSubParts %> Items</td></tr>
+				    </table>
+				</prop:FooterTemplate>
+			</com:TDataList>
+		</com:TPanel>
+		<br/>
+
+
+		<com:TPanel ID="installPanel" Visible="false" >
+			<table width="100%">
+				<tr>
+					<td>
+						<table width="100%">
+							<tr>
+								<td width="14%" style="text-align:left; padding-left: 10px;">
+									<b><com:TLabel ID="selectLocationLabel" Text="Select Location By :" /></b>
+								</td>
+								<td width="60%" style="text-align:left;>
+									<com:TPanel ID="MovePartTechnicianWrapper">
+										<com:TRadioButton GroupName="RadioGroupLocationTo" ID="MovePartTreeLocation" AutoPostBack="false" Checked="false" Attributes.onClick="showLocationTree(1)"/>
+										&nbsp;<com:TLabel Text="Location Tree" ForControl="MovePartTreeLocation" />&nbsp;&nbsp;
+										<com:TRadioButton GroupName="RadioGroupLocationTo" ID="MovePartDefaultLocation" AutoPostBack="false" Checked="false" Attributes.onClick="showLocationTree(0)"/>
+										&nbsp;<com:TLabel Text="Kits in Build" ForControl="MovePartDefaultLocation" /><br />
+										<com:THiddenField ID="treeCheck" />
+									</com:TPanel>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<table>
+							<tr>
+								<td>
+									&nbsp;&nbsp;
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+			<table width="50%">
+				<tr>
+					<td width="100%">
+						<com:TPanel ID="locationPanel" visible="false">
+							<table width="100%">
+								<tr>
+									<td width="15%" style="text-align:left; padding-left: 10px;">
+										<b>Part Location :</b>
+									</td>
+									<td width="65%" style="text-align:left;">
+										<com:TLabel ID="partLocation" TabIndex="10" />
+									</td>
+								</tr>
+							</table>
+						</com:TPanel>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<com:TPanel ID="ToLocationPanel">
+							<table width="100%">
+								<tr>
+									<td style="text-align:left; padding-left: 10px;">
+										<b><com:TLabel ID="partLocationLabel" Text="Part Location :" /></b>
+									</td>
+									<td>
+										<com:Application.controls.HYWHTree
+											ID="warehouse"
+											hidden="warehouseid"
+											TabIndex="11"
+											Width="100px"
+											HideTree="false"
+											RootNode="<%= $this->Page->getDefaultWarehouseId() %>"
+										 />
+										<com:THiddenField ID="warehouseid" value="" />
+
+										<com:THiddenField ID="selectedWarehouseId" value="" />
+									</td>
+								</tr>
+							</table>
+						</com:TPanel>
+					</td>
+				</tr>
+			</table>
+			</br>
+			<table width="100%">
+				<tr>
+					<td>
+						<com:TPanel ID="oldPanel">
+							<table width="100%">
+								<tr>
+									<td width="15%" style="text-align:left; padding-left: 10px;">
+										<b>Kit BS number :</b>
+									</td>
+									<td width="65%">
+										<com:TLabel ID="ToInstance" TabIndex="10" />
+									</td>
+								</tr>
+							</table>
+						</com:TPanel>
+						<com:TPanel ID="newPanel" DefaultButton="ToInstance1_SearchButton">
+							<table width="100%">
+								<tr>
+									<td width="15%" style="text-align:left; padding-left: 10px;">
+										<b>Kit BS number :</b>
+									</td>
+									<td width="65%">
+										<com:TTextBox ID="ToInstance1" TabIndex="10"/>
+										<com:TButton ID="ToInstance1_SearchButton" Text="Create" OnClick="Page.searchToParts" TabIndex="11"/>
+										&nbsp;&nbsp;&nbsp;
+										<com:TCheckBox id="printBoxLabelBox" Text="Box Label" ToolTip="Print Box Label based on the Kit BS number on the left hand side, when click on 'Create' button or scan in barcode!"/>
+									</td>
+								</tr>
+							</table>
+						</com:TPanel>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						&nbsp;&nbsp;
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<com:TPanel ID="boxLabelPanel" Visible="false">
+							<table width="100%">
+								<tr>
+									<td width="15%" style="text-align:left; padding-left: 10px;">
+										<b>Box Label :</b>
+										&nbsp;&nbsp;
+									</td>
+									<td width="65%">
+										<com:TLabel ID="boxLabel" TabIndex="10" />
+									</td>
+								</tr>
+							</table>
+						</com:TPanel>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						&nbsp;&nbsp;
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<table width="100%">
+							<tr>
+								<td width="15%" style="text-align:left; padding-left: 10px;">
+									<b><com:TLabel ID="kitPartTypeLabel" Text="Kit Part Type :" /></b>
+								</td>
+								<td width="65%" style="text-align:left;>
+									<com:TLabel ID="partTypeLabel" TabIndex="10"/>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<table>
+							<tr>
+								<td>
+									&nbsp;&nbsp;
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<table width="100%">
+							<tr>
+								<td width="15%" style="text-align:left; padding-left: 10px;">
+									<b><com:TLabel ID="kitTypeLabel" Text="Kit Type :" /></b>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								</td>
+								<td width="65%" style="text-align:left;">
+									<com:TLabel ID="KitType" />
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<table>
+							<tr>
+								<td>
+									&nbsp;&nbsp;
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<table width="100%">
+							<tr>
+								<td width="15%" style="text-align:left; padding-left: 10px;">
+									<b><com:TLabel ID="keepPartTypeLabel" Text="Keep Part Details :&nbsp;&nbsp;" /></b>
+								</td>
+								<td width="65%" style="text-align:left;">
+									<com:TCheckBox ID="keepPartCheck" />
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<table>
+							<tr>
+								<td>
+									&nbsp;&nbsp;
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+
+			</table>
+
+			<table width="100%">
+			<tr>
+				<td colspan="2">
+					<com:Application.controls.SearchPartsPanel.SearchPartsPanel ID="SearchPartsPanel" IsActiveProcessingFunction="0" SearchLabel="Child Part " BarcodeRegexCheck="registrable" InvolvesPartMovement="true" />
+				</td>
+			</tr>
+			</table>
+
+
+			<br/>
+
+			<com:TPanel width="100%" ID="errorPanel" Visible="false">
+				<table width="100%">
+					<tr>
+						<td width="10%">&nbsp;</td>
+							<com:TLabel ID="ErrorList_label" Text="Error List" style="font-weight:bold;"/>
+							<br/>
+							<com:TDataList ID="ErrorDataList"
+											CssClass="DataList"
+											ItemStyle.CssClass="DataListItem"
+											AlternatingItemStyle.CssClass="DataListAlterItem"
+											EditItemStyle.CssClass="DataListEditItem"
+											width="100%"
+											EnableViewState="true">
+								<prop:HeaderTemplate>
+								<table width="100%">
+									<tr>
+										<td width="15%">Serial Number</td>
+										<td width="15%">Part Code</td>
+										<td width="40%">Location</td>
+										<td width="30%">Error</td>
+									</tr>
+								</table>
+								</prop:HeaderTemplate>
+
+								<prop:ItemTemplate>
+								<table width="100%">
+									<tr>
+										<td width="15%"><%# $this->DataItem['barcode'] %></td>
+										<td width="15%"><%# $this->DataItem['partcode'] %></td>
+										<td width="40%"><%# Factory::service("PartInstance")->get($this->DataItem['id'])->getWarehouse() %></td>
+										<td width="30%"><%# $this->DataItem['error'] %></td>
+									</tr>
+								</table>
+								</prop:ItemTemplate>
+
+								<prop:FooterTemplate>
+									<table width="100%">
+										<tr>
+											<td colspan="5">Total <%# $this->Page->getTotalErrorsWhileInstalling() %> Error(s)</td>
+										</tr>
+									</table>
+								</prop:FooterTemplate>
+							</com:TDataList>
+						</td>
+					</tr>
+				</table>
+			</com:TPanel>
+			<br/><br/>
+			<table width="100%">
+				<tr>
+					<td width="100%">
+						<com:TLabel ID="FromCandidateDataList_label" style="font-weight:bold;"/>
+						<br/><br/>
+						<com:TDataList ID="FromCandidateDataList"
+										CssClass="DataList"
+										ItemStyle.CssClass="DataListItem"
+										AlternatingItemStyle.CssClass="DataListAlterItem"
+										EditItemStyle.CssClass="DataListEditItem"
+										width="100%"
+										EnableViewState="true">
+							<prop:HeaderTemplate>
+							<table width="100%">
+								<tr>
+									<td width="15%">Serial Number</td>
+									<td width="15%">Part Code</td>
+									<td width="25%">Part Description</td>
+									<td width="5%">Qty</td>
+									<td width="*">Location</td>
+									<td width="5%">&nbsp;</td>
+								</tr>
+							</table>
+							</prop:HeaderTemplate>
+
+							<prop:ItemTemplate>
+							<table width="100%">
+								<tr>
+									<td width="15%"><%# $this->DataItem['barcode'] %></td>
+									<td width="15%"><%# $this->DataItem['partcode'] %></td>
+									<td width="25%"><%# $this->DataItem['partInstance']->getPartType()->getName() %></td>
+									<td width="5%"><%# $this->DataItem['qty'] %></td>
+									<td width="*"><%# $this->DataItem['partInstance']->getWarehouse() %></td>
+									<td width="5%">
+										<com:TImageButton ImageUrl="../../../themes/images/delete.png" Text="Delete" OnCommand="Page.removeFromInstallingList" CommandParameter="<%# $this->DataItem['partInstance']->getId() %>" ToolTip="Remove From this List" />
+									</td>
+								</tr>
+							</table>
+							</prop:ItemTemplate>
+
+							<prop:FooterTemplate>
+								<table width="100%">
+									<tr>
+										<td colspan="5">Total <%# $this->Page->getTotalPartsToBeInstalled() %> Part(s)</td>
+									</tr>
+								</table>
+							</prop:FooterTemplate>
+						</com:TDataList>
+					</td>
+				</tr>
+			</table>
+			<table>
+				<tr><td colspan="2">&nbsp;</td></tr>
+				<tr>
+					<td style="text-align:left ; padding-left: 10px;">&nbsp;</td>
+					<td>
+						<com:TButton ID="installButton" Text="No parts to Install" OnClick="checkKitComplete" Display="None" />
+					</td>
+				</tr>
+			</table>
+		</com:TPanel>
+		<com:TActivePanel ID="outer" Display="None" ScrollBars="Auto" CssClass="BackgroundPanel" />
+		<div>
+			<com:TActivePanel ID="inner" Display="None" ScrollBars="Auto" CssClass="ResultFrontPanel" Style="top: 30%; left: 35%; width: 25%; height: 10%; background-color:#C0C0C0">
+				<div align="center">
+					No parts found within the Kit. Do you wish to deactivate this Kit?
+					<br/><br/>
+					<com:TButton ID="yes" Text="Yes" OnClick="deactivateKit" />
+					<com:TButton ID="no" Text="No" OnClick="keepKitActive"/>
+				</div>
+			</com:TActivePanel>
+		</div>
+		<com:TActivePanel ID="outer1" Display="None" ScrollBars="Auto" CssClass="BackgroundPanel" />
+		<div>
+			<com:TActivePanel ID="inner1" Display="None" ScrollBars="Auto" CssClass="ResultFrontPanel" Style="top: 35%; left: 35%; width: 30%; height: 20%; background-color:#C0C0C0">
+				<div align="center">
+					Kit incomplete - Parts Missing from BOM . Do you wish to continue?
+					<br/><br/>
+					<com:TButton ID="yes1" Text="Yes" OnClick="attemptToInstall" />
+					<com:TButton ID="no1" Text="No" OnClick="returnPage"/>
+				</div>
+			</com:TActivePanel>
+		</div>
+		<com:TPanel ID="PaginationPanel">
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>
+		</com:TPanel>
+	</div>
+</com:TContent>

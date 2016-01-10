@@ -1,0 +1,330 @@
+<com:TContent ID="MainContent">
+    <com:TActiveLabel Text="" ID="jsLbl" />
+    <com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+	<style type="text/css">
+	table.ignoreWarhouseInfoTable {
+	  border-collapse: collapse;
+	  }
+	table.ignoreWarhouseInfoTable td,
+	table.ignoreWarhouseInfoTable th {
+	  border: 1px solid lightblue;
+	  padding: 5px;
+	  }
+	</style>
+    <script type="text/javascript">
+
+        function showDetails()
+        {
+        	Effect.BlindDown('ignoreWarhouseInfo');
+        	$('showDetailsLink').hide();
+        	$('hideDetailsLink').appear();
+
+        	$('ignoreWarhouseInfo').appear();
+        }
+        function hideDetails()
+        {
+        	Effect.BlindUp('ignoreWarhouseInfo');
+        	$('showDetailsLink').appear();
+        	$('hideDetailsLink').hide();
+
+        	$('ignoreWarhouseInfo').hide();
+        }
+        function toggleFlag(checkbox,toggleID)
+        {
+            if(checkbox.checked)
+            {
+                $(toggleID).checked=false;
+            }
+        }
+
+        function doreset()
+        {
+
+            $('ctl0_MainContent_FilterToContract').value='';
+            $('ctl0_MainContent_FilterForPartType').value='';
+            $('ctl0_MainContent_FilterForFacility').value='';
+            $('ctl0_MainContent_FilterForSite').value='';
+            $('ctl0_MainContent_ShowSubs').checked= true ;
+            $('ctl0_MainContent_ShowLocName').checked= true;
+            $('ctl0_MainContent_DoGroupResultsByCodeStatusLocation').checked=false;
+            $('ctl0_MainContent_DoGroupResultsByCodeStatus').checked=false;
+            $('ctl0_MainContent_alias').value='';
+
+            return false;
+        }
+
+        function onTreeLoadError()
+        {
+            var els = $$('.functionBtn');
+            for (var i=0; i<els.length; i++)
+            {
+                els[i].disabled = true;
+            }
+
+            $('<%= $this->WarehouseLabel->getClientId() %>').hide();
+            $('<%= $this->MoreOptionLabel->getClientId() %>').hide();
+        }
+
+        function DisableButton(button)
+	    {
+			mb.showLoading('searching');
+            button.disabled = true;
+            $('<%= $this->SearchStockLocationButtonSearch->getClientId() %>').click();
+	    }
+
+		function sentEmail()
+	    {
+			document.getElementById('loader').style.display = 'none';
+			alert("Successfully sent email!");
+	    }
+
+		function confirmStocktakeSubmit(btn)
+		{
+			if (!confirm("Are you sure you want to perform a Stocktake on the following warehouse?\n\n" + $("<%= $this->whTree->breadcrumbs->getClientId() %>").value))
+				return false;
+
+			mb.showLoading('loading');
+		}
+
+    </script>
+    <com:TButton ID="SearchStockLocationButtonSearch" Text="Stock" TabIndex="2" style='display:none;' onClick="search"  />
+
+    <com:TPanel ID="SearchAddPanel" CssClass="SearchPanel">
+        <table width="100%" style="display:none">
+            <tr>
+                <td width="80%">
+                    <com:TTextBox ID="SearchText" AutoPostBack="false" Columns="45" visible="false"/>
+                    <com:THiddenField ID="SearchString" />
+                    <com:THiddenField ID="focusObject" />
+                    <com:THiddenField ID="focusObjectArgument" />
+                </td>
+            </tr>
+        </table>
+        <hr />
+    </com:TPanel>
+
+    <com:TPanel ID="AddPanel" CssClass="AddPanel" Visible="false" />
+
+    <table width="100%" border="0">
+         <tr><td>
+                <com:TActivePanel ID="SearchRefinePanel" style="display:none; border: black solid 1px; padding:3px">
+                    <table width=100%">
+                        <tr>
+                            <td colspan="2">
+                                <com:TCheckBox ID="ShowSubs" Checked="true" Style="vertical-align:center" /> Include Subtrees<br/>
+                            </td>
+                            <td colspan="2">
+                                <com:TCheckBox ID="DoGroupResultsByCodeStatusLocation" Style="vertical-align:center"
+                                            Attributes.onClick="toggleFlag(this,'<%= $this->Page->DoGroupResultsByCodeStatus->getClientId() %>');" /> Aggregate by partcode, part status, and location<br/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <com:TCheckBox ID="ShowLocName" Checked="true" Style="vertical-align:center" /> Show Location's Full Path name ONLY<br/>
+                            </td>
+                            <td colspan="2">
+                                <com:TCheckBox ID="DoGroupResultsByCodeStatus" Style="vertical-align:center"
+                                            Attributes.onclick="toggleFlag(this,'<%= $this->Page->DoGroupResultsByCodeStatusLocation->getClientId() %>');"/> Aggregate by partcode and part status<br/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <com:TCheckBox ID="ShowIgnoreStockcount" Checked="true" Style="vertical-align:center" /> Exclude (Ignore in Stock Count) Warehouses<br/>
+                            </td>
+                            <td colspan="2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>For Contract: </td>
+                            <td style="width:33%">
+                                <com:Application.controls.HYAutoComplete ID="FilterToContract"
+                                    Suggestions.DataKeyField="id"
+                                    ResultPanel.ScrollBars="Auto"
+                                    ResultPanel.CssClass="hydraautocomplete"
+                                    Type="Contract"
+                                    Width="200"
+                                />
+                            </td>
+
+                            <td style="width:12%">For Part Type: </td>
+                            <td style="width:33%">
+                                <com:Application.controls.EntityAutoComplete.HYPartTypeComplete
+                                        ID="FilterForPartType"
+                                        ResultPanel.CssClass="hydraautocomplete"
+                                        Suggestions.DataKeyField="id" Width="200" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Last moved from Facility: </td>
+                            <td>
+                                <com:Application.controls.HYAutoComplete
+                                        ID="FilterForFacility"
+                                        type="Facility"
+                                        ResultPanel.CssClass="hydraautocomplete"
+                                        PageOnSuggestMethod="pickFacility"
+                                        PageMethod=""
+                                        Suggestions.DataKeyField="id" Width="200" >
+                                            <prop:Suggestions.ItemTemplate>
+                                                <li><%# $this->Data["facility"] %></li>
+                                            </prop:Suggestions.ItemTemplate>
+                                </com:Application.controls.HYAutoComplete>
+                            </td>
+
+                            <td>Parts In Site: </td>
+                            <td>
+                                <com:Application.controls.EntityAutoComplete.HYSiteComplete ID="FilterForSite"
+                                                AppendContractInfo="1"
+                                                ResultPanel.CssClass="hydraautocomplete"
+                                                Width="200"
+                                />
+                                <com:TActiveHiddenField ID="hiddenSiteId" />
+                            </td>
+                        </tr>
+
+
+                        <tr>
+                            <td>Search by Alias: </td>
+                            <td colspan="3">
+                                <com:TActiveDropDownList  Id="aliasTypes" DataTextField="string" DataValueField="id" />
+                                &nbsp;&nbsp;&nbsp;
+                                <com:TActiveTextBox id="alias"  Width="300px" />
+                            </td>
+
+
+
+                        <tr>
+                            <td>&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <com:TButton ID="RefreshBtn" Text=" Search " style="width:120px" TabIndex="6" Attributes.Onclick="DisableButton(this)" />
+                            </td>
+                            <td colspan="2" align="right">
+                            <com:TButton ID="ResetBtn" Text=" Reset " TabIndex="7" style="width:120px" Attributes.onclick='return doreset();' />
+                            </td>
+                        </tr>
+
+                    </table>
+                </com:TActivePanel>
+                &nbsp;
+             </td>
+            <td width="25%" style="vertical-align:top">
+                <table width="100%" border="0">
+                    <tr width="100%">
+                        <td>
+                            <com:TButton ID="SearchStockLocationButton" Text="Stock" TabIndex="2" style="width:80px"  Attributes.Onclick="DisableButton(this)"/>
+                        </td>
+                        <td align="right">
+                            <com:TActiveButton ID="StocktakeLocationButton" Text="Stocktake" TabIndex="3" style="width:80px" CssClass="functionBtn" onClick="Page.callSubmit" Attributes.Onclick="return confirmStocktakeSubmit(this);"/>
+                        </td>
+                    </tr>
+                    <tr>
+                       <td>&nbsp;</td>
+                       <td><com:TActiveLabel ID="stocktakeErrorLbl" Style="color:red;font-size:11px;" /></td></tr>
+                </table>
+                <br/>
+                <com:TActiveLinkButton ID="MoreOptionLabel" Text="More Options" Attributes.OnClick="$('<%= $this->Page->SearchRefinePanel->getClientId() %>').blindDown();$('<%= $this->Page->MoreOptionLabel->getClientId() %>').hide();$('<%= $this->Page->LessOptionLabel->getClientId() %>').show();"  />
+                <com:TActiveLinkButton ID="LessOptionLabel" Text="Less Options" Attributes.OnClick="$('<%= $this->Page->SearchRefinePanel->getClientId() %>').blindUp();$('<%= $this->Page->LessOptionLabel->getClientId() %>').hide();$('<%= $this->Page->MoreOptionLabel->getClientId() %>').show();" style="display:none;" />
+             </td>
+         </tr>
+    </table>
+    <com:TPanel ID="ListingPanel">
+    <table width="100%">
+        <tr>
+            <td width=75% valign="top">
+                <com:TPanel ID="StockHeaderPanel">
+                    <table>
+                        <tr>
+                            <td width="55%">
+                                <b><com:TLabel ID="StockHeader"/></b>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="55%">
+                                <com:TLabel ID="RecordHeader"/>
+                            </td>
+                        </tr>
+                    </table>
+                </com:TPanel>
+
+				<com:Application.controls.HYLock Feature="pages_all">
+                    <com:TActiveButton ID="regenBtn" Style="display:none;" onClick="Page.regenerateLastStockTakeEmail" Text="Regenerate Last Stocktake Email" attributes.onclick="document.getElementById('loader').style.display = '';"/>
+                    <img id='loader' src='/themes/images/ajax-loader.gif' style='display:none' />
+                </com:Application.controls.HYLock>
+
+                <com:TPanel ID="StockPanel">
+                    <com:TDataList ID="DataList" OnSelectedIndexChanged="selectItem"
+                                RepeatLayout="Raw"
+                                 OnEditCommand="edit"
+                                 OnUpdateCommand="save" OnCancelCommand="cancel"
+                                 CssClass="DataList"
+                                 ItemStyle.CssClass="DataListItem"
+                                 AlternatingItemStyle.CssClass="DataListAlterItem"
+                                 EditItemStyle.CssClass="DataListEditItem"
+                                 width="100%"
+                                 AllowPaging="true" AllowCustomPaging="true" EnableViewState="true">
+
+                        <prop:HeaderTemplate>
+                            <table width="100%" class="DataList" cellspacing="1">
+                                <thead>
+                                    <tr height="25">
+                                        <th width="5%" style="text-align:right; padding-right:5px"><%[ PartType.Quantity ]%></th>
+                                        <th width="10%"><%[ PartType.code ]%></th>
+                                        <th width="15%"><%[ PartInstance.barcode ]%></th>
+                                        <th width="10%"><%[ PartInstance.status ]%></th>
+                                        <th width="25%">Name</th>
+                                        <th width="*"><%[ PartInstance.warehouse ]%></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        </prop:HeaderTemplate>
+
+                        <prop:ItemTemplate>
+                                <tr class="<%# $this->Page->getStyle($this->getItemIndex()) %>">
+                                    <td width="5%" style="text-align:right; padding-right:5px"><%# $this->dataItem[0]%></td>
+                                    <td width="10%"><%# $this->dataItem[1]%></td>
+                                    <td width="15%"><%# ($this->dataItem[2] > '' && $this->dataItem[2] != 'serialised')?$this->dataItem[2]: (isset($this->dataItem[8])?$this->dataItem[8]:'') %></td>
+                                    <td width="10%"><%# $this->dataItem[3]%></td>
+                                    <td width="25%"><%# $this->dataItem[4]%></td>
+                                    <td width="*"><%# $this->dataItem[5]%></td>
+                                </tr>
+                        </prop:ItemTemplate>
+
+                        <prop:FooterTemplate>
+                                </tbody>
+                                <tfoot>
+                                <tr>
+                                    <th colspan="6">
+                                        <div style="font-weight: bold; text-align: center;">
+                                            &nbsp;
+                                        </div>
+                                    </th>
+                                </tr>
+                                </tfoot>
+                            </table>
+                        </prop:FooterTemplate>
+                    </com:TDataList>
+                    <com:TLabel ID="SuccessfulStocktake" />
+            </com:TPanel>
+            <com:TPanel ID="PaginationPanel">
+                <table width="100%" height="25">
+                    <tr>
+                        <th colspan="2" align="left">Select Page:
+                            <com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+                        </th>
+                        <th colspan="3" align="right">Go To Page:
+                            <com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+                            <com:Application.controls.ResultsPerPageList.ResultsPerPageList ID="resultsPerPageList" onPageResultsChanged="resultsPerPageChanged" defaultPerPage="500" AutoPostBack="true" ExtraPerPageAmounts="10000" />
+                        </th>
+                    </tr>
+                </table>
+            </com:TPanel>
+            </td>
+            <td valign="top">
+                <com:TLabel Id="WarehouseLabel" Text="Select Location:"/>
+                <com:Application.controls.HYWHTree.HYWHTree ID="whTree" />
+            </td>
+         </tr>
+    </table>
+    </com:TPanel />
+</com:TContent>

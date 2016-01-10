@@ -1,0 +1,67 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<com:THiddenField ID="SearchString" />
+	<com:THiddenField ID="focusObject" />
+	<com:THiddenField ID="focusObjectArgument" />
+	<br />
+	<br />
+	<div>
+		<b><com:TLabel ID="UserLabel" Style="color:#ffffff"/></b>
+
+		<table width="100%" border="0">
+			<tr>
+				<td width="50%" valign="top">
+					<com:Application.controls.HYWHTree ID="towarehouse" hidden="Warehouseid1" />
+					<com:THiddenField ID="Warehouseid1" VALUE="" />					
+				</td>
+				<td width="50%" valign="top">
+					<com:Application.controls.HYWHTree ID="fromwarehouse" hidden="Warehouseid2" />
+					<com:THiddenField ID="Warehouseid2" VALUE="" />				
+				</td>
+			</tr>
+			<tr>
+				<td><com:TButton onClick="moveOneToTwo" Text="Move That'a'Way --->" /></td>
+				<td>
+					<com:TButton onClick="moveTwoToOne" Text="Move That'a'Way &lt;---" />
+					<com:TButton onClick="explodeWarehouse" Text="Explode" />
+				</td>
+			</tr>
+		</table>
+	
+				
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" >		
+		</com:TPanel>
+
+<!---   ---------------- Listing Panel Starts---------------- --->					
+		<com:TPanel>		
+			<br />
+			
+			<com:TDataList ID="DataList" DataKeyField="0" OnSelectedIndexChanged="selectItem"
+						 RepeatLayout="Raw"
+						 OnEditCommand="edit"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList" 
+					     ItemStyle.CssClass="DataListItem" 
+					     AlternatingItemStyle.CssClass="DataListAlterItem" 
+					     EditItemStyle.CssClass="DataListEditItem" 
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="true" PageSize="10" EnableViewState="true">
+				
+			    <prop:HeaderTemplate>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+				</prop:ItemTemplate>
+			
+				<prop:EditItemTemplate>	
+				</prop:EditItemTemplate>
+							
+			    <prop:FooterTemplate>
+				</prop:FooterTemplate>				
+			</com:TDataList>
+		</com:TPanel>		
+
+		<com:TPanel ID="PaginationPanel">		
+		</com:TPanel>			
+	</div>
+</com:TContent>

@@ -1,0 +1,72 @@
+#wrapper {width:100%;}
+#pagewrapper {padding-top:15px;}
+.disabled {display:inline-block;background:#dddddd;cursor:not-allowed;border:1px #777777 solid;color:black;}
+.hydraautocomplete ul li {cursor: pointer;}
+.manD {color: red;}
+.hidden {display: none;}
+.floatLeft {float: left;}
+.floatRight {float:right;}
+.widePanel {width: 100%;}
+.inlineBlock {
+    display: inline-block; 
+}
+.vtop{vertical-align: top;}
+.ralign{text-align: right;}
+.leftpanel {
+    width:65%;
+    padding-left: 8px;
+}
+.rightpanel {
+    width:330px;
+}
+#resetPanel {
+    text-align:center; 
+    border:2px solid red;
+    width: 302px;
+}
+#balancePanel {
+    text-align:center; 
+    width: 280px;
+}
+.title {
+    width:30%; 
+    text-align: right; 
+    padding-right: 8px;
+    font-weight: bold;
+
+    float: left;
+    margin-top: 3px;
+}
+.content {
+    width:65%;
+}
+.roundedCorners, .currentRow, .row {    
+    border-radius:5px; 
+    -moz-border-radius:5px;
+}
+.currentRow, .row {
+    margin: 6px; 
+    padding: 8px 5px 8px 5px; 
+    border:2px solid #0099FF;
+}
+.row {
+    border: 2px solid grey;
+}
+.partsMatchDiv, .currentPartsMatchDiv {
+    margin: 3px;
+    padding: 4px 3px 4px 3px;
+    border:1px solid grey;
+}
+.currentPartsMatchDiv {
+    border:2px solid #0099FF;
+}
+#parentLbl {
+    text-align: center;
+    font-weight: bold;
+    font-size: 11px; 
+}
+.statusImg {
+    width: 26px;
+    height: 26px;
+    cursor:pointer;
+}

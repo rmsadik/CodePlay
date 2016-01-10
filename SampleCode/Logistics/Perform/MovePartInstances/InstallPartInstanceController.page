@@ -1,0 +1,271 @@
+<com:TContent ID="MainContent">
+	<com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+	<script type="text/javascript">
+
+		function installParts()
+		{
+			$('<%= $this->ajaxProcessor->startAjaxProcessor->getClientId(); %>').click();
+		}
+
+		function finishProcessingInstallParts(message, error)
+		{
+			$('<%= $this->InstallPartsError->getClientId(); %>').value = error;
+			$('<%= $this->InstallPartsMessage->getClientId(); %>').value = message;
+			$('<%= $this->finishProcessingInstallParts->getClientId(); %>').click();
+		}
+
+	</script>
+
+	<com:THiddenField ID="fromWarehouseid" Value="" />
+
+
+	<com:TButton ID="finishProcessingInstallParts" Text=""  OnClick="Page.finishProcessingInstallParts" Style="display:none;" />
+
+	<com:Application.pages.Bulkload.CustomisedControls.AjaxProcessor.AjaxProcessor ID="ajaxProcessor"
+	ProcessingFunc_page="processInstallParts" AfterLoadCompleteFunc_page="finishProcessing" MaxCycles="0"/>
+
+	<com:TActiveHiddenField ID="InstallPartsMessage" />
+	<com:TActiveHiddenField ID="InstallPartsError" />
+	<com:TActiveHiddenField ID="noOfSuccesFullyInstalledParts" />
+
+
+	<com:TActiveLabel ID="jsLbl" Style="display:none;" />
+
+	<com:THiddenField ID="focusObject" />
+	<com:THiddenField ID="focusObjectArgument" />
+	<com:THiddenField ID="SearchString" />
+	<com:TActiveHiddenField ID="toBeInstalledPartInstances" />
+	<com:THiddenField ID="toBeInstalledPartInstances_parent" />
+	<com:THiddenField ID="withinParts" />
+	<com:THiddenField ID="parentPartId" />
+	<br/>
+	<br/>
+	<com:TPanel ID="ScanningPanel">
+		<table width="100%">
+			<tr>
+				<td width="100%" style="text-align:right">
+					<com:TTextBox ID="ViewPartsWithin" Attributes.onkeydown ="if(event.keyCode=='13'){$('ctl0_MainContent_ViewPartsBtn').click(); }" width="40"/>
+					<com:TButton ID="ViewPartsBtn"  onClick="showWithinPart" Text="View Parts Within" />
+				</td>
+			</tr>
+		</table>
+	</com:TPanel>
+
+
+	<com:TPanel ID="AddingPanel">
+		<com:TPanel ID="TitlePanel">
+			<b><com:TLabel ID="TitleLabel" Text="Install Parts In Part"/></b>
+		</com:TPanel>
+		<table width="100%">
+			<tr>
+				<td  width="15%" style="text-align:right; padding-right: 10px;"><b>Into :</b></td>
+				<td>
+					<com:TPanel ID="ToInstancePanel" DefaultButton="ToInstance_SearchButton">
+						<com:TTextBox ID="ToInstance" TabIndex="1" />
+						<com:TButton ID="ToInstance_SearchButton" Text="Search" OnClick="Page.searchToParts" TabIndex="2"/>
+					</com:TPanel>
+				</td>
+			</tr>
+			<tr>
+				<td>&nbsp;</td>
+				<td colspan="2">
+					<com:TLabel ID="ToCandidateDataList_label" style="font-weight:bold;"/>
+					<com:TDataList ID="ToCandidateDataList"
+									CssClass="DataList"
+									ItemStyle.CssClass="DataListItem"
+									AlternatingItemStyle.CssClass="DataListAlterItem"
+									EditItemStyle.CssClass="DataListEditItem"
+									width="100%"
+									EnableViewState="true">
+						<prop:HeaderTemplate>
+							<table width="100%">
+								<tr>
+									<td width="15%">Serial Number</td>
+									<td width="15%">Part Code</td>
+									<td width="25%">Part Description</td>
+									<td width="5%">Qty</td>
+									<td width="*">Location</td>
+									<td width="5%">&nbsp;</td>
+								</tr>
+							</table>
+						</prop:HeaderTemplate>
+
+						<prop:ItemTemplate>
+							<table width="100%">
+								<tr>
+									<td width="15%"><%# $this->DataItem['barcode'] %></td>
+									<td width="15%"><%# $this->DataItem['partcode'] %></td>
+									<td width="25%"><%# $this->DataItem['partInstance']->getPartType()->getName() %></td>
+									<td width="5%"><%# $this->DataItem['qty'] %></td>
+									<td width="*"><%# $this->DataItem['partInstance']->getWarehouse() %></td>
+									<td width="5%">
+										<com:TImageButton ImageUrl="../../../themes/images/delete.png" Text="Delete" OnCommand="Page.removeToInstallingList" CommandParameter="<%# $this->DataItem['partInstance']->getId() %>" ToolTip="Remove From this List" />
+									</td>
+								</tr>
+							</table>
+						</prop:ItemTemplate>
+						<prop:FooterTemplate>
+							<table width="100%">
+								<tr>
+									<td align="center">Total 1 part</td>
+								</tr>
+							</table>
+						</prop:FooterTemplate>
+					</com:TDataList>
+				</td>
+			</tr>
+			<tr><td colspan="2">&nbsp;</td></tr>
+			<tr>
+				<td colspan="2">
+					<com:Application.controls.SearchPartsPanel.SearchPartsPanel ID="SearchPartsPanel" IsActiveProcessingFunction="0" SearchLabel="Install " BarcodeRegexCheck="PartInstance" InvolvesPartMovement="true" />
+				</td>
+			</tr>
+
+			<tr>
+				<td >&nbsp;</td>
+				<td >
+					<com:TLabel ID="FromCandidateDataList_label" style="font-weight:bold;"/>
+					<com:TDataList ID="FromCandidateDataList"
+									CssClass="DataList"
+									ItemStyle.CssClass="DataListItem"
+									AlternatingItemStyle.CssClass="DataListAlterItem"
+									EditItemStyle.CssClass="DataListEditItem"
+									width="100%"
+									EnableViewState="true">
+						<prop:HeaderTemplate>
+						<table width="100%">
+							<tr>
+								<td colspan="5">Total <%# $this->Page->getTotalPartsToBeInstalled() %> Part(s)</td>
+							</tr>
+							<tr>
+								<td width="15%">Serial Number</td>
+								<td width="15%">Part Code</td>
+								<td width="25%">Part Description</td>
+								<td width="5%">Qty</td>
+								<td width="*">Location</td>
+								<td width="5%">&nbsp;</td>
+							</tr>
+						</table>
+						</prop:HeaderTemplate>
+
+						<prop:ItemTemplate>
+						<table width="100%">
+							<tr>
+								<td width="15%"><%# $this->DataItem['barcode'] %></td>
+								<td width="15%"><%# $this->DataItem['partcode'] %></td>
+								<td width="25%"><%# $this->DataItem['partInstance']->getPartType()->getName() %></td>
+								<td width="5%"><%# $this->DataItem['qty'] %></td>
+								<td width="*"><%# $this->DataItem['partInstance']->getWarehouse() %></td>
+								<td width="5%">
+									<com:TImageButton ImageUrl="../../../themes/images/delete.png" Text="Delete" OnCommand="Page.removeFromInstallingList" CommandParameter="<%# $this->DataItem['partInstance']->getId() %>" ToolTip="Remove From this List" />
+								</td>
+							</tr>
+						</table>
+						</prop:ItemTemplate>
+
+						<prop:FooterTemplate>
+							<table width="100%">
+								<tr>
+									<td colspan="5">Total <%# $this->Page->getTotalPartsToBeInstalled() %> Part(s)</td>
+								</tr>
+							</table>
+						</prop:FooterTemplate>
+					</com:TDataList>
+				</td>
+			</tr>
+			<tr><td colspan="2">&nbsp;</td></tr>
+<!--
+			<tr>
+				<td style="text-align:right; padding-right: 10px;">
+					<b>Kit Type :</b></td>
+				<td><com:TDropDownList ID="KitType" PromptText="Please Select" TabIndex="25" DataTextField="name" DataValueField="id" /></td>
+			</tr>
+-->
+			<tr>
+				<td style="text-align:right; padding-right: 10px;">&nbsp;</td>
+				<td><com:TActiveButton ID="installButton" Text="No parts to Install" OnClick="Page.attemptToInstall" Attributes.onclick="mb.showLoading('installing parts');"  TabIndex="26" Enabled="false"/></td>
+			</tr>
+		</table>
+	</com:TPanel>
+
+	<br/><br/>
+	<com:TLabel Id="showWithinPartLabel"  />
+
+	<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem"
+	     CssClass="DataList"
+	     ItemStyle.CssClass="DataListItem"
+	     AlternatingItemStyle.CssClass="DataListAlterItem"
+	     EditItemStyle.CssClass="DataListEditItem"
+		 width="100%"
+		 EnableViewState="true">
+		<prop:HeaderTemplate>
+			<table width="100%">
+				<tr>
+					<td width="15%">Serial Number</td>
+					<td width="15%">Part Code</td>
+					<td width="25%">Part Description</td>
+					<td width="5%">Qty</td>
+					<td width="*">Location</td>
+					<td width="5%">&nbsp;</td>
+				</tr>
+			</table>
+		</prop:HeaderTemplate>
+
+		<prop:ItemTemplate>
+			<table width="100%">
+				<tr>
+					<td width="15%">
+						<com:TLinkButton Text="<%# $this->DataItem['barcode'] %>"  OnClick="Page.showWithinPart" ToolTip="View Parts Within <%# $this->DataItem['barcode'] %>"/></td>
+					<td width="15%"><%# $this->DataItem['partcode'] %></td>
+					<td width="25%"><%# $this->DataItem['partInstance']->getPartType()->getName() %></td>
+					<td width="5%"><%# $this->DataItem['qty'] %></td>
+					<td width="*"><%# $this->DataItem['partInstance']->getRootWarehouse() %></td>
+					<td width="5%">
+						<com:TImageButton ImageUrl="../../../themes/images/delete.png" Text="Remove From this Part" OnClick="Page.showRemovePartPanel" ToolTip="Remove From this Part" />
+					</td>
+				</tr>
+			</table>
+		</prop:ItemTemplate>
+
+		<prop:EditItemTemplate>
+			<table width="100%">
+				<tr valign="top">
+					<td width="30%">
+						<com:TLabel ID="removingPartInstance_SerialNo" />
+						<com:THiddenField ID="removingPartInstance_Id" />
+					</td>
+					<td width="60%">
+						<h3>Please choose from the list of location,where you want to move this part to:</h3>
+						<com:TRequiredFieldValidator
+							ControlToValidate="targetWarehouseId"
+							ErrorMessage="Need to select a warehouse to move the part to!"
+							ValidationGroup="Group3" EnableClientScript="true" /><br />
+						<com:Application.controls.HYWHTree ID="removingPartInstance_warehouse" hidden="targetWarehouseId" />
+						<com:TActiveHiddenField ID="targetWarehouseId" Value=""/>
+					</td>
+					<td><com:TButton ID="RemoveButton" Text="Remove" OnCommand="Page.removePart" ValidationGroup="Group3" /></td>
+					<td><com:TButton ID="CancelRemoveButton" Text="Cancel" OnCommand="Page.cancelRemovePart" /></td>
+				</tr>
+			</table>
+		</prop:EditItemTemplate>
+	    <prop:FooterTemplate>
+		    <table width="100%">
+		    	<tr><td width="100%" style="text-align:center"><%# $this->Page->totalSubParts %> entries.</td></tr>
+		    </table>
+		</prop:FooterTemplate>
+	</com:TDataList>
+	<div>
+	<com:TActivePanel ID="outer" Display="None" ScrollBars="Auto" CssClass="BackgroundPanel" />
+		<div>
+			<com:TActivePanel ID="inner" Display="None" ScrollBars="Auto" CssClass="ResultFrontPanel" Style="top: 30%; left: 35%; width: 25%; height: 10%; background-color:#C0C0C0">
+				<div align="center">
+					Part contains no parts. Do you wish to deactivate the Part?
+					<br/><br/>
+					<com:TButton ID="yes" Text="Yes" OnClick="deactivatePart" />
+					<com:TButton ID="no" Text="No" OnClick="keepPartActive"/>
+				</div>
+			</com:TActivePanel>
+		</div>
+	</div>
+	<com:TPanel ID="PaginationPanel" />
+</com:TContent>

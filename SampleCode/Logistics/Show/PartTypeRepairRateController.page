@@ -1,0 +1,126 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+	<br />
+	<div>
+		<com:THiddenField ID="SearchString" />
+		<com:THiddenField ID="focusObject" />
+		<com:THiddenField ID="focusObjectArgument" />	
+		<b><com:TLabel ID="UserLabel" Style="color:#ffffff"/></b>
+		
+		<com:TLabel ID="pageTitle" Attributes.style="font-weight:bold" />
+		
+		<com:TPanel ID="AddPanel" CssClass="AddPanel" ></com:TPanel>
+		
+		<com:TPanel ID="SearchPanel">
+			<table border="0" width="100%">
+				<tr>
+					<td>Partcode</td>
+					<td>
+						<com:Application.controls.EntityAutoComplete.HYPartTypeComplete
+								ID="PartCode" ResultPanel.CssClass="hydraautocomplete" Width="400" />
+					</td>
+				</tr>
+				<tr>
+					<td>Contract</td>
+					<td>
+						<com:TListBox ID="Contract" Width="400px" Rows="1" DataValueField="0" DataTextField="1" />
+					</td>
+				</tr>
+				<tr>
+					<td>Rate</td>
+					<td>
+						<com:TTextBox ID="Rate" Width="50px" />
+					</td>
+				</tr>
+				<tr>
+					<td>State</td>
+					<td>
+						<com:TListBox ID="State" Width="400px" Rows="1" DataValueField="0" DataTextField="1" />
+					</td>
+				</tr>
+				<tr>
+					<td>&nbsp;</td>
+					<td>
+						<com:TButton ID="Search" Text="View" OnClick="search" />
+					</td>
+				</tr>
+			</table>
+		</com:TPanel>
+		
+		<com:TPanel ID="ListingPanel">
+			
+			<br />
+			
+			<com:TDataList ID="DataList" DataKeyField="0" OnSelectedIndexChanged="selectItem" 
+						 RepeatLayout="Raw"
+					     OnEditCommand="edit"
+					     OnUpdateCommand="save" 
+					     OnCancelCommand="cancel"
+					     CssClass="DataList" 
+					     ItemStyle.CssClass="DataListItem" 
+					     AlternatingItemStyle.CssClass="DataListAlterItem" 
+					     EditItemStyle.CssClass="DataListEditItem" 
+						 width="100%"
+						 AllowPaging="true" AllowCustomPaging="false" PageSize="50" EnableViewState="true">
+			    <prop:HeaderTemplate>
+					<table width="100%" height="25" class="DataList">
+						<thead>
+						<tr>
+							<%%
+								$cellCtr = 0;
+								foreach ($this->Page->dataListHeader as $th)
+								{
+									$attr = "width='6%'";
+									if ($cellCtr < 2)
+										$attr = "width='*'";
+									$cellCtr++;
+									print "<th $attr>$th</th>";
+								}
+							%>
+						</tr>
+						</thead>
+						<tbody>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+						<tr class="<%# $this->Page->getStyle($this->getItemIndex()) %>">
+							<%#
+								$this->Page->printDataItem($this->DataItem);
+							%>
+						</tr>
+				</prop:ItemTemplate>
+			
+				<prop:EditItemTemplate></prop:EditItemTemplate>
+							
+			    <prop:FooterTemplate>
+			    		</tbody>
+			    		<tfoot>
+						<tr>
+							<th colspan="<%= count($this->Page->dataListHeader) %>">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Parent->VirtualItemCount %> Entries
+								</div>
+							</th>
+						</tr>
+						</tfoot>
+					</table>
+				</prop:FooterTemplate>				
+			</com:TDataList>
+		</com:TPanel>		
+
+		<com:TPanel ID="PaginationPanel">		
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>			
+	</div>
+</com:TContent>

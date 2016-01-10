@@ -1,0 +1,155 @@
+<com:TContent ID="MainContent">
+<script type="text/javascript">
+function validateQuantity(qty,actualQty,comments)
+{
+	var qty = parseInt(qty);
+	var actualQty = parseInt(actualQty);
+    if(!actualQty ||actualQty == 0)
+    {
+		alert('Please enter some quantity');
+		return false;
+    }
+    if(!comments || comments === null || comments === '')
+    {
+		alert('Please enter some comments');
+		return false;
+    }
+    if(actualQty > qty)
+    {
+		alert('Quantity cannot be greater than '+qty);
+		return false;
+    }
+}
+</script>
+	<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel">
+			<table width="100%">
+				<tr>
+					<td width="80%">
+						<b>Search: </b><com:TTextBox ID="SearchText" AutoPostBack="false" Columns="45" visible="true"/>
+						<com:TButton ID="SearchBtn" visible="true" Text="Search" OnClick="search" />
+						<com:THiddenField ID="SearchString" />
+						<com:THiddenField ID="focusObject" />
+						<com:THiddenField ID="focusObjectArgument" />
+					</td>
+				</tr>
+			</table>
+	</com:TPanel>
+	<br/>
+<!---   ---------------- Adding Panel ---------------- ---> 
+        <com:TPanel ID="AddPanel" CssClass="AddPanel" />
+
+<!---   ---------------- Adding Panel ---------------- ---> 
+		<table class="DataListTitle">		
+			<tr>
+				<td>
+					<com:TLabel ID="PageTitleLabel" Text="Show Parts" />
+				</td>
+			</tr>
+		</table>
+		<br/>
+				<com:TPanel>
+						<com:TDataList ID="DataList" DataKeyField="0" OnSelectedIndexChanged="selectItem"
+			                         OnEditCommand="edit"
+			                         OnUpdateCommand="save" OnCancelCommand="cancel"
+									 RepeatLayout="Raw" 
+								     CssClass="DataList" 
+								     ItemStyle.CssClass="DataListItem" 
+								     AlternatingItemStyle.CssClass="DataListAlterItem" 
+									 width="100%"
+									 AllowPaging="true" AllowCustomPaging="true" PageSize="40" EnableViewState="true">
+							
+						    <prop:HeaderTemplate>
+								<table width="100%" height="25" class="DataList">
+									<thead>
+										<tr>
+											<th width="5%"><%[ PartType.Quantity ]%></th>
+											<th width="10%"><%[ PartType.code ]%></th>
+											<th width="15%"><%[ PartInstance.serialNo ]%></th>
+											<th width="10%"><%[ PartInstance.status ]%></th>
+											<th width="35%"><%[ PartType.description ]%></th>
+											<th width="*"><%[ PartInstance.warehouse ]%></th>
+											<th width="5%">#</th>
+										</tr>
+									</thead>
+									<tbody>
+							</prop:HeaderTemplate>
+			
+							<prop:ItemTemplate>
+									<tr class="<%# $this->Page->getStyle($this->getItemIndex()) %>">
+										<td width="5%"><%# $this->dataItem[0]%></td>
+										<td width="10%"><%# $this->dataItem[1]%></td>
+										<td width="15%"><%# $this->dataItem[2]%></td>
+										<td width="10%"><%# $this->dataItem[3]%></td>
+										<td width="35%"><%# $this->dataItem[4]%></td>										
+										<td width="*"><%# $this->dataItem[5]%></td>										
+										<td width="5%"> <com:TImageButton ImageUrl="../../../themes/images/edit.png" Text="Edit" CommandName="edit" ToolTip="Edit Record" /></td>
+									</tr>
+							</prop:ItemTemplate>
+							
+                            <prop:EditItemTemplate>
+									<tr style="background-color:#FFFFCC; color: black">
+										<td width="5%">
+										<com:TTextBox ID="NewQuantity" Text="<%# $this->dataItem[0] %>" AutoPostBack="false" ValidationGroup="Group1" />
+										
+                                            <com:TRequiredFieldValidator ControlToValidate="NewQuantity"
+                                            ErrorMessage="Qty Required" ValidationGroup="Group1" EnableClientScript="true" />
+										</td>
+										<td width="10%"><%# $this->dataItem[1]%><com:THiddenField ID="partcode" value ="<%# $this->dataItem[1] %>" /></td>
+										<td width="15%"><%# $this->dataItem[2]%><com:THiddenField ID="barcode" value ="<%# $this->dataItem[2] %>" /></td>
+										<td width="10%"><%# $this->dataItem[3]%><com:THiddenField ID="status" value ="<%# $this->dataItem[3] %>" /></td>
+										<td width="35%"><%# $this->dataItem[4]%></td>										
+										<td width="*"><%# $this->dataItem[5]%></td>										
+										<td width="5%"> </td>
+                                    </tr>
+                                    <tr style="background-color:#FFFFCC; color: black">
+                                        <td colspan="1">
+                                        Comments :  
+			                               </td>
+                                        <td colspan="3">  
+                                         <com:TTextBox ID="Comments" TextMode="MultiLine" Rows="3"  style="width:200px;" AutoPostBack="false" ValidationGroup="Group1" />
+                                         </td>   
+										<td align="right">
+                                        Change Part Status to:
+                                        <com:TDropDownList ID="statusList" DataTextField='1' DataValueField="0" Width="100px"/>                     
+										</td>
+										<td colspan="2">
+											 <com:Application.controls.HYLock Feature="pages_all,feature_showparts_edit">
+	                                            <com:TButton ID="EditButton" Text="Save" Attributes.onClick="return validateQuantity(<%# $this->dataItem[0]%>,$('<%# $this->NewQuantity->getClientId() %>').value, $('<%# $this->Comments->getClientId() %>').value);" CommandName="update" ValidationGroup="Group1" />
+	                                        </com:Application.controls.HYLock>      
+	                                         <com:TButton ID="CancelEditButton" Text="Cancel" CommandName="cancel" />
+										</td>
+                                    </tr>
+                            </prop:EditItemTemplate>
+											
+						    <prop:FooterTemplate>
+						    		</tbody>
+						    		<tfoot>
+									<tr>
+										<th colspan="7">
+											<div style="font-weight: bold; text-align: center;">
+												Total <%# $this->Parent->VirtualItemCount %> parts found.
+											</div>
+										</th>
+									</tr>
+									</tfoot>
+								</table>
+							</prop:FooterTemplate>				
+						</com:TDataList>
+						<com:TLabel ID="SuccessfulStocktake" />
+				</com:TPanel>	
+				<!-- Pagination Panel Start -->		
+				<com:TPanel ID="PaginationPanel">		
+					<table width="100%" height="25">
+						<tr>
+							<th colspan="2" align="left">Select Page :
+								<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+							</th>
+							<th colspan="3" align="right">Go To Page :
+								<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+							</th>
+						</tr>
+					</table>
+				</com:TPanel>	
+				<!-- Pagination Panel End -->		
+				
+</com:TContent>

@@ -1,0 +1,282 @@
+<%@MasterClass="Application.layouts.LogisticsLayout"%>
+<com:TContent ID="MainContent">
+
+<com:THiddenField ID="AllowDeactivate" />
+
+	<br />
+	<div>
+		<table width="100%">
+			<tr>
+				<br />
+				<b>Manage Part Type Warranty Details</b>
+			</tr>
+			<tr>
+				<td width="82%">	
+					<com:TPanel ID="SearchAddPanel" CssClass="SearchPanel" GroupingText="Search Part Type Warranty Details" DefaultButton="SearchButton">
+						<table width="100%">
+							<tr>
+								<td width="27%">Part Type : <font color=red>*</font></td>
+								<td >
+									<com:Application.controls.EntityAutoComplete.HYPartTypeComplete 
+										ID="SearchPartType" 
+										ResultPanel.CssClass="hydraautocomplete" 
+										PageMethod="validatePartType"
+										width="99%" />
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<font color=red>Or</font>
+								</td>
+							</tr>
+							<tr>
+								<td width="27%">Contract - WorkType : <font color=red>*</font></td>
+								<td>
+									<com:Application.controls.EntityAutoComplete.HYContractWorkTypeComplete
+										ID="SearchWorkType" 
+										ResultPanel.CssClass="hydraautocomplete" 
+										PageMethod="validateWorkType"
+										width="99%" />
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<com:THiddenField ID="SearchString" />
+									<com:THiddenField ID="focusObject" />
+									<com:THiddenField ID="focusObjectArgument" />
+								</td>
+								<td>
+									<com:TButton ID="SearchButton" Text="Search" onCommand="search"/>
+									&nbsp;	
+									<com:TButton Text="Clear" onCommand="clearAll"/>
+								</td>
+							</tr>
+						</table>	
+					</com:TPanel>
+				</td>
+				<td width="18%" align="right" valign="top">	
+					<com:TButton ID="AddButton" Text="Add Part Type Warranty" OnClick="add"/>
+				</td>
+			</tr>
+		</table>
+		<br />
+		<hr />
+		<br />
+		
+<!---   ---------------- Adding Panel ---------------- --->	
+		<com:TActivePanel ID="AddPanel" CssClass="SearchPanel" GroupingText="Add Part Type Warranty Details" DefaultButton="AddDetailsButton">
+			<table width="100%" style="background:#eeeeee;">
+				<tr>
+					<td style="vertical-align:top" width="50%">
+						<table width="100%">
+							<tr>
+								<td width="10%">WorkType : <font color=red>*</font></td>
+								<td width="40%">
+									<com:Application.controls.EntityAutoComplete.HYContractWorkTypeComplete
+										ID="WorkType" 
+										ResultPanel.CssClass="hydraautocomplete" 
+										PageMethod="validateWorkType"
+										width="90%" />
+									<br />
+									<com:TRequiredFieldValidator 
+										ControlToValidate="WorkType" 
+										ErrorMessage="WorkType Required!" 
+										ValidationGroup="Group1" 
+										Display="Dynamic"/>
+								</td>
+								
+								<td width="15%">Warranty Period : <font color=red>*</font></td>
+								<td width="35%">
+									<com:TActiveTextBox 
+										ID="WarrantyPeriod" 
+										AutoPostBack="true" 
+										MaxLength="5"
+										OnTextChanged="validatePeriod"
+										ValidationGroup="Group1" 
+										width="90%"/>
+									<br />
+									<com:TRequiredFieldValidator 
+										ControlToValidate="WarrantyPeriod" 
+										ErrorMessage="Warranty Period Required!"
+										ValidationGroup="Group1" 
+										Display="Dynamic"/>
+								</td>
+							</tr>
+							<tr>
+								<td width="10%">Status : <font color=red>*</font></td>
+								<td width="40%">
+									<com:TActiveListBox 
+											ID="StatusList"
+											AutoPostBack="true"
+										    DataTextField="Name"
+										    DataValueField="id"
+										    ValidationGroup="Group1"
+										    EnableClientScript="true"
+										    Rows="7"
+										    width="90%"
+										    />
+									<br />
+									<com:TListControlValidator
+										ID="StatusListValidator"
+										ControlToValidate="StatusList"
+										ErrorMessage="You must select a Status!" 
+										MinSelection="1"
+										EnableClientScript="true"
+										ValidationGroup="Group1"
+										/>	
+								</td>
+								
+								<td width="15%">Warranty Period Type : <font color=red>*</font></td>
+								<td width="35%">
+									<com:TActiveListBox 
+											ID="PeriodTypeList"
+											AutoPostBack="true"
+										    DataTextField="Name"
+										    DataValueField="id"
+										    ValidationGroup="Group1"
+										    EnableClientScript="true"
+										    Rows="7"
+										    width="90%"
+										    />
+									<br />
+									<com:TListControlValidator
+										ID="PeriodTypeListValidator"
+										ControlToValidate="PeriodTypeList"
+										ErrorMessage="You must select a Warranty Period Type!" 
+										MinSelection="1"
+										EnableClientScript="true"
+										ValidationGroup="Group1"
+										/>	
+								</td>
+							</tr>
+							<tr>
+								<td width="10%" colspan="1">Part Types : <font color=red>*</font></td>
+								<td width="90%" colspan="3">
+									<com:TActiveListBox 
+											ID="PartTypeList"
+											AutoPostBack="true"
+										    DataTextField="Name"
+										    DataValueField="id"
+										    ValidationGroup="Group1"
+										    EnableClientScript="true"
+										    SelectionMode="Multiple"
+										    Rows="15"
+										    width="97%"
+										    />
+									<br />
+									<com:TListControlValidator
+										ID="PartTypeListValidator"
+										ControlToValidate="PartTypeList"
+										ErrorMessage="You must select a Part Type!" 
+										MinSelection="1"
+										EnableClientScript="true"
+										ValidationGroup="Group1"
+										/>										
+								</td>
+							</tr>		
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<com:TButton ID="AddDetailsButton" Text="Add" onCommand="addDetails" ValidationGroup="Group1"/>
+									&nbsp;	
+									<com:TButton Text="Clear" onCommand="clearAll"/>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>									
+		</com:TActivePanel>
+<!---   ---------------- Add Panel Ends Here---------------- --->					
+	<com:TPanel ID="ListingPanel">
+		<com:TActivePanel ID="DataListPanel">
+			<table width="100%" class="DataListTitle">
+				<tr>
+						<th>
+							<td align="left">
+									<com:TLabel Text="<%[ PartType.list ]%>" /> 
+									<com:TLabel ID="PartTypeLabel" />
+							</td>
+						</th>
+				</tr>
+			</table>
+			
+			<com:TDataList ID="DataList" DataKeyField="id" OnSelectedIndexChanged="selectItem" 
+					     OnEditCommand="edit"
+					     OnDeleteCommand="deletePartType"
+					     OnUpdateCommand="save" OnCancelCommand="cancel"
+					     CssClass="DataList" 
+					     ItemStyle.CssClass="DataListItem" 
+					     AlternatingItemStyle.CssClass="DataListAlterItem" 
+					     EditItemStyle.CssClass="DataListEditItem" 
+						 width="100%"
+						 AllowPaging="false" AllowCustomPaging="false" EnableViewState="true">
+				
+			    <prop:HeaderTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<th width="30%">Part Type</th>
+							<th width="25%">Contract - Worktype</th>
+							<th width="10%">Status</th>
+							<th width="10%">Warranty Period</th>
+							<th width="10%">Warranty Period Type</th>
+							<th width="10%">Updated By</th>
+							<th width="5%">Active</th>
+						</tr>
+					</table>
+				</prop:HeaderTemplate>
+
+				<prop:ItemTemplate>
+					<table width="100%" height="25">
+						<tr>
+							<th width="30%"><%= $this->DataItem['parttype'] %></th>
+							<th width="25%"><%= $this->DataItem['contractworktype'] %></th>
+							<th width="10%"><%= $this->DataItem['status'] %></th>
+							<th width="10%"><%= $this->DataItem['warrantyperiod'] %></th>
+							<th width="10%"><%= $this->DataItem['warrantyperiodtype'] %></th>
+							<th width="10%"><%= $this->DataItem['updatedby'] %></th>
+							<th width="5%">
+								<com:TCheckBox ID="Active" Enabled="<%# $this->getPage()->AllowDeactivate->getValue() %>" 
+										Checked="<%= $this->DataItem['active'] %>" 
+										AutoPostBack="true" 
+										OnCheckedChanged="Page.toggleActive" />
+							</th>
+						</tr>
+					</table>
+				</prop:ItemTemplate>
+				
+				<prop:EditItemTemplate>
+					<!-- Please dont allow to edit this records as we wont have history for it and would be difficult to trace for auto calculate warranty details for part instances based on this table... -->
+				</prop:EditItemTemplate>
+								
+			    <prop:FooterTemplate>
+				    <table width="100%" height="25">
+						<tr>
+							<th colspan="3">
+								<div style="font-weight: bold; text-align: center;">
+									Total <%# $this->Parent->ItemCount %> Part Type(s)
+								</div>
+							</th>
+						</tr>
+					</table>
+				</prop:FooterTemplate>				
+			</com:TDataList>
+
+		<com:TPanel ID="PaginationPanel">		
+		    <table width="100%" height="25">
+				<tr>
+					<th colspan="3" align="left">
+						Select Page :
+						<com:TPager ID="PagerList" ControlToPaginate="DataList" PageButtonCount="5" Mode="Numeric" OnPageIndexChanged="pageChanged" />
+					</th>
+					<th colspan="3" align="right">
+						Go To Page :
+						<com:TPager ID="PagerGoTo" ControlToPaginate="DataList" Mode="DropDownList" OnPageIndexChanged="pageChanged" />
+					</th>
+				</tr>
+			</table>
+		</com:TPanel>			
+	  </com:TActivePanel>		
+	</com:TPanel>		
+	</div>
+</com:TContent>

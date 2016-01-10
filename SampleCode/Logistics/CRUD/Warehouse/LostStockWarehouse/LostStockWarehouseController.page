@@ -1,0 +1,82 @@
+<%@MasterClass="Application.layouts.DefaultLayout"%>
+<com:TContent ID="MainContent">
+	<com:TActiveLabel ID="activeInformationMsg" style="font-weight:bold;color:green;"/>
+	<com:TActiveLabel ID="activeErrorMsg" style="font-weight:bold;color:red;"/>
+	<com:TActiveLabel ID="jsLbl" Style="display:none;" />
+	<com:TActiveHiddenField ID="noOfWarehouseChanged" />
+	
+	<com:Application.controls.3rdPartyScript.HYModalBox.HYModalBox id="modalBox" />
+	<script>
+	 function saveChangeLostStockWarehouse()
+     {
+		 Modalbox.show('loading', {beforeLoad: function(){Modalbox.deactivate();}, title: 'Applying changes to child warehouses, do not stop!'});
+         $('<%= $this->ajaxProcessor->startAjaxProcessor->getClientId(); %>').click();
+     }
+     
+
+     
+     function finishProcessChangeLostStockWarehouse()
+     {
+         Modalbox.hide();
+         $('<%= $this->finishProcessChangeLostStockWarehouse->getClientId(); %>').click();    
+     }
+
+	</script>
+	
+	
+	<com:TActiveHiddenField ID="exceptionMessage" Value=""/>
+    <com:TActiveHiddenField ID="errorMessage" Value=""/>
+	
+	<com:TButton ID="finishProcessChangeLostStockWarehouse" Text="" OnClick="Page.finishProcessChangeLostStockWarehouse" Style="display:none;" />
+    <com:Application.pages.Bulkload.CustomisedControls.AjaxProcessor.AjaxProcessor ID="ajaxProcessor" ProcessingFunc_page="processChangeLostStockWarehouse" AfterLoadCompleteFunc_page="finishProcess" MaxCycles="0"/>
+    
+	
+	
+	
+	
+	<com:TPanel ID="dataPanel">
+		<com:THiddenField ID="currentWarehouseId" />
+		<com:THiddenField ID="currentWarehouseName" />
+		<br />
+		<br />
+		<font style='font-size:15px;'>The 'Lost Stock Warehouse' for <b><%= $this->Page->getCurrentWarehouseName() %></b></font>
+		<br />
+		<ul style="list-style:disc;margin-left: 30px; font-size: 11px;">
+			<li>
+				The Lost Stock Warehouse is where unallocated parts are moved to when a stocktake of '<%= $this->Page->getCurrentWarehouseName() %>' is completed.
+			</li>
+		</ul>
+		<br><br>
+		
+		<com:TActiveLabel ID="currentLostStockWarehouse" style=""/>
+		<table width="100%" border="0">
+			<tr>
+				<td width="70%" valign="top">
+					<com:TActiveButton ID="changeWarehouse" OnCommand="Page.changeLostStockWarehouse" Text="change" style="display:none;"/>
+					
+					
+					
+					<com:Application.controls.EntityAutoComplete.HYWarehouseBreadcrumbComplete 
+                                                    IncludeWarehouseCategoryIds="2" 
+                                                    ID="warehouseidauto" 
+                                                    ResultPanel.CssClass="hydraautocomplete" SearchLimit="10"  width="80%" PageMethod="setWarehouse" PageOnExtraSuggestMethod="resetWarehouse"/>
+				    <com:TActiveHiddenField ID="warehouseid" />
+					
+				</td>
+				<td align="left" valign="top">
+					<com:TActiveButton ID="saveWarehouse" OnClick="Page.saveLostStockWarehouse" Enabled="false">
+						<prop:ClientSide 
+							OnLoading="$('<%= $this->Page->saveWarehouse->getClientId() %>').value='Processing ...';
+										$('<%= $this->Page->saveWarehouse->getClientId() %>').disabled=true;
+										" 
+							OnComplete="
+									$('<%= $this->Page->saveWarehouse->getClientId() %>').value='Save \'Lost Stock Warehouse\' for \'' + $('<%= $this->Page->currentWarehouseName->getClientId() %>').value+ '\'';
+									$('<%= $this->Page->saveWarehouse->getClientId() %>').disabled=false;" 
+							/>
+					</com:TActiveButton>
+					<com:TActiveLabel ID="OutputText" style="border:2px #cccccc solid;" Text="<ul style='list-style:disc; margin-left:20px;'><br /><br />Output:<br />" Visible='false'/>
+				</td>
+			</tr>
+		</table>
+	</com:TPanel>
+</com:TContent>
