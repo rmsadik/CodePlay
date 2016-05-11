@@ -1,115 +1,182 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Testing ES6</title>
-	<link rel="stylesheet" href="">
-	<style type="text/css">
-	#test{
-		/*position: relative;*/
-		height: 100px;
-		width: 100px;
-		margin-/*left: 30%;
-		margin-*/top: 30%;
-	}
-	#outPopUp {
-	  position: absolute;
-	  width: 300px;
-	  height: 200px;
-	  z-index: 15;
-	  top: 50%;
-	  left: 50%;
-	  margin: -100px 0 0 -150px;
-	  /*background: red;*/
-	}		
-	</style>
-<script type="text/javascript">
-"use strict";
-class Cat {
-  constructor(name) {
-    this._name = name;
-  }
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Testing ES6</title>
+    <link rel="stylesheet" href="">
+    <style type="text/css">
+    #test {
+        /*position: relative;*/
+        height: 100px;
+        width: 100px;
+        margin-/*left: 30%;
+		margin-*/
+        top: 30%;
+    }
+    
+    #outPopUp {
+        position: absolute;
+        width: 300px;
+        height: 200px;
+        z-index: 15;
+        top: 50%;
+        left: 50%;
+        margin: -100px 0 0 -150px;
+        /*background: red;*/
+    }
+    </style>
+    <script type="text/javascript">
+    "use strict";
+    class Cat {
+        constructor(name) {
+            this._name = name;
+        }
 
-  bark() {
-    console.log("meow! meow!"+this._name);
-  }
-}
-
-
-class Dog extends Cat {
-  constructor(name) {
-  	super(name);
-    this._name = name;
-  }
-
-  bark2() {
-    console.log("wuf! wuf!"+this._name);
-  }
-}
-
-var leo = new Dog("Leo");
-// leo.bark();
-// leo.test = function(){console.log('testing new function')};
-// leo.test();
- 
-class Car extends Dog {
-
-	constructor(make='test make', model='test model'){
-		super(make);
-		this._make = make;
-		this._model = model;	
-		this.PI = 3.1415;
-	}
-
-	toString(){
-		return console.log(`Make : ${this._make} and the ${this.PI} model is ${this._model}`);
-	}
-	getmake(){
-		return this._make;
-	}
-	setmake(make){
-		this._make=make;	
-	}
-	static defaultValue() {
-		return this.toString();
-	}
-}
-// var benz = new Car('Mercedez','S Class');
-var benz = new Car();
-// benz.toString();
-Car.defaultValue();
-// benz.bark();
-// benz.bark2();
+        bark() {
+            console.log("meow! meow!" + this._name);
+        }
+    }
 
 
+    class Dog extends Cat {
+        constructor(name) {
+            super(name);
+            this._name = name;
+        }
 
-class Polygon {
-  constructor(height, width) {
-    this.height = height;
-    this.width = width;
-  }
-  
-  get area() {
-    return this.calcArea();
-  }
+        bark2() {
+            console.log("wuf! wuf!" + this._name);
+        }
+    }
 
-  calcArea() {
-    return this.height * this.width;
-  }
-}
+    var leo = new Dog("Leo");
+    // leo.bark();
+    // leo.test = function(){console.log('testing new function')};
+    // leo.test();
 
-const square = new Polygon(10, 10);
+    class Car extends Dog {
 
-console.log(square.area);
+        constructor(make = 'test make', model = 'test model') {
+            super(make);
+            this._make = make;
+            this._model = model;
+            this.PI = 3.1415;
+        }
+
+        toString() {
+            return console.log(`Make : ${this._make} and the ${this.PI} model is ${this._model}`);
+        }
+        getmake() {
+            return this._make;
+        }
+        setmake(make) {
+            this._make = make;
+        }
+        static defaultValue() {
+            return this.toString();
+        }
+    }
+    // var benz = new Car('Mercedez','S Class');
+    var benz = new Car();
+    // benz.toString();
+    Car.defaultValue();
+    // benz.bark();
+    // benz.bark2();
 
 
 
-</script>
+    class Polygon {
+        constructor(height, width) {
+            this.height = height;
+            this.width = width;
+        }
 
+        get area() {
+            return this.calcArea();
+        }
+
+        calcArea() {
+            return this.height * this.width;
+        }
+    }
+
+    // const square = new Polygon(10, 10);
+    // console.log(square.area);
+
+    // var benz = new Car('Mercedez', 'S Class');
+    // // benz.toString();
+    // benz.bark();
+    // benz.bark2();
+
+    // var shape = new Polygon(200, 500);
+    // console.log(shape.area);
+
+
+//-----------------------------------------------------Setters and Getters---------------------------------------------------
+    class Circle {
+        constructor(radius) {
+            this.radius = radius;
+            Circle.circlesMade++;
+        };
+
+        static draw(circle, canvas) {
+            // Canvas drawing code
+        };
+
+        static get circlesMade() {
+            return !this._count ? 0 : this._count;
+        };
+        static set circlesMade(val) {
+            this._count = val;
+        };
+
+        area() {
+            return Math.pow(this.radius, 2) * Math.PI;
+        };
+
+        get radius() {
+            return this._radius;
+        };
+        set radius(radius) {
+            if (!Number.isInteger(radius))
+                throw new Error("Circle radius must be an integer.");
+            this._radius = radius;
+        };
+    }
+    var circle = new Circle(100);
+    console.log(circle.radius);
+    circle.radius=20;
+    console.log(circle.radius);
+
+//----------------------------------------------------Super class-------------------------------------------------
+    class Cat2 {
+        constructor(name) {
+            this.name = name;
+        }
+
+        speak() {
+            console.log(this.name + ' makes a noise.');
+        }
+    }
+
+    class Lion extends Cat2 {
+        speak() {
+            super.speak();
+            console.log(this.name + ' roars.');
+        }
+    }
+    // var lion = new Lion('lion');
+    // console.log(lion.speak());
+//----------------------------------------------------------------------------------------------------------
+
+    </script>
 </head>
+
 <body>
-<div id="test">...</div>
-<div id="outPopUp">VV</div>
+    <div id="test">...</div>
+    <div id="outPopUp">VV</div>
 </body>
+
 </html>
