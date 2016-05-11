@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Testing ES6</title>
+	<link rel="stylesheet" href="">
+<script type="text/javascript">
+"use strict";
+class Cat {
+  constructor(name) {
+    this._name = name;
+  }
+
+  bark() {
+    console.log("meow! meow!"+this._name);
+  }
+}
+
+
+class Dog extends Cat {
+  constructor(name) {
+  	super(name);
+    this._name = name;
+  }
+
+  bark2() {
+    console.log("wuf! wuf!"+this._name);
+  }
+}
+
+var leo = new Dog("Leo");
+// leo.bark();
+// leo.test = function(){console.log('testing new function')};
+// leo.test();
+class Car extends Dog {
+
+	constructor(make, model){
+		super(make);
+		this._make = make;
+		this._model = model;	
+	}
+
+	toString(){
+		return console.log(`Make : ${this._make} and the model is ${this._model}`);
+	}
+}
+var benz = new Car('Mercedez','S Class');
+// benz.toString();
+benz.bark();
+benz.bark2();
+
+</script>
+
+</head>
+<body>
+	
+</body>
+</html>
