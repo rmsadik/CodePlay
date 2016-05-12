@@ -171,6 +171,27 @@
     // console.log(lion.speak());
 //----------------------------------------------------------------------------------------------------------
 
+    const square = new Polygon(10, 10);
+
+    console.log(square.area);
+
+
+    class Car extends Dog {
+
+        constructor(make, model) {
+            super(make);
+            this._make = make;
+            this._model = model;
+        }
+
+        toString() {
+            return console.log(`Make : ${this._make} and the model is ${this._model}`);
+        }
+    }
+    var benz = new Car('Mercedez', 'S Class');
+    // benz.toString();
+    benz.bark();
+    benz.bark2();
     </script>
 </head>
 
