@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Testing Promises</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+    <script type="text/javascript">
+    "use strict";
+
+    function getJSON(url) {
+        return $.get(url).then(JSON.parse);
+    }
+
+    var promise = new Promise(function(resolve, reject) {
+        resolve(1);
+    });
+
+    promise.then(function(val) {
+        console.log(val); // 1
+        $.get('story.json').then(function(story) {
+            console.log(story.chapterUrls[0]);
+        });
+
+        return val + 2;
+    }).then(function(val) {
+        console.log(val); // 3
+    });
+
+    var testPromise = new Promise(function(resolve, reject) {
+        let num = 19;
+        if (num > 10)
+            return resolve('test');
+	    else
+    	    return reject('Number is less then 8');
+
+    });
+
+    testPromise.then(function(then){
+    	console.log(`then ${then}`);
+    }).catch(function(error){
+    	console.log(`Error : ${error}`);
+    })
+    </script>
+</head>
+
+<body>
+</body>
+
+</html>
