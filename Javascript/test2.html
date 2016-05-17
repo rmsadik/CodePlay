@@ -60,7 +60,7 @@
 
     asyncThing1.then(function(success) {
         console.log(`Success 1: ${success}`);
-return success;
+		return success;
     }, function(error) {
         console.log(`Error 1 : ${error}`);
         return error;
@@ -87,6 +87,12 @@ return success;
             console.log("All done!");
         });
     */
+
+    testPromise.then(function(then){
+    	console.log(`then ${then}`);
+    }).catch(function(error){
+    	console.log(`Error : ${error}`);
+    });
     </script>
 </head>
 
