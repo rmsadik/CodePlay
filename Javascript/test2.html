@@ -13,7 +13,7 @@
         return $.get(url).then(JSON.parse);
     }
 
-    var promise = new Promise(function(resolve, reject) {
+/*    var promise = new Promise(function(resolve, reject) {
         resolve(1);
     });
 
@@ -37,35 +37,37 @@
 
     });
 
-    // testPromise.then(function(then) {
-    //         console.log(`then ${then}`);
-    //     }).catch(function(error) {
-    //         console.log(`Error : ${error}`);
-    //     })
-
+    testPromise.then(function(then) {
+            console.log(`then ${then}`);
+        }).catch(function(error) {
+            console.log(`Error : ${error}`);
+        })
+*/
     //----------------------------------------------------------------------------------------------------------------
 
     let asyncThing1 = new Promise(function(resolve, reject) {
         // return resolve('some initial text');
         return reject('some error');
     });
-    let asyncThing2 = function(text) {
-        if (text.length > 1)
-            console.log(`Success - asyncThing2`);
-        else
-            console.log(`${text} - text`);
+    let asyncThing2 = function() {
+        console.log(`asyncThing2`);
     };
-    let asyncThing3 = function() {};
-    let asyncThing4 = function() {};
+    let asyncThing3 = function() {
+        console.log(`asyncThing3`);
+    };
+    let asyncThing4 = function() {
+        console.log(`asyncThing4`);
+    };
 
     asyncThing1.then(function(success) {
         console.log(`Success 1: ${success}`);
-		return success;
+        return success;
     }, function(error) {
         console.log(`Error 1 : ${error}`);
         return error;
-    }).then(function(success2) {
-        asyncThing2(success2);
+    })
+    .then(function(success2) {
+        asyncThing2();
     }).catch(function(err) {
         console.log(`Catch : ${err}`);
     });
@@ -87,16 +89,13 @@
             console.log("All done!");
         });
     */
-
-    testPromise.then(function(then){
-    	console.log(`then ${then}`);
-    }).catch(function(error){
-    	console.log(`Error : ${error}`);
-    });
     </script>
 </head>
 
 <body>
+    <div>
+        <p id="scribble">test</p>
+    </div>
 </body>
 
 </html>

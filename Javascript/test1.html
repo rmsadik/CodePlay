@@ -89,6 +89,12 @@
         constructor(height, width) {
             this.height = height;
             this.width = width;
+            this.playArea();
+        }
+
+        playArea(){
+        	this._tmpVar1 = 1;
+        	this._tmpVar2 = 2;
         }
 
         get area() {
@@ -96,6 +102,7 @@
         }
 
         calcArea() {
+        	console.log(this._tmpVar1);
             return this.height * this.width;
         }
     }
@@ -108,8 +115,8 @@
     // benz.bark();
     // benz.bark2();
 
-    // var shape = new Polygon(200, 500);
-    // console.log(shape.area);
+    var shape = new Polygon(200, 500);
+    console.log(shape.area);
 
 
     //-----------------------------------------------------Setters and Getters---------------------------------------------------
@@ -143,14 +150,14 @@
             this._radius = radius;
         };
     }
-    var circle = new Circle(100);
-    console.log(circle.radius);
-    circle.radius = 20;
-    console.log(circle.radius);
+    // var circle = new Circle(100);
+    // console.log(circle.radius);
+    // circle.radius = 20;
+    // console.log(circle.radius);
 
-    console.log(Circle.circlesMade);
-    console.log(Circle.circlesMade = 5);
-    console.log(Circle.circlesMade);
+    // console.log(Circle.circlesMade);
+    // console.log(Circle.circlesMade = 5);
+    // console.log(Circle.circlesMade);
 
     //----------------------------------------------------Super class-------------------------------------------------
     class Cat2 {
@@ -181,15 +188,15 @@
             console.log(`Class Lion toString method`);
         }
     }
-    var lion = new Lion('lion');
-    // console.log(lion.speak());
-    console.log(lion.animalSentenceFancy());
-    console.log(lion.temptest()); //`this` outputs the global variable
+    // var lion = new Lion('lion');
+    // // console.log(lion.speak());
+    // console.log(lion.animalSentenceFancy());
+    // console.log(lion.temptest()); //`this` outputs the global variable
     //----------------------------------------------------------------------------------------------------------
     //
-    function testClick(e) {
-        console.log(e.value);
-    }
+    // function testClick(e) {
+    //     console.log(e.value);
+    // }
     </script>
 </head>
 
