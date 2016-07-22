@@ -1,0 +1,142 @@
+{
+    "category" : "Horse Racing",
+    "subCategory" : "BENDIGO",
+    "market" : "Racing Live",
+    "products" : [
+        {
+            "name" : "LuxBOG",
+            "id": 733,
+            "addToMarket" : true
+        },
+        {
+            "name" : "SP",
+            "id": 234,
+            "addToMarket" : false
+        }
+    ],
+    "disableLuxbookDVP" : true,
+    "LuxBookDVPId" : 280,
+    "newEvent": {
+        "name" : "Test event for settlement",
+        "selections": [
+            {
+                "name" : "A",
+                "prices": [
+                    {
+                        "winPrice": 5.00,
+                        "placePrice": 3.00
+                    },
+                    {
+                        "winPrice": 7.00,
+                        "placePrice": 4.00
+                    }
+                ]
+            },
+            {
+                "name" : "B",
+                "prices": [
+                    {
+                        "winPrice": 6.00,
+                        "placePrice": 4.00
+                    },
+                    {
+                        "winPrice": 8.00,
+                        "placePrice": 5.00
+                    }
+                ]
+            },
+            {
+                "name" : "C",
+                "prices": [
+                    {
+                        "winPrice": 8.00,
+                        "placePrice": 5.00
+                    },
+                    {
+                        "winPrice": 9.00,
+                        "placePrice": 6.00
+                    }
+                ]
+            },
+            {
+                "name" : "D",
+                "prices": [
+                    {
+                        "winPrice": 9.00,
+                        "placePrice": 6.00
+                    },
+                    {
+                        "winPrice": 10.00,
+                        "placePrice": 7.00
+                    }
+                ]
+            },
+            {
+                "name" : "E",
+                "prices": [
+                    {
+                        "winPrice": 10.00,
+                        "placePrice": 7.00
+                    },
+                    {
+                        "winPrice": 11.00,
+                        "placePrice": 8.00
+                    }
+                ]
+            },
+            {
+                "name" : "F",
+                "prices": [
+                    {
+                        "winPrice": 11.00,
+                        "placePrice": 8.00
+                    },
+                    {
+                        "winPrice": 12.00,
+                        "placePrice": 9.00
+                    }
+                ]
+            },
+            {
+                "name" : "G",
+                "prices": [
+                    {
+                        "winPrice": 12.00,
+                        "placePrice": 9.00
+                    },
+                    {
+                        "winPrice": 13.00,
+                        "placePrice": 10.00
+                    }
+                ]
+            },
+            {
+                "name" : "H",
+                "prices": [
+                    {
+                        "winPrice": 13.00,
+                        "placePrice": 10.00
+                    },
+                    {
+                        "winPrice": 14.00,
+                        "placePrice": 11.00
+                    }
+                ]
+            }
+        ]
+    },
+    "bets" : [
+        {
+            "stake" : "10",
+            "selection" : "A",
+            "betType": "win",
+            "product": "LuxBOG"
+        },
+        {
+            "stake" : "10",
+            "selection" : "B",
+            "betType": "place",
+            "product": "LuxBOG"
+        }    
+    ]
+}

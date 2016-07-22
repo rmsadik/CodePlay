@@ -1,0 +1,6 @@
+{
+    "wagerplayerUrl" : "http://localhost:8888/admin/frames.php",
+    "betshopUrl" : "http://localhost:8888",
+    "username": "admin",
+    "password" : "luxbet123"
+}
